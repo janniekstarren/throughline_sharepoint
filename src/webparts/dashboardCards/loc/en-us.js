@@ -1,6 +1,6 @@
 define([], function() {
   return {
-    "PropertyPaneDescription": "Configure your dashboard settings",
+    "PropertyPaneDescription": "Configure your Throughline dashboard settings. Customize cards, categories, and display options to create your perfect productivity hub.",
     "BasicGroupName": "Display Settings",
     "GreetingGroupName": "Greeting",
     "DescriptionFieldLabel": "Description Field",

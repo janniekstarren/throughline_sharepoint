@@ -17,12 +17,12 @@
 
   "preconfiguredEntries": [{
     "groupId": "5c03119e-3074-46fd-976b-c60198311f70", // Advanced
-    "group": { "default": "Advanced" },
-    "title": { "default": "DashboardCards" },
-    "description": { "default": "DashboardCards description" },
-    "officeFabricIconFontName": "Page",
+    "group": { "default": "Throughline" },
+    "title": { "default": "Throughline Dashboard" },
+    "description": { "default": "Your personalized productivity hub. View calendar events, emails, tasks, files, and team activity in customizable, organized cards." },
+    "officeFabricIconFontName": "ViewDashboard",
     "properties": {
-      "description": "DashboardCards"
+      "description": "Throughline Dashboard"
     }
   }]
 }

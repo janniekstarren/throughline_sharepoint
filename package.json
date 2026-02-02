@@ -1,6 +1,7 @@
 {
-  "name": "dashboard-cards-new",
-  "version": "0.0.1",
+  "name": "throughline-sharepoint",
+  "version": "1.0.0",
+  "description": "Throughline for SharePoint - Your personalized productivity hub",
   "private": true,
   "engines": {
     "node": ">=18.17.1 <19.0.0"
