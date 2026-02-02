@@ -1,0 +1,31 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+.dashboard {
+  padding: 16px;
+  position: relative;
+}
+
+.dashboardContainer {
+  position: relative;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  align-content: start;
+}
+
+// Drawer wrapper for proper positioning
+.drawerWrapper {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  pointer-events: none;
+
+  &.drawerOpen {
+    pointer-events: auto;
+  }
+}

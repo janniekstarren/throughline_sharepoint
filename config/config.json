@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "dashboard-cards-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/dashboardCards/DashboardCardsWebPart.js",
+          "manifest": "./src/webparts/dashboardCards/DashboardCardsWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "DashboardCardsWebPartStrings": "lib/webparts/dashboardCards/loc/{locale}.js"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "whichFolder": "subdir",
+    "solutionName": "dashboard-cards-new",
+    "componentType": "webpart",
+    "template": "react",
+    "componentName": "DashboardCards",
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "18.20.8",
+    "sdksVersions": {
+      "@microsoft/microsoft-graph-client": "3.0.2",
+      "@microsoft/teams-js": "2.24.0"
+    },
+    "version": "1.20.0",
+    "libraryName": "dashboard-cards-new",
+    "libraryId": "ac3c10f1-8fcb-4ae9-8c2d-5d41b5cdcec8",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionShortDescription": "dashboard-cards-new description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false
+  }
+}

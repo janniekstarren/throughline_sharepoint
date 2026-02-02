@@ -1,0 +1,50 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "dashboard-cards-new-client-side-solution",
+    "id": "ac3c10f1-8fcb-4ae9-8c2d-5d41b5cdcec8",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "webApiPermissionRequests": [
+      { "resource": "Microsoft Graph", "scope": "Calendars.Read" },
+      { "resource": "Microsoft Graph", "scope": "Mail.Read" },
+      { "resource": "Microsoft Graph", "scope": "Tasks.Read" },
+      { "resource": "Microsoft Graph", "scope": "Files.Read.All" },
+      { "resource": "Microsoft Graph", "scope": "User.Read.All" },
+      { "resource": "Microsoft Graph", "scope": "Presence.Read.All" },
+      { "resource": "Microsoft Graph", "scope": "People.Read" },
+      { "resource": "Microsoft Graph", "scope": "Sites.Read.All" }
+    ],
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.20.0"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "dashboard-cards-new description"
+      },
+      "longDescription": {
+        "default": "dashboard-cards-new description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "dashboard-cards-new Feature",
+        "description": "The feature that activates elements of the dashboard-cards-new solution.",
+        "id": "31d6837e-1484-490a-96ac-b16abd254104",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/dashboard-cards-new.sppkg"
+  }
+}

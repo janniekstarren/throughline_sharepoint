@@ -1,0 +1,154 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 400px;
+  background-color: white;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #edebe9;
+  background-color: #faf9f8;
+  font-size: 14px;
+  font-weight: 600;
+  color: #323130;
+  flex-shrink: 0;
+}
+
+.cardIcon {
+  font-size: 16px;
+  color: #0078d4;
+}
+
+.badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background-color: #0078d4;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cardContent {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.loadingContainer,
+.errorContainer,
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  color: #605e5c;
+  gap: 8px;
+}
+
+.errorIcon {
+  font-size: 24px;
+  color: #d83b01;
+}
+
+.emptyIcon {
+  font-size: 32px;
+  color: #107c10;
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.taskItem {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 4px;
+  background-color: #faf9f8;
+  gap: 12px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #edebe9;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #0078d4;
+    outline-offset: 2px;
+  }
+}
+
+.overdue {
+  border-left: 3px solid #d83b01;
+}
+
+.checkbox {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.taskContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.taskTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #323130;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.importantIcon {
+  color: #d83b01;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.taskMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #605e5c;
+}
+
+.listName {
+  color: #0078d4;
+}
+
+.dueDate {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  i {
+    font-size: 10px;
+  }
+}
+
+.overdueDue {
+  color: #d83b01;
+  font-weight: 600;
+}
