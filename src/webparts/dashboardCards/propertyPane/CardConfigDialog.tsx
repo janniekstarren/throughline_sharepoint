@@ -14,6 +14,8 @@ import {
   Popover,
   PopoverTrigger,
   PopoverSurface,
+  FluentProvider,
+  webLightTheme,
 } from '@fluentui/react-components';
 import {
   Dismiss24Regular,
@@ -28,6 +30,7 @@ import {
   EyeOff24Regular,
   TextT24Regular,
   Grid24Regular as GridIcon,
+  Search24Regular,
 } from '@fluentui/react-icons';
 import {
   Calendar24Regular,
@@ -41,6 +44,102 @@ import {
   Link24Regular,
   History24Regular,
   Grid24Regular,
+  // Icons for icon picker
+  Home24Regular,
+  Star24Regular,
+  Heart24Regular,
+  Bookmark24Regular,
+  Folder24Regular,
+  FolderOpen24Regular,
+  Archive24Regular,
+  Box24Regular,
+  Tag24Regular,
+  Settings24Regular,
+  Lightbulb24Regular,
+  Sparkle24Regular,
+  Trophy24Regular,
+  Ribbon24Regular,
+  Target24Regular,
+  Rocket24Regular,
+  Briefcase24Regular,
+  Building24Regular,
+  BuildingMultiple24Regular,
+  Money24Regular,
+  Wallet24Regular,
+  Calculator24Regular,
+  ChartMultiple24Regular,
+  DataTrending24Regular,
+  DataBarVertical24Regular,
+  Board24Regular,
+  ClipboardTask24Regular,
+  CheckboxChecked24Regular,
+  CheckmarkCircle24Regular,
+  ClipboardTextLtr24Regular,
+  Notebook24Regular,
+  Book24Regular,
+  BookOpen24Regular,
+  News24Regular,
+  Chat24Regular,
+  ChatMultiple24Regular,
+  Comment24Regular,
+  CommentMultiple24Regular,
+  Call24Regular,
+  Video24Regular,
+  Camera24Regular,
+  Image24Regular,
+  ImageMultiple24Regular,
+  MusicNote124Regular,
+  Play24Regular,
+  Globe24Regular,
+  Map24Regular,
+  Location24Regular,
+  CompassNorthwest24Regular,
+  VehicleCar24Regular,
+  Airplane24Regular,
+  WeatherSunny24Regular,
+  Cloud24Regular,
+  LeafOne24Regular,
+  Food24Regular,
+  DrinkCoffee24Regular,
+  Gift24Regular,
+  ShoppingBag24Regular,
+  Cart24Regular,
+  Person24Regular,
+  PersonCircle24Regular,
+  PeopleTeam24Regular,
+  PersonAdd24Regular,
+  Organization24Regular,
+  Shield24Regular,
+  LockClosed24Regular,
+  Key24Regular,
+  Bug24Regular,
+  Code24Regular,
+  Beaker24Regular,
+  PuzzlePiece24Regular,
+  Games24Regular,
+  Sport24Regular,
+  HeartPulse24Regular,
+  Stethoscope24Regular,
+  Pill24Regular,
+  HatGraduation24Regular,
+  Wrench24Regular,
+  Toolbox24Regular,
+  DesignIdeas24Regular,
+  PaintBrush24Regular,
+  Ruler24Regular,
+  Pen24Regular,
+  Attach24Regular,
+  Send24Regular,
+  Save24Regular,
+  Print24Regular,
+  Clock24Regular,
+  Timer24Regular,
+  Hourglass24Regular,
+  Alert24Regular,
+  Info24Regular,
+  Question24Regular,
+  Flash24Regular,
+  Fingerprint24Regular,
 } from '@fluentui/react-icons';
 import { MiniCard } from './MiniCard';
 import { CardSettingsDrawer } from './CardSettingsDrawer';
@@ -59,6 +158,7 @@ export interface ICardConfig {
   categoryOrder: string[];
   categoryConfig: Record<string, ICategoryConfig>;
   cardCategoryAssignment: Record<string, string>;
+  categoryIcons?: Record<string, string>;
 }
 
 export interface ICardConfigDialogProps {
@@ -71,6 +171,7 @@ export interface ICardConfigDialogProps {
   categoryOrder?: string[];
   categoryConfig?: Record<string, ICategoryConfig>;
   cardCategoryAssignment?: Record<string, string>;
+  categoryIcons?: Record<string, string>;
   onSave: (config: ICardConfig) => void;
 }
 
@@ -129,6 +230,145 @@ export const CATEGORIES: Record<string, ICategoryDefinition> = {
 };
 
 export const DEFAULT_CATEGORY_ORDER: string[] = ['calendar', 'email', 'tasks', 'files', 'people', 'navigation'];
+
+// Available icons for custom categories
+interface IIconDefinition {
+  id: string;
+  name: string;
+  icon: React.ReactElement;
+  category: string;
+}
+
+export const AVAILABLE_ICONS: IIconDefinition[] = [
+  // General
+  { id: 'grid', name: 'Grid', icon: <Grid24Regular />, category: 'General' },
+  { id: 'home', name: 'Home', icon: <Home24Regular />, category: 'General' },
+  { id: 'star', name: 'Star', icon: <Star24Regular />, category: 'General' },
+  { id: 'heart', name: 'Heart', icon: <Heart24Regular />, category: 'General' },
+  { id: 'bookmark', name: 'Bookmark', icon: <Bookmark24Regular />, category: 'General' },
+  { id: 'tag', name: 'Tag', icon: <Tag24Regular />, category: 'General' },
+  { id: 'sparkle', name: 'Sparkle', icon: <Sparkle24Regular />, category: 'General' },
+  { id: 'lightbulb', name: 'Lightbulb', icon: <Lightbulb24Regular />, category: 'General' },
+  { id: 'trophy', name: 'Trophy', icon: <Trophy24Regular />, category: 'General' },
+  { id: 'ribbon', name: 'Ribbon', icon: <Ribbon24Regular />, category: 'General' },
+  { id: 'target', name: 'Target', icon: <Target24Regular />, category: 'General' },
+  { id: 'rocket', name: 'Rocket', icon: <Rocket24Regular />, category: 'General' },
+  { id: 'gift', name: 'Gift', icon: <Gift24Regular />, category: 'General' },
+  { id: 'flash', name: 'Flash', icon: <Flash24Regular />, category: 'General' },
+  // Files & Folders
+  { id: 'folder', name: 'Folder', icon: <Folder24Regular />, category: 'Files' },
+  { id: 'folderOpen', name: 'Folder Open', icon: <FolderOpen24Regular />, category: 'Files' },
+  { id: 'document', name: 'Document', icon: <Document24Regular />, category: 'Files' },
+  { id: 'archive', name: 'Archive', icon: <Archive24Regular />, category: 'Files' },
+  { id: 'box', name: 'Box', icon: <Box24Regular />, category: 'Files' },
+  { id: 'attach', name: 'Attach', icon: <Attach24Regular />, category: 'Files' },
+  { id: 'save', name: 'Save', icon: <Save24Regular />, category: 'Files' },
+  { id: 'print', name: 'Print', icon: <Print24Regular />, category: 'Files' },
+  // Business
+  { id: 'briefcase', name: 'Briefcase', icon: <Briefcase24Regular />, category: 'Business' },
+  { id: 'building', name: 'Building', icon: <Building24Regular />, category: 'Business' },
+  { id: 'buildingMultiple', name: 'Buildings', icon: <BuildingMultiple24Regular />, category: 'Business' },
+  { id: 'money', name: 'Money', icon: <Money24Regular />, category: 'Business' },
+  { id: 'wallet', name: 'Wallet', icon: <Wallet24Regular />, category: 'Business' },
+  { id: 'calculator', name: 'Calculator', icon: <Calculator24Regular />, category: 'Business' },
+  { id: 'chart', name: 'Chart', icon: <ChartMultiple24Regular />, category: 'Business' },
+  { id: 'trending', name: 'Trending', icon: <DataTrending24Regular />, category: 'Business' },
+  { id: 'barChart', name: 'Bar Chart', icon: <DataBarVertical24Regular />, category: 'Business' },
+  { id: 'organization', name: 'Organization', icon: <Organization24Regular />, category: 'Business' },
+  // Tasks & Productivity
+  { id: 'calendar', name: 'Calendar', icon: <Calendar24Regular />, category: 'Tasks' },
+  { id: 'calendarLtr', name: 'Calendar Week', icon: <CalendarLtr24Regular />, category: 'Tasks' },
+  { id: 'tasks', name: 'Tasks', icon: <TaskListSquareLtr24Regular />, category: 'Tasks' },
+  { id: 'board', name: 'Board', icon: <Board24Regular />, category: 'Tasks' },
+  { id: 'clipboardTask', name: 'Clipboard Task', icon: <ClipboardTask24Regular />, category: 'Tasks' },
+  { id: 'checkboxChecked', name: 'Checkbox', icon: <CheckboxChecked24Regular />, category: 'Tasks' },
+  { id: 'checkmarkCircle', name: 'Checkmark', icon: <CheckmarkCircle24Regular />, category: 'Tasks' },
+  { id: 'clipboardList', name: 'Clipboard List', icon: <ClipboardTextLtr24Regular />, category: 'Tasks' },
+  { id: 'clock', name: 'Clock', icon: <Clock24Regular />, category: 'Tasks' },
+  { id: 'timer', name: 'Timer', icon: <Timer24Regular />, category: 'Tasks' },
+  { id: 'hourglass', name: 'Hourglass', icon: <Hourglass24Regular />, category: 'Tasks' },
+  // Communication
+  { id: 'mail', name: 'Mail', icon: <Mail24Regular />, category: 'Communication' },
+  { id: 'flag', name: 'Flag', icon: <Flag24Regular />, category: 'Communication' },
+  { id: 'chat', name: 'Chat', icon: <Chat24Regular />, category: 'Communication' },
+  { id: 'chatMultiple', name: 'Chat Multiple', icon: <ChatMultiple24Regular />, category: 'Communication' },
+  { id: 'comment', name: 'Comment', icon: <Comment24Regular />, category: 'Communication' },
+  { id: 'commentMultiple', name: 'Comments', icon: <CommentMultiple24Regular />, category: 'Communication' },
+  { id: 'call', name: 'Call', icon: <Call24Regular />, category: 'Communication' },
+  { id: 'video', name: 'Video', icon: <Video24Regular />, category: 'Communication' },
+  { id: 'send', name: 'Send', icon: <Send24Regular />, category: 'Communication' },
+  // People
+  { id: 'people', name: 'People', icon: <People24Regular />, category: 'People' },
+  { id: 'person', name: 'Person', icon: <Person24Regular />, category: 'People' },
+  { id: 'personCircle', name: 'Person Circle', icon: <PersonCircle24Regular />, category: 'People' },
+  { id: 'peopleTeam', name: 'Team', icon: <PeopleTeam24Regular />, category: 'People' },
+  { id: 'personAdd', name: 'Add Person', icon: <PersonAdd24Regular />, category: 'People' },
+  { id: 'share', name: 'Share', icon: <Share24Regular />, category: 'People' },
+  // Media
+  { id: 'camera', name: 'Camera', icon: <Camera24Regular />, category: 'Media' },
+  { id: 'image', name: 'Image', icon: <Image24Regular />, category: 'Media' },
+  { id: 'imageMultiple', name: 'Images', icon: <ImageMultiple24Regular />, category: 'Media' },
+  { id: 'music', name: 'Music', icon: <MusicNote124Regular />, category: 'Media' },
+  { id: 'play', name: 'Play', icon: <Play24Regular />, category: 'Media' },
+  // Learning & Reading
+  { id: 'notebook', name: 'Notebook', icon: <Notebook24Regular />, category: 'Learning' },
+  { id: 'book', name: 'Book', icon: <Book24Regular />, category: 'Learning' },
+  { id: 'bookOpen', name: 'Book Open', icon: <BookOpen24Regular />, category: 'Learning' },
+  { id: 'news', name: 'News', icon: <News24Regular />, category: 'Learning' },
+  { id: 'graduationCap', name: 'Graduation', icon: <HatGraduation24Regular />, category: 'Learning' },
+  // Navigation & Location
+  { id: 'link', name: 'Link', icon: <Link24Regular />, category: 'Navigation' },
+  { id: 'globe', name: 'Globe', icon: <Globe24Regular />, category: 'Navigation' },
+  { id: 'map', name: 'Map', icon: <Map24Regular />, category: 'Navigation' },
+  { id: 'location', name: 'Location', icon: <Location24Regular />, category: 'Navigation' },
+  { id: 'compass', name: 'Compass', icon: <CompassNorthwest24Regular />, category: 'Navigation' },
+  { id: 'history', name: 'History', icon: <History24Regular />, category: 'Navigation' },
+  // Development & Tools
+  { id: 'settings', name: 'Settings', icon: <Settings24Regular />, category: 'Tools' },
+  { id: 'wrench', name: 'Wrench', icon: <Wrench24Regular />, category: 'Tools' },
+  { id: 'hammer', name: 'Toolbox', icon: <Toolbox24Regular />, category: 'Tools' },
+  { id: 'code', name: 'Code', icon: <Code24Regular />, category: 'Tools' },
+  { id: 'bug', name: 'Bug', icon: <Bug24Regular />, category: 'Tools' },
+  { id: 'beaker', name: 'Beaker', icon: <Beaker24Regular />, category: 'Tools' },
+  { id: 'puzzle', name: 'Puzzle', icon: <PuzzlePiece24Regular />, category: 'Tools' },
+  // Design
+  { id: 'designIdeas', name: 'Design', icon: <DesignIdeas24Regular />, category: 'Design' },
+  { id: 'paintBrush', name: 'Paint Brush', icon: <PaintBrush24Regular />, category: 'Design' },
+  { id: 'ruler', name: 'Ruler', icon: <Ruler24Regular />, category: 'Design' },
+  { id: 'pen', name: 'Pen', icon: <Pen24Regular />, category: 'Design' },
+  // Security
+  { id: 'shield', name: 'Shield', icon: <Shield24Regular />, category: 'Security' },
+  { id: 'lock', name: 'Lock', icon: <LockClosed24Regular />, category: 'Security' },
+  { id: 'key', name: 'Key', icon: <Key24Regular />, category: 'Security' },
+  { id: 'fingerprint', name: 'Fingerprint', icon: <Fingerprint24Regular />, category: 'Security' },
+  // Status
+  { id: 'alert', name: 'Alert', icon: <Alert24Regular />, category: 'Status' },
+  { id: 'info', name: 'Info', icon: <Info24Regular />, category: 'Status' },
+  { id: 'question', name: 'Question', icon: <Question24Regular />, category: 'Status' },
+  // Lifestyle
+  { id: 'food', name: 'Food', icon: <Food24Regular />, category: 'Lifestyle' },
+  { id: 'coffee', name: 'Coffee', icon: <DrinkCoffee24Regular />, category: 'Lifestyle' },
+  { id: 'shoppingBag', name: 'Shopping Bag', icon: <ShoppingBag24Regular />, category: 'Lifestyle' },
+  { id: 'cart', name: 'Cart', icon: <Cart24Regular />, category: 'Lifestyle' },
+  { id: 'games', name: 'Games', icon: <Games24Regular />, category: 'Lifestyle' },
+  { id: 'sport', name: 'Sport', icon: <Sport24Regular />, category: 'Lifestyle' },
+  // Health
+  { id: 'heartPulse', name: 'Health', icon: <HeartPulse24Regular />, category: 'Health' },
+  { id: 'stethoscope', name: 'Stethoscope', icon: <Stethoscope24Regular />, category: 'Health' },
+  { id: 'pill', name: 'Pill', icon: <Pill24Regular />, category: 'Health' },
+  // Travel & Weather
+  { id: 'car', name: 'Car', icon: <VehicleCar24Regular />, category: 'Travel' },
+  { id: 'airplane', name: 'Airplane', icon: <Airplane24Regular />, category: 'Travel' },
+  { id: 'sunny', name: 'Sunny', icon: <WeatherSunny24Regular />, category: 'Travel' },
+  { id: 'cloud', name: 'Cloud', icon: <Cloud24Regular />, category: 'Travel' },
+  { id: 'leaf', name: 'Leaf', icon: <LeafOne24Regular />, category: 'Travel' },
+];
+
+// Helper to get icon by ID
+export const getIconById = (iconId: string): React.ReactElement => {
+  const iconDef = AVAILABLE_ICONS.find(i => i.id === iconId);
+  return iconDef?.icon || <Grid24Regular />;
+};
 
 const CARD_DEFINITIONS: Record<string, { icon: React.ReactElement; defaultTitle: string; defaultCategory: string }> = {
   todaysAgenda: { icon: <Calendar24Regular />, defaultTitle: "Today's Agenda", defaultCategory: 'calendar' },
@@ -369,6 +609,114 @@ const useStyles = makeStyles({
     borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground1,
   },
+  // Icon picker dialog styles
+  iconPickerDialogSurface: {
+    maxWidth: '600px',
+    width: '90vw',
+    height: '70vh',
+    minHeight: '400px',
+    padding: 0,
+    zIndex: 1000002, // Above the main config dialog
+  },
+  iconPickerDialogBody: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    minHeight: '400px',
+    overflow: 'hidden',
+  },
+  iconPickerHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`,
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    backgroundColor: tokens.colorNeutralBackground2,
+  },
+  iconPickerTitle: {
+    fontSize: tokens.fontSizeBase400,
+    fontWeight: tokens.fontWeightSemibold,
+  },
+  iconPickerSearchContainer: {
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalL}`,
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    backgroundColor: tokens.colorNeutralBackground1,
+  },
+  iconPickerSearchInput: {
+    width: '100%',
+  },
+  iconPickerNoResults: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: tokens.spacingVerticalXXL,
+    color: tokens.colorNeutralForeground3,
+    fontStyle: 'italic',
+  },
+  iconPickerContent: {
+    flex: 1,
+    padding: tokens.spacingVerticalM,
+    overflowY: 'auto',
+    backgroundColor: tokens.colorNeutralBackground1,
+    minHeight: '200px',
+  },
+  iconPickerCategory: {
+    marginBottom: tokens.spacingVerticalL,
+  },
+  iconPickerCategoryTitle: {
+    fontSize: tokens.fontSizeBase300,
+    fontWeight: tokens.fontWeightSemibold,
+    color: tokens.colorNeutralForeground2,
+    marginBottom: tokens.spacingVerticalS,
+    paddingLeft: tokens.spacingHorizontalXS,
+  },
+  iconPickerGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(56px, 1fr))',
+    gap: tokens.spacingHorizontalS,
+  },
+  iconPickerButton: {
+    width: '56px',
+    height: '56px',
+    minWidth: '56px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '2px',
+    padding: tokens.spacingHorizontalXS,
+    borderRadius: tokens.borderRadiusMedium,
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    backgroundColor: tokens.colorNeutralBackground1,
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    ':hover': {
+      backgroundColor: tokens.colorNeutralBackground3,
+      border: `1px solid ${tokens.colorBrandStroke1}`,
+    },
+  },
+  iconPickerButtonSelected: {
+    backgroundColor: tokens.colorBrandBackground2,
+    border: `2px solid ${tokens.colorBrandStroke1}`,
+  },
+  iconPickerButtonIcon: {
+    color: tokens.colorNeutralForeground1,
+  },
+  iconPickerFooter: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalM,
+    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`,
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+    backgroundColor: tokens.colorNeutralBackground1,
+  },
+  categoryIconButton: {
+    minWidth: '28px',
+    height: '28px',
+    padding: '4px',
+    color: tokens.colorBrandForeground1,
+  },
 });
 
 export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
@@ -381,6 +729,7 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
   categoryOrder: initialCategoryOrder,
   categoryConfig: initialCategoryConfig,
   cardCategoryAssignment: initialCardCategoryAssignment,
+  categoryIcons: initialCategoryIcons,
   onSave,
 }) => {
   const styles = useStyles();
@@ -434,6 +783,15 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
   // Track which category delete popover is open
   const [deleteCategoryPopoverOpen, setDeleteCategoryPopoverOpen] = React.useState<string | null>(null);
 
+  // Track custom category icons
+  const [categoryIcons, setCategoryIcons] = React.useState<Record<string, string>>({ ...(initialCategoryIcons || {}) });
+
+  // Icon picker dialog state
+  const [iconPickerOpen, setIconPickerOpen] = React.useState(false);
+  const [iconPickerCategory, setIconPickerCategory] = React.useState<string | null>(null);
+  const [selectedIconId, setSelectedIconId] = React.useState<string>('grid');
+  const [iconSearchQuery, setIconSearchQuery] = React.useState<string>('');
+
   // Reset state when dialog opens
   React.useEffect(() => {
     if (open) {
@@ -466,8 +824,11 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
       setShowAvailableCards(true);
       setDragState(INITIAL_DRAG_STATE);
       setAlteredCategories(new Set());
+      setCategoryIcons({ ...(initialCategoryIcons || {}) });
+      setIconPickerOpen(false);
+      setIconPickerCategory(null);
     }
-  }, [open, initialCardOrder, initialCardVisibility, initialCardTitles, initialCategoryNames, initialCategoryOrder, initialCategoryConfig, initialCardCategoryAssignment]);
+  }, [open, initialCardOrder, initialCardVisibility, initialCardTitles, initialCategoryNames, initialCategoryOrder, initialCategoryConfig, initialCardCategoryAssignment, initialCategoryIcons]);
 
   // Get cards in a category based on assignment
   const getCardsInCategory = React.useCallback((categoryId: string): string[] => {
@@ -713,9 +1074,10 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
       return cardsInCategory.length > 0 || wasAltered;
     });
 
-    // Also filter categoryConfig and categoryNames for removed categories
+    // Also filter categoryConfig, categoryNames, and categoryIcons for removed categories
     const filteredCategoryConfig: Record<string, ICategoryConfig> = {};
     const filteredCategoryNames: Record<string, string> = {};
+    const filteredCategoryIcons: Record<string, string> = {};
 
     // Include all categories in the filtered order
     filteredCategoryOrder.forEach(categoryId => {
@@ -725,12 +1087,18 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
       if (categoryNames[categoryId]) {
         filteredCategoryNames[categoryId] = categoryNames[categoryId];
       }
+      if (categoryIcons[categoryId]) {
+        filteredCategoryIcons[categoryId] = categoryIcons[categoryId];
+      }
     });
 
-    // Also include system categories in config (they might not be in filteredCategoryOrder)
+    // Also include system categories in config and icons (they might not be in filteredCategoryOrder)
     ['calendar', 'email', 'tasks', 'files', 'people', 'navigation', 'available'].forEach(sysId => {
       if (categoryConfig[sysId]) {
         filteredCategoryConfig[sysId] = categoryConfig[sysId];
+      }
+      if (categoryIcons[sysId]) {
+        filteredCategoryIcons[sysId] = categoryIcons[sysId];
       }
     });
 
@@ -742,6 +1110,7 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
       categoryOrder: filteredCategoryOrder,
       categoryConfig: filteredCategoryConfig,
       cardCategoryAssignment,
+      categoryIcons: filteredCategoryIcons,
     });
     onClose();
   };
@@ -763,7 +1132,41 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
   };
 
   const getCategoryIcon = (categoryId: string): React.ReactElement => {
+    // Check for custom icon first
+    if (categoryIcons[categoryId]) {
+      return getIconById(categoryIcons[categoryId]);
+    }
     return CATEGORIES[categoryId]?.icon || <Grid24Regular />;
+  };
+
+  // Open icon picker for a category
+  const openIconPicker = (categoryId: string, e: React.MouseEvent): void => {
+    e.stopPropagation();
+    setIconPickerCategory(categoryId);
+    setSelectedIconId(categoryIcons[categoryId] || 'grid');
+    setIconPickerOpen(true);
+  };
+
+  // Save selected icon for category
+  const handleIconSelect = (): void => {
+    if (iconPickerCategory && selectedIconId) {
+      setCategoryIcons(prev => ({
+        ...prev,
+        [iconPickerCategory]: selectedIconId,
+      }));
+      // Mark category as altered
+      setAlteredCategories(prev => new Set(prev).add(iconPickerCategory));
+    }
+    setIconPickerOpen(false);
+    setIconPickerCategory(null);
+    setIconSearchQuery('');
+  };
+
+  // Close icon picker without saving
+  const closeIconPicker = (): void => {
+    setIconPickerOpen(false);
+    setIconPickerCategory(null);
+    setIconSearchQuery('');
   };
 
   const handleCategoryEditStart = (categoryId: string, e: React.MouseEvent): void => {
@@ -904,6 +1307,7 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
   const allCategories = showAvailableCards ? [...categoryOrder, 'available'] : categoryOrder;
 
   return (
+    <>
     <Dialog open={open} modalType="modal" onOpenChange={(_, data) => !data.open && onClose()}>
       <DialogSurface className={styles.dialogSurface}>
         <DialogBody className={styles.dialogBody}>
@@ -986,9 +1390,21 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
                       <span className={styles.collapseIcon}>
                         {isCollapsed ? <ChevronRight24Regular /> : <ChevronDown24Regular />}
                       </span>
-                      <span className={styles.categoryIcon}>
-                        {getCategoryIcon(categoryId)}
-                      </span>
+                      {!isAvailable ? (
+                        <Tooltip content="Change icon" relationship="label">
+                          <Button
+                            appearance="subtle"
+                            className={styles.categoryIconButton}
+                            icon={getCategoryIcon(categoryId)}
+                            onClick={(e) => openIconPicker(categoryId, e)}
+                            title="Change category icon"
+                          />
+                        </Tooltip>
+                      ) : (
+                        <span className={styles.categoryIcon}>
+                          {getCategoryIcon(categoryId)}
+                        </span>
+                      )}
                       {editingCategory === categoryId ? (
                         <>
                           <Input
@@ -1195,6 +1611,95 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
         </DialogBody>
       </DialogSurface>
     </Dialog>
+
+    {/* Icon Picker Dialog - wrapped in FluentProvider for portal theming */}
+    <FluentProvider theme={webLightTheme}>
+      <Dialog open={iconPickerOpen} modalType="modal" onOpenChange={(_, data) => !data.open && closeIconPicker()}>
+        <DialogSurface className={styles.iconPickerDialogSurface}>
+          <DialogBody className={styles.iconPickerDialogBody}>
+            <div className={styles.iconPickerHeader}>
+              <Text className={styles.iconPickerTitle}>Choose an Icon</Text>
+              <Button
+                appearance="subtle"
+                icon={<Dismiss24Regular />}
+                onClick={closeIconPicker}
+                title="Close"
+              />
+            </div>
+
+            {/* Search Input */}
+            <div className={styles.iconPickerSearchContainer}>
+              <Input
+                className={styles.iconPickerSearchInput}
+                placeholder="Search icons..."
+                value={iconSearchQuery}
+                onChange={(_, data) => setIconSearchQuery(data.value)}
+                contentBefore={<Search24Regular />}
+              />
+            </div>
+
+            <div className={styles.iconPickerContent}>
+              {/* Filter icons based on search query */}
+              {(() => {
+                const query = iconSearchQuery.toLowerCase().trim();
+                const filteredIcons = query
+                  ? AVAILABLE_ICONS.filter(i =>
+                      i.name.toLowerCase().includes(query) ||
+                      i.category.toLowerCase().includes(query) ||
+                      i.id.toLowerCase().includes(query)
+                    )
+                  : AVAILABLE_ICONS;
+
+                if (filteredIcons.length === 0) {
+                  return (
+                    <div className={styles.iconPickerNoResults}>
+                      <Text>No icons found matching &quot;{iconSearchQuery}&quot;</Text>
+                    </div>
+                  );
+                }
+
+                // Group filtered icons by category
+                const categories = Array.from(new Set(filteredIcons.map(i => i.category)));
+
+                return categories.map(category => (
+                  <div key={category} className={styles.iconPickerCategory}>
+                    <Text className={styles.iconPickerCategoryTitle}>{category}</Text>
+                    <div className={styles.iconPickerGrid}>
+                      {filteredIcons.filter(i => i.category === category).map(iconDef => (
+                        <Tooltip key={iconDef.id} content={iconDef.name} relationship="label">
+                          <button
+                            className={mergeClasses(
+                              styles.iconPickerButton,
+                              selectedIconId === iconDef.id && styles.iconPickerButtonSelected
+                            )}
+                            onClick={() => setSelectedIconId(iconDef.id)}
+                            title={iconDef.name}
+                          >
+                            <span className={styles.iconPickerButtonIcon}>
+                              {iconDef.icon}
+                            </span>
+                          </button>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+
+            <div className={styles.iconPickerFooter}>
+              <Button appearance="secondary" onClick={closeIconPicker}>
+                Cancel
+              </Button>
+              <Button appearance="primary" onClick={handleIconSelect}>
+                Select Icon
+              </Button>
+            </div>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+    </FluentProvider>
+    </>
   );
 };
 

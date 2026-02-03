@@ -59,6 +59,8 @@ export interface IDashboardCardsWebPartProps {
   categoryConfig: Record<string, ICategoryConfig>;
   // Card to category assignment
   cardCategoryAssignment: Record<string, string>;
+  // Custom category icons
+  categoryIcons: Record<string, string>;
 }
 
 export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashboardCardsWebPartProps> {
@@ -221,6 +223,9 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     // Update card category assignment
     this.properties.cardCategoryAssignment = config.cardCategoryAssignment;
 
+    // Update custom category icons
+    this.properties.categoryIcons = config.categoryIcons || {};
+
     // Close dialog and re-render
     this._closeCardConfigDialog();
     this.render();
@@ -272,6 +277,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       categoryOrder,
       categoryConfig,
       cardCategoryAssignment,
+      categoryIcons: this.properties.categoryIcons || {},
       onSave: (config: ICardConfig) => this._handleDialogSave(config),
     });
 
