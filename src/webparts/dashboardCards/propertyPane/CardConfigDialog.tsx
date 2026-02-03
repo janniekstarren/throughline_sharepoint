@@ -375,18 +375,18 @@ export const getIconById = (iconId: string): React.ReactElement => {
   return iconDef?.icon || <Grid24Regular />;
 };
 
-const CARD_DEFINITIONS: Record<string, { icon: React.ReactElement; defaultTitle: string; defaultCategory: string }> = {
-  todaysAgenda: { icon: <Calendar24Regular />, defaultTitle: "Today's Agenda", defaultCategory: 'calendar' },
-  unreadInbox: { icon: <Mail24Regular />, defaultTitle: 'Unread Inbox', defaultCategory: 'email' },
-  myTasks: { icon: <TaskListSquareLtr24Regular />, defaultTitle: 'My Tasks', defaultCategory: 'tasks' },
-  recentFiles: { icon: <Document24Regular />, defaultTitle: 'Recent Files', defaultCategory: 'files' },
-  upcomingWeek: { icon: <CalendarLtr24Regular />, defaultTitle: 'Upcoming Week', defaultCategory: 'calendar' },
-  flaggedEmails: { icon: <Flag24Regular />, defaultTitle: 'Flagged Emails', defaultCategory: 'email' },
-  myTeam: { icon: <People24Regular />, defaultTitle: 'My Team', defaultCategory: 'people' },
-  sharedWithMe: { icon: <Share24Regular />, defaultTitle: 'Shared With Me', defaultCategory: 'files' },
-  quickLinks: { icon: <Link24Regular />, defaultTitle: 'Quick Links', defaultCategory: 'navigation' },
-  siteActivity: { icon: <History24Regular />, defaultTitle: 'Site Activity', defaultCategory: 'people' },
-  waitingOnYou: { icon: <PersonClock24Regular />, defaultTitle: 'Waiting On You', defaultCategory: 'email' },
+const CARD_DEFINITIONS: Record<string, { icon: React.ReactElement; defaultTitle: string; defaultCategory: string; description: string }> = {
+  todaysAgenda: { icon: <Calendar24Regular />, defaultTitle: "Today's Agenda", defaultCategory: 'calendar', description: "View your meetings and events scheduled for today" },
+  unreadInbox: { icon: <Mail24Regular />, defaultTitle: 'Unread Inbox', defaultCategory: 'email', description: "See your unread emails at a glance" },
+  myTasks: { icon: <TaskListSquareLtr24Regular />, defaultTitle: 'My Tasks', defaultCategory: 'tasks', description: "Track your assigned tasks and to-dos" },
+  recentFiles: { icon: <Document24Regular />, defaultTitle: 'Recent Files', defaultCategory: 'files', description: "Access your recently opened or modified files" },
+  upcomingWeek: { icon: <CalendarLtr24Regular />, defaultTitle: 'Upcoming Week', defaultCategory: 'calendar', description: "Preview your schedule for the next 7 days" },
+  flaggedEmails: { icon: <Flag24Regular />, defaultTitle: 'Flagged Emails', defaultCategory: 'email', description: "View emails you've flagged for follow-up" },
+  myTeam: { icon: <People24Regular />, defaultTitle: 'My Team', defaultCategory: 'people', description: "See your team members and their availability" },
+  sharedWithMe: { icon: <Share24Regular />, defaultTitle: 'Shared With Me', defaultCategory: 'files', description: "Access files and documents shared with you" },
+  quickLinks: { icon: <Link24Regular />, defaultTitle: 'Quick Links', defaultCategory: 'navigation', description: "Jump to frequently used sites and resources" },
+  siteActivity: { icon: <History24Regular />, defaultTitle: 'Site Activity', defaultCategory: 'people', description: "See recent activity on your SharePoint sites" },
+  waitingOnYou: { icon: <PersonClock24Regular />, defaultTitle: 'Waiting On You', defaultCategory: 'email', description: "Messages and conversations awaiting your response" },
 };
 
 const ALL_CARD_IDS = Object.keys(CARD_DEFINITIONS);
@@ -1282,6 +1282,10 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
     return CARD_DEFINITIONS[cardId]?.icon || <Document24Regular />;
   };
 
+  const getCardDescription = (cardId: string): string => {
+    return CARD_DEFINITIONS[cardId]?.description || '';
+  };
+
   const getCategoryName = (categoryId: string): string => {
     return categoryNames[categoryId] || CATEGORIES[categoryId]?.defaultName || categoryId;
   };
@@ -1722,6 +1726,7 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
                                 cardId={cardId}
                                 title={getCardTitle(cardId)}
                                 icon={getCardIcon(cardId)}
+                                description={getCardDescription(cardId)}
                                 visible={isAvailable ? false : cardVisibility[cardId] !== false}
                                 onSettingsClick={() => handleSettingsClick(cardId)}
                                 onVisibilityToggle={() => !isAvailable && handleVisibilityToggle(cardId)}

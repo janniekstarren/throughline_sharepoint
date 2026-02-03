@@ -5,12 +5,14 @@ import {
   Text,
   Button,
   mergeClasses,
+  Tooltip,
 } from '@fluentui/react-components';
 import {
   Settings24Regular,
   Eye24Regular,
   EyeOff24Regular,
   Delete24Regular,
+  Info16Regular,
 } from '@fluentui/react-icons';
 
 export interface IMiniCardProps {
@@ -18,6 +20,7 @@ export interface IMiniCardProps {
   title: string;
   icon: React.ReactElement;
   visible: boolean;
+  description?: string;
   onSettingsClick: () => void;
   onVisibilityToggle: () => void;
   onDelete?: () => void;
@@ -103,6 +106,20 @@ const useStyles = makeStyles({
     height: '28px',
     padding: '4px',
   },
+  infoIcon: {
+    position: 'absolute',
+    top: '4px',
+    right: '4px',
+    color: tokens.colorNeutralForeground3,
+    fontSize: '14px',
+    cursor: 'help',
+    ':hover': {
+      color: tokens.colorBrandForeground1,
+    },
+  },
+  headerContainer: {
+    position: 'relative',
+  },
 });
 
 export const MiniCard: React.FC<IMiniCardProps> = ({
@@ -110,6 +127,7 @@ export const MiniCard: React.FC<IMiniCardProps> = ({
   title,
   icon,
   visible,
+  description,
   onSettingsClick,
   onVisibilityToggle,
   onDelete,
@@ -144,10 +162,17 @@ export const MiniCard: React.FC<IMiniCardProps> = ({
       )}
       data-card-id={cardId}
     >
-      <div className={styles.header}>
+      <div className={mergeClasses(styles.header, styles.headerContainer)}>
         <span className={mergeClasses(styles.icon, !visible && styles.iconHidden)}>
           {icon}
         </span>
+        {description && (
+          <Tooltip content={description} relationship="description" positioning="above">
+            <span className={styles.infoIcon}>
+              <Info16Regular />
+            </span>
+          </Tooltip>
+        )}
       </div>
       <div className={styles.content}>
         <Text className={mergeClasses(styles.title, !visible && styles.titleHidden)}>
