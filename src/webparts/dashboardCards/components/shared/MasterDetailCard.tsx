@@ -48,7 +48,6 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusLarge,
     boxShadow: tokens.shadow8,
     overflow: 'hidden',
-    boxSizing: 'border-box',
   },
   header: {
     display: 'flex',
@@ -69,20 +68,15 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorBrandBackground2,
     color: tokens.colorBrandForeground1,
     fontSize: '16px',
-    flexShrink: 0,
   },
   titleText: {
     flex: 1,
     fontWeight: 600,
     fontSize: '14px',
     color: tokens.colorNeutralForeground1,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
   },
   badge: {
     marginLeft: 'auto',
-    flexShrink: 0,
   },
   body: {
     display: 'flex',
@@ -90,13 +84,12 @@ const useStyles = makeStyles({
     minHeight: 0,
     overflow: 'hidden',
   },
-  // Master panel (left side - list) - flexible width
+  // Master panel (left side - list)
   masterPanel: {
-    flex: '0 0 35%', // Fixed 35% width
-    maxWidth: '280px',
+    width: '40%',
+    minWidth: '200px',
     borderRight: `1px solid ${tokens.colorNeutralStroke2}`,
     overflowY: 'auto',
-    overflowX: 'hidden',
     backgroundColor: tokens.colorNeutralBackground1,
     // Custom scrollbar
     '::-webkit-scrollbar': {
@@ -113,20 +106,18 @@ const useStyles = makeStyles({
       background: tokens.colorNeutralStroke1,
     },
   },
-  // Detail panel (right side - details) - takes remaining space
+  // Detail panel (right side - details)
   detailPanel: {
-    flex: 1,
+    width: '60%',
     display: 'flex',
     flexDirection: 'column',
     backgroundColor: tokens.colorNeutralBackground1,
     overflow: 'hidden',
-    minWidth: 0, // Allow flex shrinking
   },
   detailContent: {
     flex: 1,
     padding: tokens.spacingVerticalL,
     overflowY: 'auto',
-    overflowX: 'hidden',
     // Custom scrollbar
     '::-webkit-scrollbar': {
       width: '6px',
@@ -145,7 +136,7 @@ const useStyles = makeStyles({
   detailActions: {
     display: 'flex',
     gap: tokens.spacingHorizontalS,
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
+    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`,
     borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground2,
     flexWrap: 'wrap',

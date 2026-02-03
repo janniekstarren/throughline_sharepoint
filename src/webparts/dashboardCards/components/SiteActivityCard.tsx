@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {
+  makeStyles,
   tokens,
   Text,
   Caption1,
@@ -22,8 +23,8 @@ import {
   Comment16Regular,
 } from '@fluentui/react-icons';
 import { ISiteActivity } from '../services/GraphService';
+import { MotionWrapper } from './MotionWrapper';
 import { ItemHoverCard, HoverCardItemType, IHoverCardItem } from './ItemHoverCard';
-import { useCardStyles, CardEnter, ListItemEnter } from './cardStyles';
 
 export interface ISiteActivityCardProps {
   activities: ISiteActivity[];
@@ -34,6 +35,144 @@ export interface ISiteActivityCardProps {
   title?: string;
 }
 
+// Fluent UI 9 styles using makeStyles and design tokens
+const useStyles = makeStyles({
+  card: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '400px',
+    backgroundColor: tokens.colorNeutralBackground1,
+    border: `1px solid ${tokens.colorNeutralStroke1}`,
+    borderRadius: tokens.borderRadiusMedium,
+    boxShadow: tokens.shadow4,
+  },
+  cardHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    backgroundColor: tokens.colorNeutralBackground2,
+    flexShrink: 0,
+  },
+  cardIcon: {
+    fontSize: '20px',
+    color: tokens.colorBrandForeground1,
+  },
+  cardTitle: {
+    color: tokens.colorNeutralForeground1,
+  },
+  cardContent: {
+    flex: 1,
+    padding: tokens.spacingVerticalM,
+    overflowY: 'auto',
+    minHeight: 0,
+  },
+  errorContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: tokens.spacingVerticalXXL,
+    color: tokens.colorNeutralForeground3,
+    gap: tokens.spacingVerticalS,
+  },
+  errorIcon: {
+    fontSize: '24px',
+    color: tokens.colorPaletteRedForeground1,
+  },
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: tokens.spacingVerticalXXL,
+    color: tokens.colorNeutralForeground3,
+    gap: tokens.spacingVerticalS,
+  },
+  emptyIcon: {
+    fontSize: '32px',
+    color: tokens.colorNeutralForeground4,
+  },
+  loadingContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: tokens.spacingVerticalXXL,
+    flex: 1,
+  },
+  activityList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalS,
+  },
+  activityItem: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    padding: tokens.spacingVerticalS,
+    borderRadius: tokens.borderRadiusSmall,
+    backgroundColor: tokens.colorNeutralBackground2,
+    textDecoration: 'none',
+    color: 'inherit',
+    gap: tokens.spacingHorizontalM,
+    transitionProperty: 'background-color',
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveEasyEase,
+    cursor: 'pointer',
+    border: 'none',
+    outline: 'none',
+    width: '100%',
+    textAlign: 'left',
+    ':hover': {
+      backgroundColor: tokens.colorNeutralBackground3,
+    },
+    ':focus-visible': {
+      outlineStyle: 'solid',
+      outlineWidth: '2px',
+      outlineColor: tokens.colorBrandStroke1,
+      outlineOffset: '2px',
+    },
+  },
+  activityIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '28px',
+    height: '28px',
+    borderRadius: tokens.borderRadiusCircular,
+    flexShrink: 0,
+  },
+  activityContent: {
+    flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+  activityDescription: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: tokens.spacingHorizontalXS,
+    lineHeight: '1.4',
+  },
+  actor: {
+    fontWeight: tokens.fontWeightSemibold,
+    color: tokens.colorNeutralForeground1,
+  },
+  action: {
+    color: tokens.colorNeutralForeground3,
+  },
+  itemNameText: {
+    color: tokens.colorNeutralForeground1,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  activityTime: {
+    marginTop: tokens.spacingVerticalXS,
+    color: tokens.colorNeutralForeground3,
+  },
+});
 
 // Action icon component
 const ActionIcon: React.FC<{ action: string; color: string }> = ({ action, color }) => {
@@ -63,7 +202,7 @@ const ActionIcon: React.FC<{ action: string; color: string }> = ({ action, color
 };
 
 export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({ activities, loading, error, onAction, theme, title }) => {
-  const styles = useCardStyles();
+  const styles = useStyles();
 
   const getActionColor = (action: string): string => {
     const colorMap: Record<string, string> = {
@@ -95,78 +234,68 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({ activities,
   };
 
   return (
-    <CardEnter visible={true}>
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <div className={styles.cardIconWrapper}>
-            <Pulse24Regular className={styles.cardIcon} />
+    <div className={styles.card}>
+      <div className={styles.cardHeader}>
+        <Pulse24Regular className={styles.cardIcon} />
+        <Body1Strong className={styles.cardTitle}>{title || 'Site Activity'}</Body1Strong>
+      </div>
+      <div className={styles.cardContent}>
+        {loading ? (
+          <div className={styles.loadingContainer}>
+            <Spinner size="medium" />
           </div>
-          <Body1Strong className={styles.cardTitle}>{title || 'Site Activity'}</Body1Strong>
-        </div>
-        <div className={styles.cardContent}>
-          {loading ? (
-            <div className={styles.loadingContainer}>
-              <Spinner size="medium" />
-            </div>
-          ) : error ? (
-            <div className={styles.errorContainer}>
-              <ErrorCircle24Regular className={styles.errorIcon} />
-              <Text>{error}</Text>
-            </div>
-          ) : activities.length === 0 ? (
+        ) : error ? (
+          <div className={styles.errorContainer}>
+            <ErrorCircle24Regular className={styles.errorIcon} />
+            <Text>{error}</Text>
+          </div>
+        ) : activities.length === 0 ? (
+          <MotionWrapper visible={true}>
             <div className={styles.emptyState}>
               <History24Regular className={styles.emptyIcon} />
               <Text>No recent activity</Text>
             </div>
-          ) : (
-            <div className={styles.itemList}>
-              {activities.map((activity, index) => (
-                <ListItemEnter key={activity.id} visible={true}>
-                  <div style={{ animationDelay: `${index * 50}ms` }}>
-                    <ItemHoverCard
-                      item={activity}
-                      itemType="activity"
-                      onAction={onAction}
-                      theme={theme}
+          </MotionWrapper>
+        ) : (
+          <MotionWrapper visible={true}>
+            <div className={styles.activityList}>
+              {activities.map(activity => (
+                <ItemHoverCard
+                  key={activity.id}
+                  item={activity}
+                  itemType="activity"
+                  onAction={onAction}
+                  theme={theme}
+                >
+                  <div
+                    className={styles.activityItem}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <div
+                      className={styles.activityIcon}
+                      style={{ backgroundColor: `${getActionColor(activity.action)}20` }}
                     >
-                      <div
-                        className={styles.item}
-                        role="button"
-                        tabIndex={0}
-                        style={{ alignItems: 'flex-start' }}
-                      >
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '28px',
-                          height: '28px',
-                          borderRadius: '50%',
-                          flexShrink: 0,
-                          backgroundColor: `${getActionColor(activity.action)}20`
-                        }}>
-                          <ActionIcon action={activity.action} color={getActionColor(activity.action)} />
-                        </div>
-                        <div className={styles.itemContent}>
-                          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px', lineHeight: '1.4' }}>
-                            <Body1 style={{ fontWeight: 600, color: tokens.colorNeutralForeground1 }}>{activity.actor}</Body1>
-                            <Caption1 className={styles.itemMeta}>{activity.action}</Caption1>
-                            <Body1 className={styles.itemTitle}>{activity.itemName}</Body1>
-                          </div>
-                          <Caption1 className={styles.itemMeta} style={{ marginTop: '2px' }}>
-                            {formatTime(activity.timestamp)}
-                          </Caption1>
-                        </div>
+                      <ActionIcon action={activity.action} color={getActionColor(activity.action)} />
+                    </div>
+                    <div className={styles.activityContent}>
+                      <div className={styles.activityDescription}>
+                        <Body1 className={styles.actor}>{activity.actor}</Body1>
+                        <Caption1 className={styles.action}>{activity.action}</Caption1>
+                        <Body1 className={styles.itemNameText}>{activity.itemName}</Body1>
                       </div>
-                    </ItemHoverCard>
+                      <Caption1 className={styles.activityTime}>
+                        {formatTime(activity.timestamp)}
+                      </Caption1>
+                    </div>
                   </div>
-                </ListItemEnter>
+                </ItemHoverCard>
               ))}
             </div>
-          )}
-        </div>
+          </MotionWrapper>
+        )}
       </div>
-    </CardEnter>
+    </div>
   );
 };
 

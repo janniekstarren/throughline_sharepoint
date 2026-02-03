@@ -1,5 +1,7 @@
 import * as React from 'react';
 import {
+  makeStyles,
+  tokens,
   Text,
   Body1Strong,
   Persona,
@@ -13,8 +15,8 @@ import {
   PeopleProhibited24Regular,
 } from '@fluentui/react-icons';
 import { ITeamMember } from '../services/GraphService';
+import { MotionWrapper } from './MotionWrapper';
 import { ItemHoverCard, HoverCardItemType, IHoverCardItem } from './ItemHoverCard';
-import { useCardStyles, CardEnter, ListItemEnter } from './cardStyles';
 
 export interface IMyTeamCardProps {
   members: ITeamMember[];
@@ -25,9 +27,111 @@ export interface IMyTeamCardProps {
   title?: string;
 }
 
+// Fluent UI 9 styles using makeStyles and design tokens
+const useStyles = makeStyles({
+  card: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '400px',
+    backgroundColor: tokens.colorNeutralBackground1,
+    border: `1px solid ${tokens.colorNeutralStroke1}`,
+    borderRadius: tokens.borderRadiusMedium,
+    boxShadow: tokens.shadow4,
+  },
+  cardHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    backgroundColor: tokens.colorNeutralBackground2,
+    flexShrink: 0,
+  },
+  cardIcon: {
+    fontSize: '20px',
+    color: tokens.colorBrandForeground1,
+  },
+  cardTitle: {
+    color: tokens.colorNeutralForeground1,
+  },
+  cardContent: {
+    flex: 1,
+    padding: tokens.spacingVerticalM,
+    overflowY: 'auto',
+    minHeight: 0,
+  },
+  errorContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: tokens.spacingVerticalXXL,
+    color: tokens.colorNeutralForeground3,
+    gap: tokens.spacingVerticalS,
+  },
+  errorIcon: {
+    fontSize: '24px',
+    color: tokens.colorPaletteRedForeground1,
+  },
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: tokens.spacingVerticalXXL,
+    color: tokens.colorNeutralForeground3,
+    gap: tokens.spacingVerticalS,
+  },
+  emptyIcon: {
+    fontSize: '32px',
+    color: tokens.colorNeutralForeground4,
+  },
+  loadingContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: tokens.spacingVerticalXXL,
+    flex: 1,
+  },
+  memberList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalS,
+  },
+  memberItem: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: tokens.spacingVerticalS,
+    borderRadius: tokens.borderRadiusSmall,
+    backgroundColor: tokens.colorNeutralBackground2,
+    textDecoration: 'none',
+    color: 'inherit',
+    transitionProperty: 'background-color',
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveEasyEase,
+    cursor: 'pointer',
+    border: 'none',
+    outline: 'none',
+    width: '100%',
+    textAlign: 'left',
+    ':hover': {
+      backgroundColor: tokens.colorNeutralBackground3,
+    },
+    ':focus-visible': {
+      outlineStyle: 'solid',
+      outlineWidth: '2px',
+      outlineColor: tokens.colorBrandStroke1,
+      outlineOffset: '2px',
+    },
+  },
+  persona: {
+    width: '100%',
+  },
+});
 
 export const MyTeamCard: React.FC<IMyTeamCardProps> = ({ members, loading, error, onAction, theme, title }) => {
-  const styles = useCardStyles();
+  const styles = useStyles();
 
   const getPresenceBadgeStatus = (presence: ITeamMember['presence']): PresenceBadgeStatus => {
     const presenceMap: Record<NonNullable<ITeamMember['presence']>, PresenceBadgeStatus> = {
@@ -42,64 +146,61 @@ export const MyTeamCard: React.FC<IMyTeamCardProps> = ({ members, loading, error
   };
 
   return (
-    <CardEnter visible={true}>
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <div className={styles.cardIconWrapper}>
-            <People24Regular className={styles.cardIcon} />
+    <div className={styles.card}>
+      <div className={styles.cardHeader}>
+        <People24Regular className={styles.cardIcon} />
+        <Body1Strong className={styles.cardTitle}>{title || 'My Team'}</Body1Strong>
+      </div>
+      <div className={styles.cardContent}>
+        {loading ? (
+          <div className={styles.loadingContainer}>
+            <Spinner size="medium" />
           </div>
-          <Body1Strong className={styles.cardTitle}>{title || 'My Team'}</Body1Strong>
-        </div>
-        <div className={styles.cardContent}>
-          {loading ? (
-            <div className={styles.loadingContainer}>
-              <Spinner size="medium" />
-            </div>
-          ) : error ? (
-            <div className={styles.errorContainer}>
-              <ErrorCircle24Regular className={styles.errorIcon} />
-              <Text>{error}</Text>
-            </div>
-          ) : members.length === 0 ? (
+        ) : error ? (
+          <div className={styles.errorContainer}>
+            <ErrorCircle24Regular className={styles.errorIcon} />
+            <Text>{error}</Text>
+          </div>
+        ) : members.length === 0 ? (
+          <MotionWrapper visible={true}>
             <div className={styles.emptyState}>
               <PeopleProhibited24Regular className={styles.emptyIcon} />
               <Text>No team members found</Text>
             </div>
-          ) : (
-            <div className={styles.itemList}>
-              {members.map((member, index) => (
-                <ListItemEnter key={member.id} visible={true}>
-                  <div style={{ animationDelay: `${index * 50}ms` }}>
-                    <ItemHoverCard
-                      item={member}
-                      itemType="teamMember"
-                      onAction={onAction}
-                      theme={theme}
-                    >
-                      <div
-                        className={styles.item}
-                        role="button"
-                        tabIndex={0}
-                      >
-                        <Persona
-                          name={member.displayName}
-                          secondaryText={member.jobTitle}
-                          presence={{ status: getPresenceBadgeStatus(member.presence) }}
-                          avatar={{
-                            image: member.photoUrl ? { src: member.photoUrl } : undefined,
-                          }}
-                          style={{ width: '100%' }}
-                        />
-                      </div>
-                    </ItemHoverCard>
+          </MotionWrapper>
+        ) : (
+          <MotionWrapper visible={true}>
+            <div className={styles.memberList}>
+              {members.map(member => (
+                <ItemHoverCard
+                  key={member.id}
+                  item={member}
+                  itemType="teamMember"
+                  onAction={onAction}
+                  theme={theme}
+                >
+                  <div
+                    className={styles.memberItem}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <Persona
+                      name={member.displayName}
+                      secondaryText={member.jobTitle}
+                      presence={{ status: getPresenceBadgeStatus(member.presence) }}
+                      avatar={{
+                        image: member.photoUrl ? { src: member.photoUrl } : undefined,
+                      }}
+                      className={styles.persona}
+                    />
                   </div>
-                </ListItemEnter>
+                </ItemHoverCard>
               ))}
             </div>
-          )}
-        </div>
+          </MotionWrapper>
+        )}
       </div>
-    </CardEnter>
+    </div>
   );
 };
 
