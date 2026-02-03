@@ -1,0 +1,530 @@
+// ============================================
+// THROUGHLINE DESIGN SYSTEM
+// Modern, sophisticated card styles
+// Based on Fluent 2 principles
+// ============================================
+
+// Design Tokens
+$border-radius-card: 16px;
+$border-radius-item: 10px;
+$border-radius-button: 8px;
+
+$shadow-rest: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04);
+$shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
+$shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.08), 0 16px 48px rgba(0, 0, 0, 0.12);
+
+$transition-fast: 0.15s ease-out;
+$transition-medium: 0.2s ease-out;
+
+// Colors - Clean, modern palette
+$color-surface: #ffffff;
+$color-background: transparent;
+$color-background-subtle: rgba(0, 0, 0, 0.02);
+$color-border: rgba(0, 0, 0, 0.06);
+$color-border-hover: rgba(0, 0, 0, 0.1);
+
+$color-text-primary: #1a1a2e;
+$color-text-secondary: #64748b;
+$color-text-tertiary: #94a3b8;
+
+$color-brand: #0066cc;
+$color-brand-light: #e6f0fa;
+$color-brand-hover: #0052a3;
+
+$color-success: #059669;
+$color-warning: #d97706;
+$color-error: #dc2626;
+
+// ============================================
+// BASE CARD
+// ============================================
+
+.card {
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+  max-height: 440px;
+  background: $color-surface;
+  border-radius: $border-radius-card;
+  box-shadow: $shadow-rest;
+  overflow: hidden;
+  transition: box-shadow $transition-medium, transform $transition-medium;
+
+  &:hover {
+    box-shadow: $shadow-hover;
+  }
+}
+
+// ============================================
+// CARD HEADER - Clean, borderless
+// ============================================
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 12px;
+  flex-shrink: 0;
+}
+
+.cardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: $border-radius-button;
+  background: linear-gradient(135deg, $color-brand-light 0%, rgba($color-brand, 0.08) 100%);
+  color: $color-brand;
+  font-size: 16px;
+}
+
+.cardTitle {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: $color-text-primary;
+  letter-spacing: -0.01em;
+}
+
+.cardHeaderAction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: $color-text-tertiary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $color-background;
+    color: $color-text-secondary;
+  }
+}
+
+// ============================================
+// CARD CONTENT
+// ============================================
+
+.cardContent {
+  flex: 1;
+  padding: 0 20px 16px;
+  overflow-y: auto;
+  min-height: 0;
+
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.15);
+    }
+  }
+}
+
+// ============================================
+// LIST ITEMS - Clean, modern
+// ============================================
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: $border-radius-item;
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-background;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-brand;
+    outline-offset: -2px;
+  }
+}
+
+.itemActive {
+  background: $color-brand-light;
+
+  &:hover {
+    background: darken($color-brand-light, 3%);
+  }
+}
+
+.itemHighlight {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 2px;
+    background: $color-brand;
+  }
+}
+
+// ============================================
+// ITEM CONTENT ELEMENTS
+// ============================================
+
+.itemIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: $border-radius-button;
+  background: $color-background-subtle;
+  color: $color-text-secondary;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.itemIconBrand {
+  background: $color-brand-light;
+  color: $color-brand;
+}
+
+.itemContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.itemTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: $color-text-primary;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemSubtitle {
+  font-size: 12px;
+  color: $color-text-secondary;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemMeta {
+  font-size: 11px;
+  color: $color-text-tertiary;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 500;
+}
+
+// ============================================
+// TIME/DATE DISPLAY
+// ============================================
+
+.timeBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 50px;
+  flex-shrink: 0;
+}
+
+.timeMain {
+  font-size: 13px;
+  font-weight: 600;
+  color: $color-text-primary;
+}
+
+.timeSub {
+  font-size: 11px;
+  color: $color-text-tertiary;
+}
+
+// ============================================
+// BADGES & INDICATORS
+// ============================================
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.badgeBrand {
+  background: $color-brand-light;
+  color: $color-brand;
+}
+
+.badgeSuccess {
+  background: rgba($color-success, 0.1);
+  color: $color-success;
+}
+
+.badgeWarning {
+  background: rgba($color-warning, 0.1);
+  color: $color-warning;
+}
+
+.badgeError {
+  background: rgba($color-error, 0.1);
+  color: $color-error;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotBrand {
+  background: $color-brand;
+}
+
+.dotSuccess {
+  background: $color-success;
+}
+
+.dotWarning {
+  background: $color-warning;
+}
+
+.dotError {
+  background: $color-error;
+}
+
+// ============================================
+// ACTION BUTTON
+// ============================================
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: $border-radius-button;
+  border: none;
+  background: $color-brand;
+  color: white;
+  cursor: pointer;
+  transition: all $transition-fast;
+  flex-shrink: 0;
+
+  &:hover {
+    background: $color-brand-hover;
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.actionButtonSubtle {
+  background: $color-background;
+  color: $color-text-secondary;
+
+  &:hover {
+    background: $color-background-subtle;
+    color: $color-text-primary;
+  }
+}
+
+// ============================================
+// EMPTY & LOADING STATES
+// ============================================
+
+.stateContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 12px;
+  text-align: center;
+}
+
+.stateIcon {
+  font-size: 40px;
+  color: $color-text-tertiary;
+  opacity: 0.5;
+}
+
+.stateTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: $color-text-secondary;
+}
+
+.stateDescription {
+  font-size: 13px;
+  color: $color-text-tertiary;
+  max-width: 200px;
+}
+
+// ============================================
+// AVATAR
+// ============================================
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: $color-background-subtle;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.avatarInitials {
+  font-size: 13px;
+  font-weight: 600;
+  color: $color-text-secondary;
+}
+
+.avatarSmall {
+  width: 28px;
+  height: 28px;
+
+  .avatarInitials {
+    font-size: 11px;
+  }
+}
+
+// ============================================
+// GRID LAYOUT (for Quick Links)
+// ============================================
+
+.gridLayout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.gridItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  border-radius: $border-radius-item;
+  background: transparent;
+  border: none;
+  outline: none;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $color-background;
+    transform: translateY(-2px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-brand;
+    outline-offset: -2px;
+  }
+}
+
+.gridItemIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, $color-brand-light 0%, rgba($color-brand, 0.15) 100%);
+  color: $color-brand;
+  font-size: 20px;
+}
+
+.gridItemLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: $color-text-primary;
+  text-align: center;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+// ============================================
+// DIVIDER
+// ============================================
+
+.divider {
+  height: 1px;
+  background: $color-border;
+  margin: 8px 0;
+}
+
+.dividerWithText {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: $color-text-tertiary;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: $color-border;
+  }
+}

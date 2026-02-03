@@ -33,9 +33,13 @@ const CARD_DEFAULT_CATEGORIES: Record<string, string> = {
   siteActivity: 'people',
 };
 
+export type ThemeMode = 'auto' | 'light' | 'dark';
+
 export interface IDashboardCardsWebPartProps {
   salutationType: SalutationType;
   salutationSize: SalutationSize;
+  // Theme mode
+  themeMode: ThemeMode;
   // Card visibility toggles
   showTodaysAgenda: boolean;
   showUnreadInbox: boolean;
@@ -67,6 +71,84 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
   private _dialogContainer: HTMLDivElement | null = null;
   private _isDialogOpen: boolean = false;
 
+  protected async onInit(): Promise<void> {
+    await super.onInit();
+    this._injectPropertyPaneStyles();
+  }
+
+  private _injectPropertyPaneStyles(): void {
+    const styleId = 'throughline-property-pane-styles';
+    if (document.getElementById(styleId)) {
+      return; // Already injected
+    }
+
+    const styles = `
+      /* Property Pane Overrides - Fluent 2 Design (theme-aware) */
+      .propertyPanePageContent::-webkit-scrollbar { width: 6px; }
+      .propertyPanePageContent::-webkit-scrollbar-track { background: transparent; }
+      .propertyPanePageContent::-webkit-scrollbar-thumb { background: var(--neutralTertiaryAlt, rgba(0,0,0,0.1)); border-radius: 3px; }
+      .propertyPanePageContent::-webkit-scrollbar-thumb:hover { background: var(--neutralTertiary, rgba(0,0,0,0.15)); }
+
+      /* Property pane groups (accordions) - use inherit for colors */
+      .ms-PropertyPaneGroup { margin-bottom: 12px !important; border-radius: 10px !important; overflow: hidden !important; }
+      .ms-PropertyPaneGroup-group { border: none !important; }
+      .ms-PropertyPaneGroup-groupHeader { border-radius: 10px !important; padding: 14px 16px !important; font-weight: 600 !important; font-size: 14px !important; letter-spacing: -0.01em !important; }
+
+      /* Dropdowns - Fabric UI */
+      .ms-Dropdown .ms-Dropdown-title { border-radius: 8px !important; }
+      .ms-Dropdown-callout { border-radius: 8px !important; border: none !important; overflow: hidden !important; }
+      .ms-Dropdown-item { border-radius: 6px !important; margin: 2px 4px !important; }
+
+      /* Text fields - Fabric UI */
+      .ms-TextField .ms-TextField-fieldGroup { border-radius: 8px !important; }
+
+      /* Labels */
+      .ms-Label { font-weight: 500 !important; font-size: 13px !important; }
+
+      /* Toggles - Fabric UI */
+      .ms-Toggle .ms-Toggle-background { border-radius: 10px !important; }
+      .ms-Toggle .ms-Toggle-thumb { border-radius: 50% !important; }
+
+      /* Buttons - Fabric UI */
+      .ms-Button { border-radius: 8px !important; }
+
+      /* Checkbox - Fabric UI */
+      .ms-Checkbox .ms-Checkbox-checkbox { border-radius: 4px !important; }
+
+      /* Fluent UI v9 (fui-*) Overrides */
+      /* Switch/Toggle */
+      .fui-Switch__indicator { border-radius: 10px !important; }
+      .fui-Switch__input { border-radius: 10px !important; }
+
+      /* Input fields */
+      .fui-Input { border-radius: 8px !important; }
+      .fui-Input__input { border-radius: 8px !important; }
+
+      /* Buttons */
+      .fui-Button { border-radius: 8px !important; }
+
+      /* Dropdown/Combobox */
+      .fui-Dropdown { border-radius: 8px !important; }
+      .fui-Listbox { border-radius: 8px !important; }
+      .fui-Option { border-radius: 6px !important; margin: 2px 4px !important; }
+
+      /* Checkbox */
+      .fui-Checkbox__indicator { border-radius: 4px !important; }
+
+      /* Dialog Surface */
+      .fui-DialogSurface { border-radius: 16px !important; }
+      .fui-DialogBody { border-radius: 16px !important; overflow: hidden !important; }
+
+      /* Popover Surface */
+      .fui-PopoverSurface { border-radius: 12px !important; }
+    `;
+
+    const styleElement = document.createElement('style');
+    styleElement.id = styleId;
+    styleElement.textContent = styles;
+    document.head.appendChild(styleElement);
+  }
+
   public render(): void {
     // Build card visibility object (default all to true if not set)
     const cardVisibility: ICardVisibility = {
@@ -96,6 +178,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
         context: this.context,
         salutationType: this.properties.salutationType || 'timeBased',
         salutationSize: this.properties.salutationSize || 'h4',
+        themeMode: this.properties.themeMode || 'light',
         cardVisibility,
         cardOrder,
         cardTitles,
@@ -158,12 +241,20 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
         styleEl.textContent = `
           .fui-DialogSurface {
             z-index: 1000001 !important;
+            border-radius: 16px !important;
+          }
+          .fui-DialogBody {
+            border-radius: 16px !important;
+            overflow: hidden !important;
           }
           .fui-Dialog__backdrop {
             z-index: 1000000 !important;
           }
           [data-portal-node] {
             z-index: 1000000 !important;
+          }
+          .fui-PopoverSurface {
+            border-radius: 12px !important;
           }
         `;
         document.head.appendChild(styleEl);
@@ -477,6 +568,23 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     return false; // Enable reactive updates
   }
 
+  /**
+   * Build the appearance settings group fields
+   */
+  private getAppearanceFields(): IPropertyPaneGroup['groupFields'] {
+    return [
+      PropertyPaneDropdown('themeMode', {
+        label: 'Theme Mode',
+        options: [
+          { key: 'auto', text: 'Auto (follow system)' },
+          { key: 'light', text: 'Light' },
+          { key: 'dark', text: 'Dark' },
+        ],
+        selectedKey: this.properties.themeMode || 'light',
+      }),
+    ];
+  }
+
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
     return {
       pages: [
@@ -486,6 +594,11 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
           },
           displayGroupsAsAccordion: true,
           groups: [
+            {
+              groupName: 'Appearance',
+              isCollapsed: true,
+              groupFields: this.getAppearanceFields(),
+            },
             {
               groupName: strings.GreetingGroupName,
               isCollapsed: true,

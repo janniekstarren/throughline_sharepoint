@@ -1,0 +1,178 @@
+// ============================================
+// PROPERTY PANE OVERRIDES
+// Match SPFx property pane to Fluent 2 design
+// ============================================
+
+// Property pane page content - scrollbar
+.propertyPanePageContent {
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.15);
+    }
+  }
+}
+
+// Property pane groups (accordions)
+.ms-PropertyPaneGroup {
+  margin-bottom: 12px !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  background: #fff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+}
+
+.ms-PropertyPaneGroup-group {
+  border: none !important;
+}
+
+.ms-PropertyPaneGroup-groupHeader {
+  border-radius: 10px !important;
+  padding: 14px 16px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  letter-spacing: -0.01em !important;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.02) !important;
+  }
+}
+
+// Dropdowns
+.ms-Dropdown {
+  .ms-Dropdown-title {
+    border-radius: 8px !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    transition: border-color 0.15s ease !important;
+  }
+
+  &:hover .ms-Dropdown-title {
+    border-color: rgba(0, 0, 0, 0.2) !important;
+  }
+
+  .ms-Dropdown-caretDownWrapper {
+    border-radius: 0 8px 8px 0 !important;
+  }
+}
+
+.ms-Dropdown-callout {
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+
+.ms-Dropdown-item {
+  border-radius: 6px !important;
+  margin: 2px 4px !important;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04) !important;
+  }
+}
+
+// Text fields
+.ms-TextField {
+  .ms-TextField-fieldGroup {
+    border-radius: 8px !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    transition: border-color 0.15s ease !important;
+  }
+
+  &:hover .ms-TextField-fieldGroup {
+    border-color: rgba(0, 0, 0, 0.2) !important;
+  }
+
+  &.is-active .ms-TextField-fieldGroup {
+    border-color: #0066cc !important;
+  }
+}
+
+// Labels
+.ms-Label {
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  color: #1a1a2e !important;
+}
+
+// Toggles
+.ms-Toggle {
+  .ms-Toggle-background {
+    border-radius: 10px !important;
+  }
+
+  .ms-Toggle-thumb {
+    border-radius: 50% !important;
+  }
+}
+
+// Buttons in property pane
+.ms-Button {
+  border-radius: 8px !important;
+  transition: all 0.15s ease !important;
+
+  &.ms-Button--primary {
+    background: #0066cc !important;
+
+    &:hover {
+      background: #0052a3 !important;
+    }
+  }
+}
+
+// Checkbox styling
+.ms-Checkbox {
+  .ms-Checkbox-checkbox {
+    border-radius: 4px !important;
+  }
+}
+
+// Choice group (radio buttons)
+.ms-ChoiceField {
+  .ms-ChoiceField-field {
+    &::before {
+      border-radius: 50% !important;
+    }
+  }
+}
+
+// Slider
+.ms-Slider {
+  .ms-Slider-slideBox {
+    border-radius: 4px !important;
+  }
+
+  .ms-Slider-thumb {
+    border-radius: 50% !important;
+  }
+}
+
+// Spinner/SpinButton
+.ms-SpinButton {
+  .ms-SpinButton-input {
+    border-radius: 8px 0 0 8px !important;
+  }
+
+  .ms-SpinButton-arrowButtonsContainer {
+    border-radius: 0 8px 8px 0 !important;
+  }
+}
+
+// Link styling
+.ms-Link {
+  color: #0066cc !important;
+
+  &:hover {
+    color: #0052a3 !important;
+  }
+}

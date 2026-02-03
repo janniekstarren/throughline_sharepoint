@@ -349,11 +349,64 @@ export function isDarkTheme(spTheme?: ISharePointTheme): boolean {
 }
 
 /**
- * Get a Fluent UI v9 theme, preferring SharePoint theme if available
+ * Get default SharePoint dark theme colors
  */
-export function getFluentTheme(context?: WebPartContext): Theme {
+function getDefaultDarkTheme(): ISharePointTheme {
+  return {
+    // Primary brand (SharePoint blue - brighter for dark mode)
+    themePrimary: '#2899f5',
+    themeDark: '#52abf5',
+    themeDarker: '#7cbdf7',
+    themeLight: '#0d3259',
+    themeLighter: '#082540',
+    themeLighterAlt: '#031a2e',
+    themeTertiary: '#1364a3',
+    themeSecondary: '#1b7fcc',
+
+    // Neutral palette (dark theme grays - inverted from light theme)
+    neutralPrimary: '#ffffff',
+    neutralPrimaryAlt: '#f3f2f1',
+    neutralSecondary: '#d2d0ce',
+    neutralSecondaryAlt: '#c8c6c4',
+    neutralTertiary: '#a19f9d',
+    neutralTertiaryAlt: '#605e5c',
+    neutralQuaternary: '#484644',
+    neutralQuaternaryAlt: '#3b3a39',
+    neutralLight: '#323130',
+    neutralLighter: '#252423',
+    neutralLighterAlt: '#201f1e',
+    neutralDark: '#f3f2f1',
+    neutralDarker: '#ffffff',
+    black: '#ffffff',
+    white: '#1b1a19', // Dark background color
+  };
+}
+
+export type ThemeMode = 'auto' | 'light' | 'dark';
+
+/**
+ * Get a Fluent UI v9 theme based on mode and SharePoint context
+ */
+export function getFluentTheme(context?: WebPartContext, themeMode: ThemeMode = 'light'): Theme {
   const spTheme = getSharePointTheme(context);
 
+  // If mode is 'dark', force dark theme
+  if (themeMode === 'dark') {
+    const darkTheme = getDefaultDarkTheme();
+    return createFluentThemeFromSharePoint(darkTheme);
+  }
+
+  // If mode is 'light', force light theme
+  if (themeMode === 'light') {
+    if (spTheme) {
+      // Use SP theme but ensure it's light
+      const lightSpTheme = { ...spTheme, white: '#ffffff' };
+      return createFluentThemeFromSharePoint(lightSpTheme);
+    }
+    return webLightTheme;
+  }
+
+  // Auto mode - use SharePoint theme if available
   if (spTheme) {
     return createFluentThemeFromSharePoint(spTheme);
   }

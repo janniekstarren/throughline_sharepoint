@@ -5,7 +5,7 @@ import {
   PropertyPaneFieldType,
   IPropertyPaneCustomFieldProps,
 } from '@microsoft/sp-property-pane';
-import { Button, makeStyles, tokens, FluentProvider, webLightTheme } from '@fluentui/react-components';
+import { Button, makeStyles, FluentProvider, webLightTheme } from '@fluentui/react-components';
 import { Settings24Regular } from '@fluentui/react-icons';
 
 export interface IPropertyPaneConfigureButtonProps {
@@ -22,19 +22,36 @@ const MIN_DESKTOP_WIDTH = 768;
 
 const useStyles = makeStyles({
   container: {
-    padding: `${tokens.spacingVerticalS} 0`,
+    padding: '8px 0',
   },
   button: {
     width: '100%',
+    borderRadius: '8px',
+    fontWeight: '600',
+    fontSize: '13px',
+    letterSpacing: '-0.01em',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04)',
+    transitionProperty: 'background-color, box-shadow, transform',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'ease-out',
+    ':hover': {
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.1)',
+      transform: 'translateY(-1px)',
+    },
+    ':active': {
+      transform: 'translateY(0)',
+    },
   },
   hidden: {
     display: 'none',
   },
   mobileMessage: {
-    padding: tokens.spacingVerticalS,
-    fontSize: tokens.fontSizeBase200,
-    color: tokens.colorNeutralForeground3,
+    padding: '12px',
+    fontSize: '12px',
+    color: '#64748b',
     textAlign: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    borderRadius: '8px',
   },
 });
 

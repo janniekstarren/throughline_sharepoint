@@ -9,7 +9,6 @@ import {
   Text,
   Input,
   mergeClasses,
-  Divider,
   Tooltip,
   Popover,
   PopoverTrigger,
@@ -31,6 +30,8 @@ import {
   TextT24Regular,
   Grid24Regular as GridIcon,
   Search24Regular,
+  FullScreenMaximize24Regular,
+  FullScreenMinimize24Regular,
 } from '@fluentui/react-icons';
 import {
   Calendar24Regular,
@@ -401,44 +402,100 @@ const INITIAL_DRAG_STATE: IDragState = {
 };
 
 const useStyles = makeStyles({
+  // Main dialog - modern Fluent 2 style
   dialogSurface: {
     maxWidth: '1000px',
     width: '95vw',
-    height: '90vh',
-    minHeight: '500px',
+    height: '85vh',
+    minHeight: '480px',
     padding: 0,
+    borderRadius: '16px',
+    boxShadow: tokens.shadow64,
     zIndex: 1000001,
+    backgroundColor: tokens.colorNeutralBackground1,
+    transitionProperty: 'max-width, width, height, border-radius',
+    transitionDuration: '0.25s',
+    transitionTimingFunction: 'cubic-bezier(0.33, 0, 0.67, 1)',
+  },
+  // Fullscreen dialog mode
+  dialogSurfaceFullscreen: {
+    maxWidth: '100vw',
+    width: '100vw',
+    height: '100vh',
+    borderRadius: 0,
   },
   dialogBody: {
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    minHeight: '500px',
     overflow: 'hidden',
   },
+  // Header - clean, modern
   header: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    backgroundColor: tokens.colorNeutralBackground2,
+    padding: '20px 24px',
+    borderBottom: 'none',
+    backgroundColor: tokens.colorNeutralBackground1,
   },
   title: {
-    fontSize: tokens.fontSizeBase500,
-    fontWeight: tokens.fontWeightSemibold,
+    fontSize: '18px',
+    fontWeight: '600',
+    color: tokens.colorNeutralForeground1,
+    letterSpacing: '-0.02em',
   },
+  headerButtons: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+  },
+  headerIconButton: {
+    minWidth: '32px',
+    width: '32px',
+    height: '32px',
+    padding: 0,
+    borderRadius: '8px',
+    color: tokens.colorNeutralForeground2,
+    transitionProperty: 'background-color, color',
+    transitionDuration: '0.15s',
+    ':hover': {
+      color: tokens.colorNeutralForeground1,
+      backgroundColor: tokens.colorNeutralBackground3,
+    },
+  },
+  // Toolbar - clean, no border
   toolbar: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalM,
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalL}`,
+    gap: '8px',
+    padding: '8px 24px 16px',
     backgroundColor: tokens.colorNeutralBackground1,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    borderBottom: 'none',
+  },
+  toolbarButton: {
+    height: '36px',
+    minWidth: 'auto',
+    padding: '0 14px',
+    gap: '8px',
+    fontSize: '13px',
+    fontWeight: '500',
+    borderRadius: '8px',
+    backgroundColor: 'transparent',
+    color: tokens.colorNeutralForeground2,
+    transitionProperty: 'background-color, color, transform',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'cubic-bezier(0.33, 0, 0.67, 1)',
+    ':hover': {
+      backgroundColor: tokens.colorNeutralBackground3,
+      color: tokens.colorNeutralForeground1,
+    },
   },
   toolbarDivider: {
-    height: '24px',
+    height: '20px',
+    margin: '0 4px',
   },
+  // Content area - subtle background
   content: {
     flex: 1,
     display: 'flex',
@@ -447,73 +504,119 @@ const useStyles = makeStyles({
   },
   gridContainer: {
     flex: 1,
-    padding: tokens.spacingVerticalL,
+    padding: '20px 24px',
     overflowY: 'auto',
-    backgroundColor: tokens.colorNeutralBackground3,
+    backgroundColor: tokens.colorNeutralBackground2,
+    // Custom scrollbar
+    '::-webkit-scrollbar': {
+      width: '8px',
+    },
+    '::-webkit-scrollbar-track': {
+      background: 'transparent',
+    },
+    '::-webkit-scrollbar-thumb': {
+      background: tokens.colorNeutralStroke2,
+      borderRadius: '4px',
+    },
+    '::-webkit-scrollbar-thumb:hover': {
+      background: tokens.colorNeutralStroke1,
+    },
   },
+  // Category sections - modern card style
   categorySection: {
-    marginBottom: tokens.spacingVerticalL,
+    marginBottom: '16px',
     backgroundColor: tokens.colorNeutralBackground1,
-    borderRadius: tokens.borderRadiusMedium,
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    borderRadius: '12px',
+    boxShadow: tokens.shadow8,
     overflow: 'hidden',
-    transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+    transitionProperty: 'box-shadow, transform',
+    transitionDuration: '0.2s',
+    transitionTimingFunction: 'cubic-bezier(0.33, 0, 0.67, 1)',
+    ':hover': {
+      boxShadow: tokens.shadow16,
+    },
   },
   categorySectionHidden: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   categorySectionDragging: {
-    boxShadow: tokens.shadow16,
-    opacity: 0.9,
+    boxShadow: tokens.shadow28,
+    transform: 'scale(1.01)',
   },
   categorySectionDragOver: {
-    border: `2px solid ${tokens.colorBrandStroke1}`,
+    boxShadow: `0 0 0 2px ${tokens.colorBrandStroke1}`,
   },
   categorySectionCategoryDragOver: {
-    border: `2px dashed ${tokens.colorBrandStroke1}`,
+    boxShadow: `0 0 0 2px ${tokens.colorBrandStroke1}`,
     backgroundColor: tokens.colorBrandBackground2,
   },
+  // Category header - clean, modern
   categoryHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    gap: '10px',
+    padding: '14px 18px',
     cursor: 'pointer',
     userSelect: 'none',
+    transitionProperty: 'background-color',
+    transitionDuration: '0.15s',
+    ':hover': {
+      backgroundColor: tokens.colorNeutralBackground1Hover,
+    },
   },
-  categoryHeaderCollapsed: {
-    borderBottom: 'none',
-  },
+  categoryHeaderCollapsed: {},
   categoryIcon: {
-    color: tokens.colorBrandForeground1,
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    backgroundColor: tokens.colorBrandBackground2,
+    color: tokens.colorBrandForeground1,
+    fontSize: '16px',
   },
   categoryTitle: {
-    fontSize: tokens.fontSizeBase400,
-    fontWeight: tokens.fontWeightSemibold,
+    fontSize: '14px',
+    fontWeight: '600',
     color: tokens.colorNeutralForeground1,
     flex: 1,
+    letterSpacing: '-0.01em',
   },
   categoryTitleInput: {
-    fontSize: tokens.fontSizeBase400,
-    fontWeight: tokens.fontWeightSemibold,
-    minWidth: '150px',
-    maxWidth: '250px',
+    fontSize: '14px',
+    minWidth: '120px',
+    maxWidth: '200px',
     flex: 1,
+    '& input': {
+      borderRadius: '8px',
+    },
+    '& .fui-Input': {
+      borderRadius: '8px',
+    },
+    '& .fui-Input__input': {
+      borderRadius: '8px',
+    },
   },
   headerButton: {
     minWidth: '28px',
+    width: '28px',
     height: '28px',
-    padding: '4px',
+    padding: 0,
+    borderRadius: '6px',
+    color: tokens.colorNeutralForeground3,
+    transitionProperty: 'color, background-color',
+    transitionDuration: '0.15s',
+    ':hover': {
+      color: tokens.colorNeutralForeground1,
+      backgroundColor: tokens.colorNeutralBackground3,
+    },
   },
   collapseIcon: {
     color: tokens.colorNeutralForeground3,
-    transition: 'transform 0.2s ease',
     display: 'flex',
     alignItems: 'center',
+    fontSize: '16px',
   },
   dragHandle: {
     color: tokens.colorNeutralForeground4,
@@ -521,17 +624,23 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     padding: '4px',
+    borderRadius: '6px',
+    transitionProperty: 'color, background-color',
+    transitionDuration: '0.15s',
     ':hover': {
       color: tokens.colorNeutralForeground2,
+      backgroundColor: tokens.colorNeutralBackground3,
     },
   },
+  // Category content - spacious
   categoryContent: {
-    padding: tokens.spacingVerticalM,
+    padding: '12px 18px 18px',
     display: 'flex',
     flexWrap: 'wrap',
-    gap: tokens.spacingHorizontalL,
-    minHeight: '140px',
-    transition: 'background-color 0.15s ease',
+    gap: '14px',
+    minHeight: '120px',
+    transitionProperty: 'background-color',
+    transitionDuration: '0.15s',
   },
   categoryContentDragOver: {
     backgroundColor: tokens.colorBrandBackground2,
@@ -541,13 +650,12 @@ const useStyles = makeStyles({
   },
   cardWrapper: {
     position: 'relative',
-    transition: 'opacity 0.15s ease',
   },
   cardPlaceholder: {
-    width: '140px',
-    height: '120px',
+    width: '156px',
+    height: '144px',
     border: `2px dashed ${tokens.colorBrandStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
+    borderRadius: '12px',
     backgroundColor: tokens.colorBrandBackground2,
     display: 'flex',
     alignItems: 'center',
@@ -559,163 +667,199 @@ const useStyles = makeStyles({
     alignItems: 'center',
     justifyContent: 'center',
     color: tokens.colorNeutralForeground4,
-    fontSize: tokens.fontSizeBase200,
-    fontStyle: 'italic',
+    fontSize: '13px',
     minHeight: '100px',
   },
   availableCategory: {
-    backgroundColor: tokens.colorNeutralBackground4,
+    backgroundColor: tokens.colorNeutralBackground3,
+    boxShadow: 'none',
     border: `1px dashed ${tokens.colorNeutralStroke2}`,
   },
   availableCategoryEmpty: {
-    opacity: 0.5,
-    backgroundColor: tokens.colorNeutralBackground5,
+    opacity: 0.6,
   },
+  // Delete popover - modern
   deletePopover: {
-    padding: tokens.spacingVerticalM,
+    padding: '14px',
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacingVerticalS,
-    maxWidth: '250px',
+    gap: '8px',
+    maxWidth: '240px',
+    borderRadius: '12px',
   },
   deletePopoverText: {
-    fontSize: tokens.fontSizeBase200,
-    color: tokens.colorNeutralForeground1,
+    fontSize: '13px',
+    color: tokens.colorNeutralForeground2,
+    lineHeight: '1.5',
   },
   deletePopoverWarning: {
-    fontSize: tokens.fontSizeBase200,
+    fontSize: '13px',
     color: tokens.colorPaletteRedForeground1,
-    fontWeight: tokens.fontWeightSemibold,
+    fontWeight: '500',
   },
   deletePopoverActions: {
     display: 'flex',
     justifyContent: 'flex-end',
-    gap: tokens.spacingHorizontalS,
-    marginTop: tokens.spacingVerticalXS,
+    gap: '8px',
+    marginTop: '8px',
   },
+  // Footer - clean
   instructions: {
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalL}`,
-    backgroundColor: tokens.colorNeutralBackground1,
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
-    fontSize: tokens.fontSizeBase200,
-    color: tokens.colorNeutralForeground3,
+    display: 'none',
   },
   footer: {
     display: 'flex',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalM,
-    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`,
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+    gap: '10px',
+    padding: '16px 24px',
     backgroundColor: tokens.colorNeutralBackground1,
+    borderTop: 'none',
   },
-  // Icon picker dialog styles
+  // Icon picker dialog - modern Fluent 2
   iconPickerDialogSurface: {
-    maxWidth: '600px',
+    maxWidth: '540px',
     width: '90vw',
-    height: '70vh',
-    minHeight: '400px',
+    height: '60vh',
+    minHeight: '380px',
     padding: 0,
-    zIndex: 1000002, // Above the main config dialog
+    borderRadius: '16px',
+    boxShadow: tokens.shadow64,
+    zIndex: 1000002,
+    backgroundColor: tokens.colorNeutralBackground1,
   },
   iconPickerDialogBody: {
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    minHeight: '400px',
     overflow: 'hidden',
   },
   iconPickerHeader: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    backgroundColor: tokens.colorNeutralBackground2,
+    padding: '16px 20px',
+    borderBottom: 'none',
   },
   iconPickerTitle: {
-    fontSize: tokens.fontSizeBase400,
-    fontWeight: tokens.fontWeightSemibold,
+    fontSize: '16px',
+    fontWeight: '600',
+    letterSpacing: '-0.01em',
   },
   iconPickerSearchContainer: {
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalL}`,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    backgroundColor: tokens.colorNeutralBackground1,
+    padding: '0 20px 16px',
+    borderBottom: 'none',
   },
   iconPickerSearchInput: {
     width: '100%',
+    '& input': {
+      borderRadius: '8px',
+    },
+    '& .fui-Input': {
+      borderRadius: '8px',
+    },
+    '& .fui-Input__input': {
+      borderRadius: '8px',
+    },
   },
   iconPickerNoResults: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: tokens.spacingVerticalXXL,
+    padding: '40px 20px',
     color: tokens.colorNeutralForeground3,
-    fontStyle: 'italic',
+    fontSize: '13px',
   },
   iconPickerContent: {
     flex: 1,
-    padding: tokens.spacingVerticalM,
+    padding: '16px 20px',
     overflowY: 'auto',
-    backgroundColor: tokens.colorNeutralBackground1,
-    minHeight: '200px',
+    backgroundColor: tokens.colorNeutralBackground2,
+    // Custom scrollbar
+    '::-webkit-scrollbar': {
+      width: '8px',
+    },
+    '::-webkit-scrollbar-track': {
+      background: 'transparent',
+    },
+    '::-webkit-scrollbar-thumb': {
+      background: tokens.colorNeutralStroke2,
+      borderRadius: '4px',
+    },
+    '::-webkit-scrollbar-thumb:hover': {
+      background: tokens.colorNeutralStroke1,
+    },
   },
   iconPickerCategory: {
-    marginBottom: tokens.spacingVerticalL,
+    marginBottom: '20px',
   },
   iconPickerCategoryTitle: {
-    fontSize: tokens.fontSizeBase300,
-    fontWeight: tokens.fontWeightSemibold,
-    color: tokens.colorNeutralForeground2,
-    marginBottom: tokens.spacingVerticalS,
-    paddingLeft: tokens.spacingHorizontalXS,
+    fontSize: '11px',
+    fontWeight: '600',
+    color: tokens.colorNeutralForeground3,
+    marginBottom: '10px',
+    paddingLeft: '4px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
   iconPickerGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(56px, 1fr))',
-    gap: tokens.spacingHorizontalS,
+    gridTemplateColumns: 'repeat(auto-fill, minmax(48px, 1fr))',
+    gap: '6px',
   },
   iconPickerButton: {
-    width: '56px',
-    height: '56px',
-    minWidth: '56px',
+    width: '48px',
+    height: '48px',
+    minWidth: '48px',
     display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '2px',
-    padding: tokens.spacingHorizontalXS,
-    borderRadius: tokens.borderRadiusMedium,
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    padding: 0,
+    borderRadius: '10px',
+    border: 'none',
     backgroundColor: tokens.colorNeutralBackground1,
     cursor: 'pointer',
-    transition: 'all 0.15s ease',
+    transitionProperty: 'background-color, transform, box-shadow',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'cubic-bezier(0.33, 0, 0.67, 1)',
     ':hover': {
-      backgroundColor: tokens.colorNeutralBackground3,
-      border: `1px solid ${tokens.colorBrandStroke1}`,
+      backgroundColor: tokens.colorNeutralBackground1Hover,
+      transform: 'scale(1.05)',
     },
   },
   iconPickerButtonSelected: {
     backgroundColor: tokens.colorBrandBackground2,
-    border: `2px solid ${tokens.colorBrandStroke1}`,
+    boxShadow: `0 0 0 2px ${tokens.colorBrandStroke1}`,
+    ':hover': {
+      backgroundColor: tokens.colorBrandBackground2Hover,
+    },
   },
   iconPickerButtonIcon: {
     color: tokens.colorNeutralForeground1,
+    fontSize: '20px',
   },
   iconPickerFooter: {
     display: 'flex',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalM,
-    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`,
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+    gap: '10px',
+    padding: '16px 20px',
     backgroundColor: tokens.colorNeutralBackground1,
+    borderTop: 'none',
   },
   categoryIconButton: {
-    minWidth: '28px',
-    height: '28px',
-    padding: '4px',
+    minWidth: '32px',
+    width: '32px',
+    height: '32px',
+    padding: 0,
+    borderRadius: '8px',
     color: tokens.colorBrandForeground1,
+    transitionProperty: 'background-color, transform',
+    transitionDuration: '0.15s',
+    ':hover': {
+      backgroundColor: tokens.colorBrandBackground2,
+      transform: 'scale(1.05)',
+    },
   },
 });
 
@@ -792,6 +936,9 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
   const [selectedIconId, setSelectedIconId] = React.useState<string>('grid');
   const [iconSearchQuery, setIconSearchQuery] = React.useState<string>('');
 
+  // Fullscreen mode state
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+
   // Reset state when dialog opens
   React.useEffect(() => {
     if (open) {
@@ -827,6 +974,7 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
       setCategoryIcons({ ...(initialCategoryIcons || {}) });
       setIconPickerOpen(false);
       setIconPickerCategory(null);
+      setIsFullscreen(false);
     }
   }, [open, initialCardOrder, initialCardVisibility, initialCardTitles, initialCategoryNames, initialCategoryOrder, initialCategoryConfig, initialCardCategoryAssignment, initialCategoryIcons]);
 
@@ -1309,29 +1457,39 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
   return (
     <>
     <Dialog open={open} modalType="modal" onOpenChange={(_, data) => !data.open && onClose()}>
-      <DialogSurface className={styles.dialogSurface}>
+      <DialogSurface className={mergeClasses(styles.dialogSurface, isFullscreen && styles.dialogSurfaceFullscreen)}>
         <DialogBody className={styles.dialogBody}>
           <div className={styles.header}>
             <Text className={styles.title}>Configure Dashboard Cards</Text>
-            <Button
-              appearance="subtle"
-              icon={<Dismiss24Regular />}
-              onClick={onClose}
-              title="Close"
-            />
+            <div className={styles.headerButtons}>
+              <Tooltip content={isFullscreen ? "Exit fullscreen" : "Fullscreen"} relationship="label">
+                <Button
+                  appearance="subtle"
+                  icon={isFullscreen ? <FullScreenMinimize24Regular /> : <FullScreenMaximize24Regular />}
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className={styles.headerIconButton}
+                />
+              </Tooltip>
+              <Button
+                appearance="subtle"
+                icon={<Dismiss24Regular />}
+                onClick={onClose}
+                className={styles.headerIconButton}
+                title="Close"
+              />
+            </div>
           </div>
 
-          {/* Toolbar */}
+          {/* Toolbar - compact with icon buttons */}
           <div className={styles.toolbar}>
-            <Button
-              appearance="secondary"
-              icon={<Add24Regular />}
-              onClick={addNewCategory}
-            >
-              Add Category
-            </Button>
-
-            <Divider vertical className={styles.toolbarDivider} />
+            <Tooltip content="Add new category" relationship="label">
+              <Button
+                appearance="subtle"
+                icon={<Add24Regular />}
+                onClick={addNewCategory}
+                className={styles.toolbarButton}
+              />
+            </Tooltip>
 
             <Tooltip
               content={
@@ -1348,9 +1506,10 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
                 icon={showAvailableCards ? <GridIcon /> : <EyeOff24Regular />}
                 onClick={() => setShowAvailableCards(!showAvailableCards)}
                 disabled={!hasAvailableCards && !showAvailableCards}
+                className={styles.toolbarButton}
                 style={{ opacity: !hasAvailableCards ? 0.5 : 1 }}
               >
-                Available Cards ({availableCardsCount})
+                Available ({availableCardsCount})
               </Button>
             </Tooltip>
           </div>
