@@ -23,17 +23,16 @@
 
 // ============================================
 // HIERARCHICAL GRID SYSTEM
-// Uses CSS Grid with auto-fit for fluid layout
+// Uses explicit 3-column grid for desktop
 // ============================================
 .cardGrid {
   display: grid;
-  gap: 20px;
+  gap: 24px;
   align-content: start;
   width: 100%;
   box-sizing: border-box;
-
-  // Default: flexible grid that adapts to content
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  // Desktop default: 3 columns
+  grid-template-columns: repeat(3, 1fr);
 }
 
 // Category header - spans full width
@@ -64,9 +63,9 @@
 // All cards use flexible sizing without min-width
 // ============================================
 
-// Large Card - Master-Detail layout
+// Large Card - Master-Detail layout (spans 2 of 3 columns on desktop)
 .cardLarge {
-  grid-column: 1 / -1; // Full width by default
+  grid-column: span 2;
   min-height: 420px;
   max-height: 480px;
   overflow: hidden;
@@ -78,8 +77,9 @@
   }
 }
 
-// Medium Card - Standard list layout
+// Medium Card - Standard list layout (spans 1 column)
 .cardMedium {
+  grid-column: span 1;
   min-height: 380px;
   max-height: 420px;
   overflow: hidden;
