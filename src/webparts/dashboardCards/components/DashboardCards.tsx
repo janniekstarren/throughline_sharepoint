@@ -18,19 +18,21 @@ import {
   ISiteActivity,
   IQuickLink
 } from '../services/GraphService';
-import { TodaysAgendaCard } from './TodaysAgendaCard';
-import { UnreadInboxCard } from './UnreadInboxCard';
+// Medium card components (standard list)
 import { MyTasksCard } from './MyTasksCard';
 import { RecentFilesCard } from './RecentFilesCard';
-import { UpcomingWeekCard } from './UpcomingWeekCard';
-import { FlaggedEmailsCard } from './FlaggedEmailsCard';
 import { MyTeamCard } from './MyTeamCard';
 import { SharedWithMeCard } from './SharedWithMeCard';
 import { QuickLinksCard } from './QuickLinksCard';
 import { SiteActivityCard } from './SiteActivityCard';
+// Large card variants (master-detail layout)
+import { TodaysAgendaCardLarge } from './TodaysAgendaCardLarge';
+import { UnreadInboxCardLarge } from './UnreadInboxCardLarge';
+import { UpcomingWeekCardLarge } from './UpcomingWeekCardLarge';
+import { FlaggedEmailsCardLarge } from './FlaggedEmailsCardLarge';
 import { HoverCardItemType, IHoverCardItem } from './ItemHoverCard';
 import { Salutation, SalutationType, SalutationSize } from './Salutation';
-import { getFluentTheme } from '../utils/themeUtils';
+import { getFluentTheme, ThemeMode } from '../utils/themeUtils';
 import styles from './DashboardCards.module.scss';
 
 export interface ICardVisibility {
@@ -46,13 +48,45 @@ export interface ICardVisibility {
   showSiteActivity: boolean;
 }
 
+// Import ICategoryConfig from CardConfigDialog
+import { ICategoryConfig } from '../propertyPane/CardConfigDialog';
+
+// Re-export for convenience
+export type { ICategoryConfig };
+
+// Card size type - determines how much space a card takes
+export type CardSize = 'large' | 'medium';
+
+// Card sizes - Large cards use master-detail layout, Medium cards use standard list
+const CARD_SIZES: Record<string, CardSize> = {
+  // Large cards (master-detail layout - 8 columns)
+  todaysAgenda: 'large',
+  unreadInbox: 'large',
+  upcomingWeek: 'large',
+  flaggedEmails: 'large',
+  // Medium cards (standard list - 4 columns)
+  myTasks: 'medium',
+  recentFiles: 'medium',
+  sharedWithMe: 'medium',
+  myTeam: 'medium',
+  siteActivity: 'medium',
+  quickLinks: 'medium',
+};
+
 export interface IDashboardCardsProps {
   context: WebPartContext;
   salutationType: SalutationType;
   salutationSize: SalutationSize;
+  themeMode: ThemeMode;
   cardVisibility: ICardVisibility;
   cardOrder: string[];
   cardTitles: Record<string, string>;
+  // Category configuration
+  categoryOrder?: string[];
+  categoryNames?: Record<string, string>;
+  categoryConfig?: Record<string, ICategoryConfig>;
+  cardCategoryAssignment?: Record<string, string>;
+  categoryIcons?: Record<string, string>;
 }
 
 // Default card titles
@@ -72,25 +106,38 @@ const DEFAULT_CARD_TITLES: Record<string, string> = {
 // Create a renderer for Fluent UI 9 that targets the document
 const renderer = createDOMRenderer(document);
 
-export const DashboardCards: React.FC<IDashboardCardsProps> = ({ context, salutationType, salutationSize, cardVisibility, cardOrder, cardTitles }) => {
+export const DashboardCards: React.FC<IDashboardCardsProps> = ({
+  context,
+  salutationType,
+  salutationSize,
+  themeMode,
+  cardVisibility,
+  cardOrder,
+  cardTitles,
+  categoryOrder = [],
+  categoryNames = {},
+  categoryConfig = {},
+  cardCategoryAssignment = {},
+  categoryIcons = {},
+}) => {
   // Helper to get card title (custom or default)
   const getCardTitle = (cardId: string): string => {
     return cardTitles[cardId] || DEFAULT_CARD_TITLES[cardId] || cardId;
   };
-  // Get theme from SharePoint (converts SP theme to Fluent UI v9)
+  // Get theme from SharePoint (converts SP theme to Fluent UI v9, respecting theme mode)
   const [currentTheme, setCurrentTheme] = React.useState<Theme | null>(null);
   const [userName, setUserName] = React.useState<string>('');
 
   React.useEffect(() => {
-    // Get the Fluent UI theme derived from SharePoint's theme
-    const theme = getFluentTheme(context);
+    // Get the Fluent UI theme derived from SharePoint's theme, respecting theme mode
+    const theme = getFluentTheme(context, themeMode);
     setCurrentTheme(theme);
 
     // Get current user's display name
     if (context.pageContext?.user?.displayName) {
       setUserName(context.pageContext.user.displayName);
     }
-  }, [context]);
+  }, [context, themeMode]);
 
   // Create a ref for the portal mount node
   const portalMountRef = React.useRef<HTMLDivElement>(null);
@@ -358,54 +405,125 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({ context, saluta
     );
   }
 
-  // Render a card by its ID
-  const renderCard = (cardId: string): React.ReactNode => {
+  // Get card size class
+  const getCardSizeClass = (cardId: string): string => {
+    const size = CARD_SIZES[cardId] || 'medium';
+    switch (size) {
+      case 'large':
+        return styles.cardLarge;
+      case 'medium':
+      default:
+        return styles.cardMedium;
+    }
+  };
+
+  // Check if a card is visible based on its visibility setting
+  const isCardVisible = (cardId: string): boolean => {
+    const visibilityMap: Record<string, boolean> = {
+      todaysAgenda: cardVisibility.showTodaysAgenda,
+      unreadInbox: cardVisibility.showUnreadInbox,
+      myTasks: cardVisibility.showMyTasks,
+      recentFiles: cardVisibility.showRecentFiles,
+      upcomingWeek: cardVisibility.showUpcomingWeek,
+      flaggedEmails: cardVisibility.showFlaggedEmails,
+      myTeam: cardVisibility.showMyTeam,
+      sharedWithMe: cardVisibility.showSharedWithMe,
+      quickLinks: cardVisibility.showQuickLinks,
+      siteActivity: cardVisibility.showSiteActivity,
+    };
+    return visibilityMap[cardId] ?? false;
+  };
+
+  // Render a card by its ID (returns the card element without visibility check)
+  // Uses Large card variants for cards with master-detail layout
+  const renderCardElement = (cardId: string): React.ReactNode => {
     const cardTitle = getCardTitle(cardId);
 
     switch (cardId) {
+      // Large cards (master-detail layout)
       case 'todaysAgenda':
-        return cardVisibility.showTodaysAgenda && (
-          <TodaysAgendaCard key={cardId} events={events} loading={eventsLoading} error={eventsError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />
-        );
+        return <TodaysAgendaCardLarge events={events} loading={eventsLoading} error={eventsError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'unreadInbox':
-        return cardVisibility.showUnreadInbox && (
-          <UnreadInboxCard key={cardId} emails={emails} loading={emailsLoading} error={emailsError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />
-        );
-      case 'myTasks':
-        return cardVisibility.showMyTasks && (
-          <MyTasksCard key={cardId} tasks={tasks} loading={tasksLoading} error={tasksError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />
-        );
-      case 'recentFiles':
-        return cardVisibility.showRecentFiles && (
-          <RecentFilesCard key={cardId} files={files} loading={filesLoading} error={filesError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />
-        );
+        return <UnreadInboxCardLarge emails={emails} loading={emailsLoading} error={emailsError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'upcomingWeek':
-        return cardVisibility.showUpcomingWeek && (
-          <UpcomingWeekCard key={cardId} events={weekEvents} loading={weekEventsLoading} error={weekEventsError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />
-        );
+        return <UpcomingWeekCardLarge events={weekEvents} loading={weekEventsLoading} error={weekEventsError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'flaggedEmails':
-        return cardVisibility.showFlaggedEmails && (
-          <FlaggedEmailsCard key={cardId} emails={flaggedEmails} loading={flaggedEmailsLoading} error={flaggedEmailsError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />
-        );
+        return <FlaggedEmailsCardLarge emails={flaggedEmails} loading={flaggedEmailsLoading} error={flaggedEmailsError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+      // Medium cards (standard list)
+      case 'myTasks':
+        return <MyTasksCard tasks={tasks} loading={tasksLoading} error={tasksError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+      case 'recentFiles':
+        return <RecentFilesCard files={files} loading={filesLoading} error={filesError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'myTeam':
-        return cardVisibility.showMyTeam && (
-          <MyTeamCard key={cardId} members={teamMembers} loading={teamMembersLoading} error={teamMembersError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />
-        );
+        return <MyTeamCard members={teamMembers} loading={teamMembersLoading} error={teamMembersError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'sharedWithMe':
-        return cardVisibility.showSharedWithMe && (
-          <SharedWithMeCard key={cardId} files={sharedFiles} loading={sharedFilesLoading} error={sharedFilesError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />
-        );
+        return <SharedWithMeCard files={sharedFiles} loading={sharedFilesLoading} error={sharedFilesError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'quickLinks':
-        return cardVisibility.showQuickLinks && (
-          <QuickLinksCard key={cardId} links={quickLinks} title={cardTitle} />
-        );
+        return <QuickLinksCard links={quickLinks} title={cardTitle} />;
       case 'siteActivity':
-        return cardVisibility.showSiteActivity && (
-          <SiteActivityCard key={cardId} activities={siteActivity} loading={siteActivityLoading} error={siteActivityError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />
-        );
+        return <SiteActivityCard activities={siteActivity} loading={siteActivityLoading} error={siteActivityError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       default:
         return null;
     }
+  };
+
+  // Render a card wrapped with its size class
+  const renderCard = (cardId: string): React.ReactNode => {
+    if (!isCardVisible(cardId)) return null;
+
+    return (
+      <div key={cardId} className={getCardSizeClass(cardId)}>
+        {renderCardElement(cardId)}
+      </div>
+    );
+  };
+
+  // Get cards grouped by category in the correct order
+  const getOrderedCards = (): React.ReactNode[] => {
+    const result: React.ReactNode[] = [];
+    const hasCategoryConfig = categoryOrder.length > 0 && Object.keys(cardCategoryAssignment).length > 0;
+
+    if (!hasCategoryConfig) {
+      // No category config - render cards in simple order
+      cardOrder.forEach(cardId => {
+        const card = renderCard(cardId);
+        if (card) result.push(card);
+      });
+      return result;
+    }
+
+    // Render cards grouped by category
+    categoryOrder.forEach(categoryId => {
+      const catConfig = categoryConfig[categoryId];
+
+      // Skip hidden categories
+      if (catConfig && !catConfig.visible) return;
+
+      // Get cards in this category (maintaining card order)
+      const cardsInCategory = cardOrder.filter(
+        cardId => cardCategoryAssignment[cardId] === categoryId && isCardVisible(cardId)
+      );
+
+      if (cardsInCategory.length === 0) return;
+
+      // Render category header if showTitle is true
+      if (catConfig?.showTitle !== false) {
+        const categoryName = categoryNames[categoryId] || categoryId;
+        result.push(
+          <div key={`category-header-${categoryId}`} className={styles.categoryHeader}>
+            <span className={styles.categoryTitle}>{categoryName}</span>
+          </div>
+        );
+      }
+
+      // Render cards in this category
+      cardsInCategory.forEach(cardId => {
+        const card = renderCard(cardId);
+        if (card) result.push(card);
+      });
+    });
+
+    return result;
   };
 
   return (
@@ -414,7 +532,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({ context, saluta
         <div className={styles.dashboard} ref={portalMountRef}>
           <Salutation type={salutationType} size={salutationSize} userName={userName} />
           <div className={styles.cardGrid}>
-            {cardOrder.map((cardId) => renderCard(cardId))}
+            {getOrderedCards()}
           </div>
         </div>
       </FluentProvider>

@@ -1,19 +1,113 @@
-@import '~@fluentui/react/dist/sass/References.scss';
+@import './CardStyles.module.scss';
 
 .dashboard {
-  padding: 16px;
+  padding: 20px;
   position: relative;
+  background: transparent;
+  min-height: 100vh;
 }
 
 .dashboardContainer {
   position: relative;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 .cardGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 24px;
   align-content: start;
+}
+
+// Category header - spans full width
+.categoryHeader {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  margin-top: 8px;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.categoryTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--colorNeutralForeground2, #605e5c);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// Card size variants
+
+// Large Card - Master-Detail layout (8 columns = 2/3 width)
+.cardLarge {
+  grid-column: span 8;
+  min-height: 440px;
+  max-height: 480px;
+
+  // Ensure the card inside fills the container
+  > div {
+    height: 100%;
+    min-height: inherit;
+    max-height: inherit;
+  }
+}
+
+// Medium Card - Standard list layout (4 columns = 1/3 width)
+.cardMedium {
+  grid-column: span 4;
+  min-width: 320px;
+  min-height: 400px;
+  max-height: 440px;
+
+  > div {
+    height: 100%;
+    min-height: inherit;
+    max-height: inherit;
+  }
+}
+
+// Legacy size classes for backwards compatibility
+.cardCompact {
+  grid-column: span 4; // 1/3 width on desktop
+  min-height: 280px;
+  max-height: 360px;
+
+  // Ensure the card inside fills the container
+  > div {
+    height: 100%;
+    min-height: inherit;
+    max-height: inherit;
+  }
+}
+
+.cardStandard {
+  grid-column: span 4; // 1/3 width on desktop
+  min-height: 320px;
+  max-height: 440px;
+
+  > div {
+    height: 100%;
+    min-height: inherit;
+    max-height: inherit;
+  }
+}
+
+.cardWide {
+  grid-column: span 6; // 1/2 width on desktop (2/3 of 3 columns)
+  min-height: 320px;
+  max-height: 440px;
+
+  > div {
+    height: 100%;
+    min-height: inherit;
+    max-height: inherit;
+  }
 }
 
 // Drawer wrapper for proper positioning
@@ -27,5 +121,307 @@
 
   &.drawerOpen {
     pointer-events: auto;
+  }
+}
+
+// Responsive adjustments
+
+// Mobile: Single column layout
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 12px;
+  }
+
+  .cardGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  // All cards take full width on mobile
+  .cardLarge,
+  .cardMedium,
+  .cardCompact,
+  .cardStandard,
+  .cardWide {
+    grid-column: 1 / -1;
+    min-width: auto;
+    min-height: 280px;
+    max-height: none; // Allow natural height on mobile
+  }
+
+  // Large cards need more height on mobile for master-detail
+  .cardLarge {
+    min-height: 400px;
+  }
+}
+
+// Tablet: 8-column layout
+@media (min-width: 769px) and (max-width: 1199px) {
+  .cardGrid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+
+  // Large cards take full width on tablet
+  .cardLarge {
+    grid-column: span 8;
+  }
+
+  // Medium cards take half width on tablet
+  .cardMedium {
+    grid-column: span 4;
+  }
+
+  .cardCompact {
+    grid-column: span 4; // Half width
+  }
+
+  .cardStandard {
+    grid-column: span 4; // Half width
+  }
+
+  .cardWide {
+    grid-column: span 8; // Full width
+  }
+}
+
+// Desktop: 12-column layout
+@media (min-width: 1200px) {
+  .cardGrid {
+    grid-template-columns: repeat(12, 1fr);
+  }
+
+  // Large cards take 8 columns (2/3 width)
+  .cardLarge {
+    grid-column: span 8;
+  }
+
+  // Medium cards take 4 columns (1/3 width)
+  .cardMedium {
+    grid-column: span 4;
+  }
+
+  .cardCompact {
+    grid-column: span 4; // 1/3 width
+  }
+
+  .cardStandard {
+    grid-column: span 4; // 1/3 width
+  }
+
+  .cardWide {
+    grid-column: span 6; // 1/2 width
+  }
+}
+
+// Large desktop: 12-column with more breathing room
+@media (min-width: 1600px) {
+  // Large cards stay at 8 columns
+  .cardLarge {
+    grid-column: span 8;
+  }
+
+  // Medium cards take 4 columns
+  .cardMedium {
+    grid-column: span 4;
+  }
+
+  .cardCompact {
+    grid-column: span 3; // 1/4 width
+  }
+
+  .cardStandard {
+    grid-column: span 4; // 1/3 width
+  }
+
+  .cardWide {
+    grid-column: span 6; // 1/2 width
+  }
+}
+
+// ============================================
+// PROPERTY PANE OVERRIDES
+// Match SPFx property pane to Fluent 2 design
+// ============================================
+
+:global {
+  // Property pane container
+  .spPropertyPaneContainer {
+    .ms-PropertyPane-page {
+      padding: 16px;
+    }
+  }
+
+  // Property pane page content - scrollbar
+  .propertyPanePageContent {
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 3px;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.15);
+      }
+    }
+  }
+
+  // Property pane groups (accordions)
+  .ms-PropertyPaneGroup {
+    margin-bottom: 12px;
+    border-radius: 10px !important;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+
+  .ms-PropertyPaneGroup-group {
+    border: none !important;
+  }
+
+  .ms-PropertyPaneGroup-groupHeader {
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.02);
+    }
+  }
+
+  // Dropdowns
+  .ms-Dropdown {
+    .ms-Dropdown-title {
+      border-radius: 8px !important;
+      border-color: rgba(0, 0, 0, 0.1) !important;
+      transition: border-color 0.15s ease;
+    }
+
+    &:hover .ms-Dropdown-title {
+      border-color: rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .ms-Dropdown-caretDownWrapper {
+      border-radius: 0 8px 8px 0;
+    }
+  }
+
+  .ms-Dropdown-callout {
+    border-radius: 8px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    border: none !important;
+    overflow: hidden;
+  }
+
+  .ms-Dropdown-item {
+    border-radius: 6px;
+    margin: 2px 4px;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+  }
+
+  // Text fields
+  .ms-TextField {
+    .ms-TextField-fieldGroup {
+      border-radius: 8px !important;
+      border-color: rgba(0, 0, 0, 0.1) !important;
+      transition: border-color 0.15s ease;
+    }
+
+    &:hover .ms-TextField-fieldGroup {
+      border-color: rgba(0, 0, 0, 0.2) !important;
+    }
+
+    &.is-active .ms-TextField-fieldGroup {
+      border-color: #0066cc !important;
+    }
+  }
+
+  // Labels
+  .ms-Label {
+    font-weight: 500;
+    font-size: 13px;
+    color: #1a1a2e;
+  }
+
+  // Toggles
+  .ms-Toggle {
+    .ms-Toggle-background {
+      border-radius: 10px !important;
+    }
+
+    .ms-Toggle-thumb {
+      border-radius: 50% !important;
+    }
+  }
+
+  // Buttons in property pane
+  .ms-Button {
+    border-radius: 8px !important;
+    transition: all 0.15s ease;
+
+    &.ms-Button--primary {
+      background: #0066cc;
+
+      &:hover {
+        background: #0052a3;
+      }
+    }
+  }
+
+  // Checkbox styling
+  .ms-Checkbox {
+    .ms-Checkbox-checkbox {
+      border-radius: 4px !important;
+    }
+  }
+
+  // Choice group (radio buttons)
+  .ms-ChoiceField {
+    .ms-ChoiceField-field {
+      &::before {
+        border-radius: 50%;
+      }
+    }
+  }
+
+  // Slider
+  .ms-Slider {
+    .ms-Slider-slideBox {
+      border-radius: 4px;
+    }
+
+    .ms-Slider-thumb {
+      border-radius: 50%;
+    }
+  }
+
+  // Spinner/SpinButton
+  .ms-SpinButton {
+    .ms-SpinButton-input {
+      border-radius: 8px 0 0 8px !important;
+    }
+
+    .ms-SpinButton-arrowButtonsContainer {
+      border-radius: 0 8px 8px 0 !important;
+    }
+  }
+
+  // Link styling
+  .ms-Link {
+    color: #0066cc;
+
+    &:hover {
+      color: #0052a3;
+    }
   }
 }
