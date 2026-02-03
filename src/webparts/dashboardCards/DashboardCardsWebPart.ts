@@ -32,6 +32,7 @@ const CARD_DEFAULT_CATEGORIES: Record<string, string> = {
   quickLinks: 'navigation',
   siteActivity: 'people',
   waitingOnYou: 'email',
+  waitingOnOthers: 'email',
 };
 
 export type ThemeMode = 'auto' | 'light' | 'dark';
@@ -43,6 +44,15 @@ export interface IWaitingOnYouSettings {
   includeTeamsChats: boolean;  // Include Teams chats (default: true)
   includeChannels: boolean;    // Include channel messages (default: false)
   includeMentions: boolean;    // Include @mentions in Teams messages (default: true)
+  showChart: boolean;          // Show the trend chart (default: true)
+}
+
+// Waiting On Others card settings
+export interface IWaitingOnOthersSettings {
+  minWaitHours: number;        // Minimum hours before showing (default: 24)
+  includeEmail: boolean;       // Include emails (default: true)
+  includeTeamsChats: boolean;  // Include Teams chats (default: true)
+  includeMentions: boolean;    // Prioritize messages where you @mentioned someone (default: true)
   showChart: boolean;          // Show the trend chart (default: true)
 }
 
@@ -63,6 +73,7 @@ export interface IDashboardCardsWebPartProps {
   showQuickLinks: boolean;
   showSiteActivity: boolean;
   showWaitingOnYou: boolean;
+  showWaitingOnOthers: boolean;
   // Card order
   cardOrder: string[];
   // Custom card titles
@@ -79,6 +90,8 @@ export interface IDashboardCardsWebPartProps {
   categoryIcons: Record<string, string>;
   // Waiting On You card settings
   waitingOnYouSettings: IWaitingOnYouSettings;
+  // Waiting On Others card settings
+  waitingOnOthersSettings: IWaitingOnOthersSettings;
 }
 
 export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashboardCardsWebPartProps> {
@@ -177,6 +190,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       showQuickLinks: this.properties.showQuickLinks !== false,
       showSiteActivity: this.properties.showSiteActivity !== false,
       showWaitingOnYou: this.properties.showWaitingOnYou !== false,
+      showWaitingOnOthers: this.properties.showWaitingOnOthers !== false,
     };
 
     // Get card order (default if not set, and ensure new cards are included)
@@ -233,6 +247,13 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
           includeEmail: true,
           includeTeamsChats: true,
           includeChannels: false,
+          includeMentions: true,
+          showChart: true,
+        },
+        waitingOnOthersSettings: this.properties.waitingOnOthersSettings || {
+          minWaitHours: 24,
+          includeEmail: true,
+          includeTeamsChats: true,
           includeMentions: true,
           showChart: true,
         },
@@ -340,6 +361,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       quickLinks: 'showQuickLinks',
       siteActivity: 'showSiteActivity',
       waitingOnYou: 'showWaitingOnYou',
+      waitingOnOthers: 'showWaitingOnOthers',
     };
 
     // Update card order
@@ -396,6 +418,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       quickLinks: this.properties.showQuickLinks !== false,
       siteActivity: this.properties.showSiteActivity !== false,
       waitingOnYou: this.properties.showWaitingOnYou !== false,
+      waitingOnOthers: this.properties.showWaitingOnOthers !== false,
     };
 
     // Get card order and ensure new cards are included
@@ -437,6 +460,15 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       showChart: true,
     };
 
+    // Get Waiting On Others settings with defaults
+    const waitingOnOthersSettings: IWaitingOnOthersSettings = this.properties.waitingOnOthersSettings || {
+      minWaitHours: 24,
+      includeEmail: true,
+      includeTeamsChats: true,
+      includeMentions: true,
+      showChart: true,
+    };
+
     // Create the dialog with proper FluentProvider wrapping
     const cardConfigDialog = React.createElement(CardConfigDialog, {
       open: this._isDialogOpen,
@@ -453,6 +485,11 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       waitingOnYouSettings,
       onWaitingOnYouSettingsChanged: (settings: IWaitingOnYouSettings) => {
         this.properties.waitingOnYouSettings = settings;
+        this.render();
+      },
+      waitingOnOthersSettings,
+      onWaitingOnOthersSettingsChanged: (settings: IWaitingOnOthersSettings) => {
+        this.properties.waitingOnOthersSettings = settings;
         this.render();
       },
     });
@@ -535,6 +572,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       quickLinks: this.properties.showQuickLinks !== false,
       siteActivity: this.properties.showSiteActivity !== false,
       waitingOnYou: this.properties.showWaitingOnYou !== false,
+      waitingOnOthers: this.properties.showWaitingOnOthers !== false,
     };
 
     // Map cardId to property name
@@ -550,6 +588,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       quickLinks: 'showQuickLinks',
       siteActivity: 'showSiteActivity',
       waitingOnYou: 'showWaitingOnYou',
+      waitingOnOthers: 'showWaitingOnOthers',
     };
 
     const categoryNames = this.properties.categoryNames || {};

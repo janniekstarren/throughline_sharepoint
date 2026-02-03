@@ -20,6 +20,14 @@ export interface IWaitingOnYouSettings {
   showChart: boolean;
 }
 
+export interface IWaitingOnOthersSettings {
+  minWaitHours: number;        // default: 24
+  includeEmail: boolean;       // default: true
+  includeTeamsChats: boolean;  // default: true
+  includeMentions: boolean;    // default: true - prioritize messages where you @mentioned someone
+  showChart: boolean;          // default: true
+}
+
 export interface ICardSettingsDrawerProps {
   open: boolean;
   cardId: string;
@@ -34,6 +42,9 @@ export interface ICardSettingsDrawerProps {
   // Waiting On You specific settings
   waitingOnYouSettings?: IWaitingOnYouSettings;
   onWaitingOnYouSettingsChanged?: (settings: IWaitingOnYouSettings) => void;
+  // Waiting On Others specific settings
+  waitingOnOthersSettings?: IWaitingOnOthersSettings;
+  onWaitingOnOthersSettingsChanged?: (settings: IWaitingOnOthersSettings) => void;
 }
 
 const useStyles = makeStyles({
@@ -132,6 +143,8 @@ export const CardSettingsDrawer: React.FC<ICardSettingsDrawerProps> = ({
   onReset,
   waitingOnYouSettings,
   onWaitingOnYouSettingsChanged,
+  waitingOnOthersSettings,
+  onWaitingOnOthersSettingsChanged,
 }) => {
   const styles = useStyles();
   const [localTitle, setLocalTitle] = React.useState(title);
@@ -303,6 +316,89 @@ export const CardSettingsDrawer: React.FC<ICardSettingsDrawerProps> = ({
               <Switch
                 checked={waitingOnYouSettings.showChart}
                 onChange={(_, data) => onWaitingOnYouSettingsChanged({ ...waitingOnYouSettings, showChart: data.checked })}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Waiting On Others specific settings */}
+        {cardId === 'waitingOnOthers' && waitingOnOthersSettings && onWaitingOnOthersSettingsChanged && (
+          <>
+            <Divider />
+            <Text className={styles.label} style={{ marginBottom: '8px' }}>Card Settings</Text>
+
+            <div className={styles.field}>
+              <Label className={styles.label} htmlFor="minWaitHours">
+                Minimum wait time (hours)
+              </Label>
+              <Input
+                id="minWaitHours"
+                className={styles.input}
+                type="number"
+                min={1}
+                max={168}
+                value={String(waitingOnOthersSettings.minWaitHours)}
+                onChange={(_, data) => {
+                  const value = parseInt(data.value, 10);
+                  if (!isNaN(value) && value >= 1 && value <= 168) {
+                    onWaitingOnOthersSettingsChanged({ ...waitingOnOthersSettings, minWaitHours: value });
+                  }
+                }}
+              />
+              <Text className={styles.hint}>
+                Only show items waiting longer than this
+              </Text>
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Include Email</Label>
+                <Text className={styles.hint}>
+                  Show sent emails awaiting reply
+                </Text>
+              </div>
+              <Switch
+                checked={waitingOnOthersSettings.includeEmail}
+                onChange={(_, data) => onWaitingOnOthersSettingsChanged({ ...waitingOnOthersSettings, includeEmail: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Include Teams Chats</Label>
+                <Text className={styles.hint}>
+                  Show Teams chats awaiting reply
+                </Text>
+              </div>
+              <Switch
+                checked={waitingOnOthersSettings.includeTeamsChats}
+                onChange={(_, data) => onWaitingOnOthersSettingsChanged({ ...waitingOnOthersSettings, includeTeamsChats: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Include @Mentions</Label>
+                <Text className={styles.hint}>
+                  Prioritize messages where you @mentioned someone
+                </Text>
+              </div>
+              <Switch
+                checked={waitingOnOthersSettings.includeMentions}
+                onChange={(_, data) => onWaitingOnOthersSettingsChanged({ ...waitingOnOthersSettings, includeMentions: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Show Chart</Label>
+                <Text className={styles.hint}>
+                  Display trend chart in card
+                </Text>
+              </div>
+              <Switch
+                checked={waitingOnOthersSettings.showChart}
+                onChange={(_, data) => onWaitingOnOthersSettingsChanged({ ...waitingOnOthersSettings, showChart: data.checked })}
               />
             </div>
           </>

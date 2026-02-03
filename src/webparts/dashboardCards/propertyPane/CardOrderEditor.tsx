@@ -101,6 +101,7 @@ export const DEFAULT_CARD_ORDER: string[] = [
   'quickLinks',
   'siteActivity',
   'waitingOnYou',
+  'waitingOnOthers',
 ];
 
 const useStyles = makeStyles({

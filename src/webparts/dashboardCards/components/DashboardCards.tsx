@@ -33,6 +33,7 @@ import { UpcomingWeekCardLarge } from './UpcomingWeekCardLarge';
 import { FlaggedEmailsCardLarge } from './FlaggedEmailsCardLarge';
 // Waiting On You card
 import { WaitingOnYouCard } from './WaitingOnYouCard';
+import { WaitingOnOthersCard } from './WaitingOnOthersCard';
 import { HoverCardItemType, IHoverCardItem } from './ItemHoverCard';
 import { Salutation, SalutationType, SalutationSize } from './Salutation';
 import { CategorySection, IOrderedCard } from './CategorySection';
@@ -51,6 +52,7 @@ export interface ICardVisibility {
   showQuickLinks: boolean;
   showSiteActivity: boolean;
   showWaitingOnYou: boolean;
+  showWaitingOnOthers: boolean;
 }
 
 // Import ICategoryConfig from CardConfigDialog
@@ -83,6 +85,15 @@ export interface IWaitingOnYouSettings {
   showChart: boolean;
 }
 
+// Waiting On Others card settings
+export interface IWaitingOnOthersSettings {
+  minWaitHours: number;
+  includeEmail: boolean;
+  includeTeamsChats: boolean;
+  includeMentions: boolean;
+  showChart: boolean;
+}
+
 export interface IDashboardCardsProps {
   context: WebPartContext;
   salutationType: SalutationType;
@@ -99,6 +110,8 @@ export interface IDashboardCardsProps {
   categoryIcons?: Record<string, string>;
   // Waiting On You settings
   waitingOnYouSettings?: IWaitingOnYouSettings;
+  // Waiting On Others settings
+  waitingOnOthersSettings?: IWaitingOnOthersSettings;
 }
 
 // Default card titles
@@ -114,6 +127,7 @@ const DEFAULT_CARD_TITLES: Record<string, string> = {
   quickLinks: 'Quick Links',
   siteActivity: 'Site Activity',
   waitingOnYou: 'Waiting On You',
+  waitingOnOthers: 'Waiting On Others',
 };
 
 // Create a renderer for Fluent UI 9 that targets the document
@@ -125,6 +139,15 @@ const DEFAULT_WAITING_ON_YOU_SETTINGS: IWaitingOnYouSettings = {
   includeEmail: true,
   includeTeamsChats: true,
   includeChannels: false,
+  includeMentions: true,
+  showChart: true,
+};
+
+// Default Waiting On Others settings
+const DEFAULT_WAITING_ON_OTHERS_SETTINGS: IWaitingOnOthersSettings = {
+  minWaitHours: 24,
+  includeEmail: true,
+  includeTeamsChats: true,
   includeMentions: true,
   showChart: true,
 };
@@ -143,6 +166,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   cardCategoryAssignment = {},
   categoryIcons = {},
   waitingOnYouSettings = DEFAULT_WAITING_ON_YOU_SETTINGS,
+  waitingOnOthersSettings = DEFAULT_WAITING_ON_OTHERS_SETTINGS,
 }) => {
   // Helper to get card title (custom or default)
   const getCardTitle = (cardId: string): string => {
@@ -462,6 +486,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       quickLinks: cardVisibility.showQuickLinks,
       siteActivity: cardVisibility.showSiteActivity,
       waitingOnYou: cardVisibility.showWaitingOnYou,
+      waitingOnOthers: cardVisibility.showWaitingOnOthers,
     };
     return visibilityMap[cardId] ?? false;
   };
@@ -504,6 +529,19 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
             includeTeamsChats={waitingOnYouSettings.includeTeamsChats}
             includeChannels={waitingOnYouSettings.includeChannels}
             includeMentions={waitingOnYouSettings.includeMentions}
+          />
+        );
+      case 'waitingOnOthers':
+        return (
+          <WaitingOnOthersCard
+            context={context}
+            settings={{
+              minWaitHours: waitingOnOthersSettings.minWaitHours,
+              includeEmail: waitingOnOthersSettings.includeEmail,
+              includeTeamsChats: waitingOnOthersSettings.includeTeamsChats,
+              includeMentions: waitingOnOthersSettings.includeMentions,
+              showChart: waitingOnOthersSettings.showChart,
+            }}
           />
         );
       default:

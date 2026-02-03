@@ -144,7 +144,7 @@ import {
   Fingerprint24Regular,
 } from '@fluentui/react-icons';
 import { MiniCard } from './MiniCard';
-import { CardSettingsDrawer, IWaitingOnYouSettings } from './CardSettingsDrawer';
+import { CardSettingsDrawer, IWaitingOnYouSettings, IWaitingOnOthersSettings } from './CardSettingsDrawer';
 
 export interface ICategoryConfig {
   id: string;
@@ -178,6 +178,9 @@ export interface ICardConfigDialogProps {
   // Waiting On You settings
   waitingOnYouSettings?: IWaitingOnYouSettings;
   onWaitingOnYouSettingsChanged?: (settings: IWaitingOnYouSettings) => void;
+  // Waiting On Others settings
+  waitingOnOthersSettings?: IWaitingOnOthersSettings;
+  onWaitingOnOthersSettingsChanged?: (settings: IWaitingOnOthersSettings) => void;
 }
 
 export type CategoryId = 'calendar' | 'email' | 'tasks' | 'files' | 'people' | 'navigation' | 'available' | string;
@@ -387,6 +390,7 @@ const CARD_DEFINITIONS: Record<string, { icon: React.ReactElement; defaultTitle:
   quickLinks: { icon: <Link24Regular />, defaultTitle: 'Quick Links', defaultCategory: 'navigation', description: "Jump to frequently used sites and resources" },
   siteActivity: { icon: <History24Regular />, defaultTitle: 'Site Activity', defaultCategory: 'people', description: "See recent activity on your SharePoint sites" },
   waitingOnYou: { icon: <PersonClock24Regular />, defaultTitle: 'Waiting On You', defaultCategory: 'email', description: "Messages and conversations awaiting your response" },
+  waitingOnOthers: { icon: <Clock24Regular />, defaultTitle: 'Waiting On Others', defaultCategory: 'email', description: "Track people who owe you a response" },
 };
 
 const ALL_CARD_IDS = Object.keys(CARD_DEFINITIONS);
@@ -882,6 +886,8 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
   onSave,
   waitingOnYouSettings,
   onWaitingOnYouSettingsChanged,
+  waitingOnOthersSettings,
+  onWaitingOnOthersSettingsChanged,
 }) => {
   const styles = useStyles();
 
@@ -1763,6 +1769,8 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
                 onReset={() => handleReset(selectedCard)}
                 waitingOnYouSettings={waitingOnYouSettings}
                 onWaitingOnYouSettingsChanged={onWaitingOnYouSettingsChanged}
+                waitingOnOthersSettings={waitingOnOthersSettings}
+                onWaitingOnOthersSettingsChanged={onWaitingOnOthersSettingsChanged}
               />
             )}
           </div>
