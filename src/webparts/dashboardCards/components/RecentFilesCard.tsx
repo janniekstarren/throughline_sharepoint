@@ -1,17 +1,17 @@
+// ============================================
+// RecentFilesCard - Displays recently accessed files
+// Refactored to use shared components
+// ============================================
+
 import * as React from 'react';
 import {
-  makeStyles,
   tokens,
-  Text,
   Caption1,
   Body1,
-  Body1Strong,
   Theme,
-  Spinner,
 } from '@fluentui/react-components';
 import {
   History24Regular,
-  ErrorCircle24Regular,
   FolderOpen24Regular,
   Folder20Regular,
   DocumentPdf20Regular,
@@ -21,6 +21,8 @@ import {
 import { IFileItem } from '../services/GraphService';
 import { MotionWrapper } from './MotionWrapper';
 import { ItemHoverCard, HoverCardItemType, IHoverCardItem } from './ItemHoverCard';
+import { BaseCard, CardHeader, EmptyState } from './shared';
+import { useCardStyles } from './cardStyles';
 
 export interface IRecentFilesCardProps {
   files: IFileItem[];
@@ -30,149 +32,6 @@ export interface IRecentFilesCardProps {
   theme?: Theme;
   title?: string;
 }
-
-// Fluent UI 9 styles using makeStyles and design tokens
-const useStyles = makeStyles({
-  card: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '400px',
-    backgroundColor: tokens.colorNeutralBackground1,
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
-    boxShadow: tokens.shadow4,
-  },
-  cardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    backgroundColor: tokens.colorNeutralBackground2,
-    flexShrink: 0,
-  },
-  cardIcon: {
-    fontSize: '20px',
-    color: tokens.colorBrandForeground1,
-  },
-  cardTitle: {
-    color: tokens.colorNeutralForeground1,
-  },
-  cardContent: {
-    flex: 1,
-    padding: tokens.spacingVerticalM,
-    overflowY: 'auto',
-    minHeight: 0,
-  },
-  errorContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: tokens.spacingVerticalXXL,
-    color: tokens.colorNeutralForeground3,
-    gap: tokens.spacingVerticalS,
-  },
-  errorIcon: {
-    fontSize: '24px',
-    color: tokens.colorPaletteRedForeground1,
-  },
-  emptyState: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: tokens.spacingVerticalXXL,
-    color: tokens.colorNeutralForeground3,
-    gap: tokens.spacingVerticalS,
-  },
-  emptyIcon: {
-    fontSize: '32px',
-    color: tokens.colorNeutralForeground4,
-  },
-  loadingContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: tokens.spacingVerticalXXL,
-    flex: 1,
-  },
-  fileList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.spacingVerticalS,
-  },
-  fileItem: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
-    borderRadius: tokens.borderRadiusSmall,
-    backgroundColor: tokens.colorNeutralBackground2,
-    textDecoration: 'none',
-    color: 'inherit',
-    gap: tokens.spacingHorizontalS,
-    transitionProperty: 'background-color',
-    transitionDuration: tokens.durationNormal,
-    transitionTimingFunction: tokens.curveEasyEase,
-    cursor: 'pointer',
-    border: 'none',
-    outline: 'none',
-    width: '100%',
-    textAlign: 'left',
-    ':hover': {
-      backgroundColor: tokens.colorNeutralBackground3,
-    },
-    ':focus-visible': {
-      outlineStyle: 'solid',
-      outlineWidth: '2px',
-      outlineColor: tokens.colorBrandStroke1,
-      outlineOffset: '2px',
-    },
-  },
-  fileIcon: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '20px',
-    color: tokens.colorNeutralForeground2,
-    flexShrink: 0,
-  },
-  fileDetails: {
-    flex: 1,
-    minWidth: 0,
-    overflow: 'hidden',
-  },
-  fileName: {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    color: tokens.colorNeutralForeground1,
-  },
-  fileMeta: {
-    display: 'flex',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: '2px 8px',
-    marginTop: tokens.spacingVerticalXS,
-    color: tokens.colorNeutralForeground3,
-  },
-  modifiedBy: {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    flex: '1 1 auto',
-    minWidth: '40px',
-  },
-  modifiedTime: {
-    flexShrink: 0,
-    whiteSpace: 'nowrap',
-  },
-  fileSize: {
-    flexShrink: 0,
-    whiteSpace: 'nowrap',
-  },
-});
 
 // File icon component using Fluent UI 9 icons
 const FileTypeIcon: React.FC<{ fileType?: string; isFolder: boolean }> = ({ fileType, isFolder }) => {
@@ -194,14 +53,21 @@ const FileTypeIcon: React.FC<{ fileType?: string; isFolder: boolean }> = ({ file
       'pptx': '#d24726',
       'ppt': '#d24726',
     };
-    return { color: colorMap[type] || '#605e5c' };
+    return { color: colorMap[type] || tokens.colorNeutralForeground2 };
   };
 
   return <Document20Regular style={getFileStyle()} />;
 };
 
-export const RecentFilesCard: React.FC<IRecentFilesCardProps> = ({ files, loading, error, onAction, theme, title }) => {
-  const styles = useStyles();
+export const RecentFilesCard: React.FC<IRecentFilesCardProps> = ({
+  files,
+  loading,
+  error,
+  onAction,
+  theme,
+  title
+}) => {
+  const styles = useCardStyles();
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -221,68 +87,87 @@ export const RecentFilesCard: React.FC<IRecentFilesCardProps> = ({ files, loadin
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
+  // Empty state content
+  if (!loading && !error && files.length === 0) {
+    return (
+      <BaseCard testId="recent-files-card">
+        <CardHeader
+          icon={<History24Regular />}
+          title={title || 'Recent Files'}
+          iconWrapperStyle={{ backgroundColor: tokens.colorPaletteBlueForeground2 }}
+        />
+        <EmptyState
+          icon={<FolderOpen24Regular />}
+          title="No recent files"
+          description="Files you work with will appear here"
+        />
+      </BaseCard>
+    );
+  }
+
   return (
-    <div className={styles.card}>
-      <div className={styles.cardHeader}>
-        <History24Regular className={styles.cardIcon} />
-        <Body1Strong className={styles.cardTitle}>{title || 'Recent Files'}</Body1Strong>
-      </div>
+    <BaseCard
+      loading={loading}
+      error={error}
+      loadingMessage="Loading files..."
+      testId="recent-files-card"
+    >
+      <CardHeader
+        icon={<History24Regular />}
+        title={title || 'Recent Files'}
+        badge={files.length > 0 ? files.length : undefined}
+        iconWrapperStyle={{ backgroundColor: tokens.colorPaletteBlueForeground2 }}
+      />
       <div className={styles.cardContent}>
-        {loading ? (
-          <div className={styles.loadingContainer}>
-            <Spinner size="medium" />
-          </div>
-        ) : error ? (
-          <div className={styles.errorContainer}>
-            <ErrorCircle24Regular className={styles.errorIcon} />
-            <Text>{error}</Text>
-          </div>
-        ) : files.length === 0 ? (
-          <MotionWrapper visible={true}>
-            <div className={styles.emptyState}>
-              <FolderOpen24Regular className={styles.emptyIcon} />
-              <Text>No recent files</Text>
-            </div>
-          </MotionWrapper>
-        ) : (
-          <MotionWrapper visible={true}>
-            <div className={styles.fileList}>
-              {files.map(file => (
-                <ItemHoverCard
-                  key={file.id}
-                  item={file}
-                  itemType="file"
-                  onAction={onAction}
-                  theme={theme}
+        <MotionWrapper visible={true}>
+          <div className={styles.itemList}>
+            {files.map(file => (
+              <ItemHoverCard
+                key={file.id}
+                item={file}
+                itemType="file"
+                onAction={onAction}
+                theme={theme}
+              >
+                <div
+                  className={styles.item}
+                  role="button"
+                  tabIndex={0}
                 >
-                  <div
-                    className={styles.fileItem}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <div className={styles.fileIcon}>
-                      <FileTypeIcon fileType={file.fileType} isFolder={file.isFolder} />
-                    </div>
-                    <div className={styles.fileDetails}>
-                      <Body1 className={styles.fileName}>{file.name}</Body1>
-                      <div className={styles.fileMeta}>
-                        {file.lastModifiedBy && (
-                          <Caption1 className={styles.modifiedBy}>{file.lastModifiedBy}</Caption1>
-                        )}
-                        <Caption1 className={styles.modifiedTime}>{formatDate(file.lastModifiedDateTime)}</Caption1>
-                        {!file.isFolder && (
-                          <Caption1 className={styles.fileSize}>{formatFileSize(file.size)}</Caption1>
-                        )}
-                      </div>
+                  <div className={styles.itemIcon}>
+                    <FileTypeIcon fileType={file.fileType} isFolder={file.isFolder} />
+                  </div>
+                  <div className={styles.itemContent}>
+                    <Body1 className={styles.itemTitle}>{file.name}</Body1>
+                    <div className={styles.itemMeta} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {file.lastModifiedBy && (
+                        <Caption1 style={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          flex: '1 1 auto',
+                          minWidth: '40px'
+                        }}>
+                          {file.lastModifiedBy}
+                        </Caption1>
+                      )}
+                      <Caption1 style={{ flexShrink: 0 }}>
+                        {formatDate(file.lastModifiedDateTime)}
+                      </Caption1>
+                      {!file.isFolder && (
+                        <Caption1 style={{ flexShrink: 0 }}>
+                          {formatFileSize(file.size)}
+                        </Caption1>
+                      )}
                     </div>
                   </div>
-                </ItemHoverCard>
-              ))}
-            </div>
-          </MotionWrapper>
-        )}
+                </div>
+              </ItemHoverCard>
+            ))}
+          </div>
+        </MotionWrapper>
       </div>
-    </div>
+    </BaseCard>
   );
 };
 
