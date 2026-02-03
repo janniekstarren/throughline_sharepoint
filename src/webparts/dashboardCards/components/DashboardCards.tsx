@@ -59,6 +59,16 @@ export type { ICategoryConfig };
 const LARGE_CARDS = ['todaysAgenda', 'unreadInbox', 'upcomingWeek', 'flaggedEmails'];
 const isLargeCard = (cardId: string): boolean => LARGE_CARDS.includes(cardId);
 
+// Default icon IDs for system categories (matches AVAILABLE_ICONS in CardConfigDialog)
+const DEFAULT_CATEGORY_ICONS: Record<string, string> = {
+  calendar: 'calendar',
+  email: 'mail',
+  tasks: 'tasks',
+  files: 'document',
+  people: 'people',
+  navigation: 'link',
+};
+
 export interface IDashboardCardsProps {
   context: WebPartContext;
   salutationType: SalutationType;
@@ -448,10 +458,17 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   // Cards are rendered in user-defined order within each category
   const getOrderedCards = (): React.ReactNode[] => {
     const result: React.ReactNode[] = [];
-    const hasCategoryConfig = categoryOrder.length > 0 && Object.keys(cardCategoryAssignment).length > 0;
 
-    if (!hasCategoryConfig) {
-      // No category config - render all cards in a single CategorySection
+    // Check for valid category configuration:
+    // - Must have categories defined
+    // - Must have category config
+    // - Must have at least one card assigned to a valid category
+    const hasValidCategoryConfig = categoryOrder.length > 0 &&
+      Object.keys(categoryConfig).length > 0 &&
+      Object.values(cardCategoryAssignment).some(catId => categoryOrder.includes(catId));
+
+    if (!hasValidCategoryConfig) {
+      // No valid category config - render all cards in a single CategorySection
       // Maintain user's card order
       const orderedCards: IOrderedCard[] = cardOrder
         .filter(id => isCardVisible(id))
@@ -471,6 +488,9 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       ];
     }
 
+    // Track which cards have been rendered
+    const renderedCards = new Set<string>();
+
     // Render each category with its own CategorySection
     categoryOrder.forEach(categoryId => {
       const catConfig = categoryConfig[categoryId];
@@ -485,6 +505,9 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
 
       if (cardsInCategory.length === 0) return;
 
+      // Track these cards as rendered
+      cardsInCategory.forEach(id => renderedCards.add(id));
+
       // Create ordered cards array that preserves user's order
       const orderedCards: IOrderedCard[] = cardsInCategory.map(id => ({
         id,
@@ -493,6 +516,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       }));
 
       const categoryName = categoryNames[categoryId] || categoryId;
+      // Use custom icon if set, otherwise fall back to default icon for system categories
+      const iconId = categoryIcons[categoryId] || DEFAULT_CATEGORY_ICONS[categoryId];
 
       result.push(
         <CategorySection
@@ -500,10 +525,33 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
           categoryId={categoryId}
           categoryName={categoryName}
           showTitle={catConfig?.showTitle !== false}
+          iconId={iconId}
           orderedCards={orderedCards}
         />
       );
     });
+
+    // Render any unassigned cards at the end (fallback)
+    const unassignedCards = cardOrder.filter(
+      cardId => !renderedCards.has(cardId) && isCardVisible(cardId)
+    );
+
+    if (unassignedCards.length > 0) {
+      const orderedUnassigned: IOrderedCard[] = unassignedCards.map(id => ({
+        id,
+        isLarge: isLargeCard(id),
+        element: renderCardElement(id)
+      }));
+
+      result.push(
+        <CategorySection
+          key="unassigned"
+          categoryId="unassigned"
+          showTitle={false}
+          orderedCards={orderedUnassigned}
+        />
+      );
+    }
 
     return result;
   };

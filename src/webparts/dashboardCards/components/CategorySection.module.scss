@@ -13,6 +13,9 @@
 }
 
 .categoryTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
   font-weight: 600;
   color: var(--colorNeutralForeground2, #605e5c);
@@ -21,6 +24,19 @@
   margin: 0 0 16px 0;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--colorNeutralStroke2, #edebe9);
+}
+
+.categoryIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--colorBrandForeground1, #0078d4);
+  font-size: 18px;
+
+  > svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 // ============================================

@@ -137,7 +137,7 @@ function getTimeBasedGreeting(): string {
   } else if (hour >= 17 && hour < 21) {
     return 'Good evening';
   } else {
-    return 'Good evening'; // Late night
+    return 'Good night'; // 9 PM to 5 AM
   }
 }
 

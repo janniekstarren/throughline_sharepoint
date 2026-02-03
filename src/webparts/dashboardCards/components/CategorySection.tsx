@@ -1,5 +1,6 @@
 import * as React from 'react';
 import Masonry from 'react-masonry-css';
+import { getIconById } from '../propertyPane/CardConfigDialog';
 import styles from './CategorySection.module.scss';
 
 // A card with its size information for ordered rendering
@@ -13,6 +14,7 @@ export interface ICategorySectionProps {
   categoryId: string;
   categoryName?: string;
   showTitle?: boolean;
+  iconId?: string;  // Icon ID to display next to category title
   orderedCards: IOrderedCard[];  // Cards in user-defined order with size info
 }
 
@@ -26,6 +28,7 @@ const masonryBreakpoints = {
 export const CategorySection: React.FC<ICategorySectionProps> = ({
   categoryName,
   showTitle = true,
+  iconId,
   orderedCards
 }) => {
   // Don't render empty sections
@@ -81,9 +84,12 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
 
   return (
     <section className={styles.categorySection}>
-      {/* Category title */}
+      {/* Category title with optional icon */}
       {showTitle && categoryName && (
-        <h3 className={styles.categoryTitle}>{categoryName}</h3>
+        <h3 className={styles.categoryTitle}>
+          {iconId && <span className={styles.categoryIcon}>{getIconById(iconId)}</span>}
+          {categoryName}
+        </h3>
       )}
 
       {/* Render cards in order */}

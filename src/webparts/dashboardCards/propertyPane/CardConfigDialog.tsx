@@ -1419,7 +1419,8 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
   };
 
   const confirmDeleteCategory = (categoryId: string): void => {
-    if (CATEGORIES[categoryId]?.isSystem) return;
+    // Don't allow deleting the 'available' category
+    if (categoryId === 'available') return;
 
     const cardsInCategory = getCardsInCategory(categoryId);
     setCardCategoryAssignment(prev => {
@@ -1522,7 +1523,6 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
                 const isAvailable = categoryId === 'available';
                 const isEmptyAvailable = isAvailable && cardsInCategory.length === 0;
                 const catConfig = categoryConfig[categoryId] || { id: categoryId, visible: true, showTitle: true };
-                const isCustomCategory = !CATEGORIES[categoryId]?.isSystem;
                 const isDragTarget = dragState.dropTarget?.categoryId === categoryId && dragState.draggedCard !== null;
                 const isCategoryDragging = dragState.draggedCategory === categoryId;
                 const isCategoryDragTarget = dragState.categoryDropTarget === categoryId && dragState.draggedCategory !== null;
@@ -1609,56 +1609,54 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
                                 onClick={(e) => toggleCategoryVisibility(categoryId, e)}
                                 title={catConfig.visible ? "Hide category" : "Show category"}
                               />
-                              {isCustomCategory && (
-                                <Popover
-                                  open={deleteCategoryPopoverOpen === categoryId}
-                                  onOpenChange={(_, data) => {
-                                    if (!data.open) {
-                                      setDeleteCategoryPopoverOpen(null);
-                                    }
-                                  }}
-                                  positioning="below"
-                                >
-                                  <PopoverTrigger disableButtonEnhancement>
-                                    <Button
-                                      appearance="subtle"
-                                      icon={<Delete24Regular />}
-                                      className={styles.headerButton}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setDeleteCategoryPopoverOpen(categoryId);
-                                      }}
-                                      title="Delete category"
-                                    />
-                                  </PopoverTrigger>
-                                  <PopoverSurface onClick={(e) => e.stopPropagation()}>
-                                    <div className={styles.deletePopover}>
-                                      <Text className={styles.deletePopoverWarning}>
-                                        Delete this category?
-                                      </Text>
-                                      <Text className={styles.deletePopoverText}>
-                                        Cards in this category will be moved to Available Cards.
-                                      </Text>
-                                      <div className={styles.deletePopoverActions}>
-                                        <Button
-                                          appearance="secondary"
-                                          size="small"
-                                          onClick={() => setDeleteCategoryPopoverOpen(null)}
-                                        >
-                                          Cancel
-                                        </Button>
-                                        <Button
-                                          appearance="primary"
-                                          size="small"
-                                          onClick={() => confirmDeleteCategory(categoryId)}
-                                        >
-                                          Delete
-                                        </Button>
-                                      </div>
+                              <Popover
+                                open={deleteCategoryPopoverOpen === categoryId}
+                                onOpenChange={(_, data) => {
+                                  if (!data.open) {
+                                    setDeleteCategoryPopoverOpen(null);
+                                  }
+                                }}
+                                positioning="below"
+                              >
+                                <PopoverTrigger disableButtonEnhancement>
+                                  <Button
+                                    appearance="subtle"
+                                    icon={<Delete24Regular />}
+                                    className={styles.headerButton}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleteCategoryPopoverOpen(categoryId);
+                                    }}
+                                    title="Delete category"
+                                  />
+                                </PopoverTrigger>
+                                <PopoverSurface onClick={(e) => e.stopPropagation()}>
+                                  <div className={styles.deletePopover}>
+                                    <Text className={styles.deletePopoverWarning}>
+                                      Delete this category?
+                                    </Text>
+                                    <Text className={styles.deletePopoverText}>
+                                      Cards in this category will be moved to Available Cards.
+                                    </Text>
+                                    <div className={styles.deletePopoverActions}>
+                                      <Button
+                                        appearance="secondary"
+                                        size="small"
+                                        onClick={() => setDeleteCategoryPopoverOpen(null)}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        appearance="primary"
+                                        size="small"
+                                        onClick={() => confirmDeleteCategory(categoryId)}
+                                      >
+                                        Delete
+                                      </Button>
                                     </div>
-                                  </PopoverSurface>
-                                </Popover>
-                              )}
+                                  </div>
+                                </PopoverSurface>
+                              </Popover>
                             </>
                           )}
                         </>
