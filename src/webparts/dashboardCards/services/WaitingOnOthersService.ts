@@ -16,6 +16,12 @@ import {
 import { GraphCacheService } from './GraphCacheService';
 import { UserResolverService } from './UserResolverService';
 import { PhotoService } from './PhotoService';
+import {
+  detectQuestion,
+  detectActionRequest,
+  detectDeadline,
+  stripHtml
+} from '../utils/textAnalysis';
 
 export class WaitingOnOthersService {
   private graphClient: MSGraphClientV3;
@@ -204,9 +210,9 @@ export class WaitingOnOthersService {
       waitingDuration: hoursWaiting,
       webUrl: email.webLink,
       conversationId: email.conversationId,
-      wasQuestion: this.detectQuestion(preview),
-      requestedAction: this.detectActionRequest(preview),
-      mentionedDeadline: this.detectDeadline(preview),
+      wasQuestion: detectQuestion(preview),
+      requestedAction: detectActionRequest(preview),
+      mentionedDeadline: detectDeadline(preview),
       reminderCount: 0
     };
   }
@@ -261,7 +267,7 @@ export class WaitingOnOthersService {
   private mapChatToPending(chat: any, lastMsg: any, member: any): PendingResponse {
     const sentDate = new Date(lastMsg.createdDateTime);
     const hoursWaiting = Math.floor((Date.now() - sentDate.getTime()) / (1000 * 60 * 60));
-    const content = this.stripHtml(lastMsg.body?.content) || '';
+    const content = stripHtml(lastMsg.body?.content) || '';
 
     return {
       id: `${chat.id}-${member.userId}`,
@@ -278,9 +284,9 @@ export class WaitingOnOthersService {
       waitingDuration: hoursWaiting,
       webUrl: chat.webUrl || `https://teams.microsoft.com/l/chat/${chat.id}`,
       chatId: chat.id,
-      wasQuestion: this.detectQuestion(content),
-      requestedAction: this.detectActionRequest(content),
-      mentionedDeadline: this.detectDeadline(content),
+      wasQuestion: detectQuestion(content),
+      requestedAction: detectActionRequest(content),
+      mentionedDeadline: detectDeadline(content),
       reminderCount: 0
     };
   }
@@ -549,45 +555,4 @@ export class WaitingOnOthersService {
     }
   }
 
-  // ============================================
-  // Utility Methods
-  // ============================================
-
-  private detectQuestion(text?: string): boolean {
-    if (!text) return false;
-    const patterns = [
-      /\?/,
-      /can you/i, /could you/i, /would you/i,
-      /what do you think/i, /thoughts\??/i,
-      /let me know/i
-    ];
-    return patterns.some(p => p.test(text));
-  }
-
-  private detectActionRequest(text?: string): boolean {
-    if (!text) return false;
-    const patterns = [
-      /please (send|provide|share|review|approve|confirm|check|update)/i,
-      /can you (send|provide|share|review|approve|confirm|check|update)/i,
-      /need you to/i,
-      /action required/i
-    ];
-    return patterns.some(p => p.test(text));
-  }
-
-  private detectDeadline(text?: string): boolean {
-    if (!text) return false;
-    const patterns = [
-      /by (monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i,
-      /by (end of day|eod|cob|close of business)/i,
-      /deadline/i, /due (by|on|date)/i,
-      /urgent/i, /asap/i
-    ];
-    return patterns.some(p => p.test(text));
-  }
-
-  private stripHtml(html?: string): string {
-    if (!html) return '';
-    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
-  }
 }

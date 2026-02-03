@@ -19,6 +19,11 @@ import {
 import { GraphCacheService } from './GraphCacheService';
 import { UserResolverService } from './UserResolverService';
 import { PhotoService } from './PhotoService';
+import {
+  detectQuestion,
+  detectDeadline,
+  stripHtml
+} from '../utils/textAnalysis';
 
 export class WaitingOnYouService {
   private graphClient: MSGraphClientV3;
@@ -261,8 +266,8 @@ export class WaitingOnYouService {
       urgencyScore: 0,
       urgencyFactors: [],
       webUrl: email.webLink,
-      isQuestion: this.detectQuestion(preview),
-      hasDeadlineMention: this.detectDeadline(preview),
+      isQuestion: detectQuestion(preview),
+      hasDeadlineMention: detectDeadline(preview),
       mentionedDates: this.extractDates(preview),
       isMention: false  // Emails don't have @mentions
     };
@@ -305,7 +310,7 @@ export class WaitingOnYouService {
     const lastMsg = chat.lastMessagePreview;
     const receivedDate = new Date(lastMsg.createdDateTime);
     const hoursStale = Math.floor((Date.now() - receivedDate.getTime()) / (1000 * 60 * 60));
-    const content = this.stripHtml(lastMsg.body?.content) || '';
+    const content = stripHtml(lastMsg.body?.content) || '';
 
     return {
       id: chat.id,
@@ -325,8 +330,8 @@ export class WaitingOnYouService {
       webUrl: chat.webUrl || `https://teams.microsoft.com/l/chat/${chat.id}`,
       chatId: chat.id,
       replyToId: lastMsg.id,
-      isQuestion: this.detectQuestion(content),
-      hasDeadlineMention: this.detectDeadline(content),
+      isQuestion: detectQuestion(content),
+      hasDeadlineMention: detectDeadline(content),
       mentionedDates: this.extractDates(content),
       isMention: false  // Will be set to true if found in mentions search
     };
@@ -387,7 +392,7 @@ export class WaitingOnYouService {
   private mapChannelMessageToConversation(message: { id: string; subject?: string; createdDateTime: string; body?: { content?: string }; from?: { user?: { id: string; displayName?: string } }; webUrl?: string }, team: Team, channel: { id: string; displayName: string; webUrl?: string }): StaleConversation {
     const receivedDate = new Date(message.createdDateTime);
     const hoursStale = Math.floor((Date.now() - receivedDate.getTime()) / (1000 * 60 * 60));
-    const content = this.stripHtml(message.body?.content) || '';
+    const content = stripHtml(message.body?.content) || '';
 
     return {
       id: message.id,
@@ -411,8 +416,8 @@ export class WaitingOnYouService {
       channelName: channel.displayName,
       chatId: `${team.id}:${channel.id}`,
       replyToId: message.id,
-      isQuestion: this.detectQuestion(content),
-      hasDeadlineMention: this.detectDeadline(content),
+      isQuestion: detectQuestion(content),
+      hasDeadlineMention: detectDeadline(content),
       mentionedDates: this.extractDates(content),
       isMention: true  // Channel messages are already filtered for mentions
     };
@@ -493,7 +498,7 @@ export class WaitingOnYouService {
   ): StaleConversation {
     const receivedDate = new Date(message.createdDateTime);
     const hoursStale = Math.floor((Date.now() - receivedDate.getTime()) / (1000 * 60 * 60));
-    const content = this.stripHtml(message.body?.content) || '';
+    const content = stripHtml(message.body?.content) || '';
     const isGroupChat = chat.chatType === 'group';
 
     return {
@@ -514,8 +519,8 @@ export class WaitingOnYouService {
       webUrl: message.webUrl || chat.webUrl || '',
       chatId: chat.id,
       replyToId: message.id,
-      isQuestion: this.detectQuestion(content),
-      hasDeadlineMention: this.detectDeadline(content),
+      isQuestion: detectQuestion(content),
+      hasDeadlineMention: detectDeadline(content),
       mentionedDates: this.extractDates(content),
       isMention: true
     };
@@ -884,40 +889,11 @@ export class WaitingOnYouService {
   }
 
   // ============================================
-  // Utility Methods
+  // Utility Methods (kept for specific service logic)
   // ============================================
-
-  private detectQuestion(text?: string): boolean {
-    if (!text) return false;
-    const patterns = [
-      /\?/,
-      /can you/i, /could you/i, /would you/i,
-      /what do you think/i, /thoughts\??/i,
-      /let me know/i, /waiting for/i, /need your/i,
-      /please (confirm|review|approve|check)/i
-    ];
-    return patterns.some(p => p.test(text));
-  }
-
-  private detectDeadline(text?: string): boolean {
-    if (!text) return false;
-    const patterns = [
-      /by (monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i,
-      /by (end of day|eod|cob|close of business)/i,
-      /deadline/i, /due (by|on|date)/i,
-      /urgent/i, /asap/i, /time.?sensitive/i,
-      /by \d{1,2}(\/|-)\d{1,2}/
-    ];
-    return patterns.some(p => p.test(text));
-  }
 
   private extractDates(_text?: string): Date[] {
     // TODO: Implement date extraction if needed
     return [];
-  }
-
-  private stripHtml(html?: string): string {
-    if (!html) return '';
-    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
   }
 }
