@@ -22,17 +22,14 @@
 }
 
 // ============================================
-// HIERARCHICAL GRID SYSTEM
-// Uses explicit 3-column grid for desktop
+// 12-COLUMN GRID SYSTEM
+// Desktop: Large cards span 8, Medium cards span 4
 // ============================================
 .cardGrid {
   display: grid;
+  grid-template-columns: repeat(12, 1fr);
   gap: 24px;
   align-content: start;
-  width: 100%;
-  box-sizing: border-box;
-  // Desktop default: 3 columns
-  grid-template-columns: repeat(3, 1fr);
 }
 
 // Category header - spans full width
@@ -60,13 +57,14 @@
 
 // ============================================
 // CARD SIZE VARIANTS
-// All cards use flexible sizing without min-width
+// Large: 8/12 columns (2/3 width)
+// Medium: 4/12 columns (1/3 width)
 // ============================================
 
-// Large Card - Master-Detail layout (spans 2 of 3 columns on desktop)
+// Large Card - Master-Detail layout (8 of 12 columns = 2/3 width)
 .cardLarge {
-  grid-column: span 2;
-  min-height: 420px;
+  grid-column: span 8;
+  min-height: 440px;
   max-height: 480px;
   overflow: hidden;
 
@@ -77,11 +75,12 @@
   }
 }
 
-// Medium Card - Standard list layout (spans 1 column)
+// Medium Card - Standard list layout (4 of 12 columns = 1/3 width)
 .cardMedium {
-  grid-column: span 1;
-  min-height: 380px;
-  max-height: 420px;
+  grid-column: span 4;
+  min-width: 320px;
+  min-height: 400px;
+  max-height: 440px;
   overflow: hidden;
 
   > div {
@@ -174,87 +173,31 @@
   }
 }
 
-// Tablet: 2-column grid (768px - 1199px)
+// Tablet: 12-column grid (768px - 1199px)
 @media (min-width: 768px) and (max-width: 1199px) {
   .cardGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(12, 1fr);
     gap: 20px;
   }
 
   .cardLarge {
-    grid-column: 1 / -1; // Full width
+    grid-column: span 12; // Full width
   }
 
   .cardMedium {
-    grid-column: span 1; // Half width
+    grid-column: span 6; // Half width
   }
 
   .cardCompact {
-    grid-column: span 1;
+    grid-column: span 6;
   }
 
   .cardStandard {
-    grid-column: span 1;
+    grid-column: span 6;
   }
 
   .cardWide {
-    grid-column: 1 / -1;
-  }
-}
-
-// Desktop: 3-column grid (1200px - 1599px)
-@media (min-width: 1200px) and (max-width: 1599px) {
-  .cardGrid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-  }
-
-  .cardLarge {
-    grid-column: span 2; // 2/3 width
-  }
-
-  .cardMedium {
-    grid-column: span 1; // 1/3 width
-  }
-
-  .cardCompact {
-    grid-column: span 1;
-  }
-
-  .cardStandard {
-    grid-column: span 1;
-  }
-
-  .cardWide {
-    grid-column: span 2;
-  }
-}
-
-// Large Desktop: 3-column with more space (>= 1600px)
-@media (min-width: 1600px) {
-  .cardGrid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-  }
-
-  .cardLarge {
-    grid-column: span 2;
-  }
-
-  .cardMedium {
-    grid-column: span 1;
-  }
-
-  .cardCompact {
-    grid-column: span 1;
-  }
-
-  .cardStandard {
-    grid-column: span 1;
-  }
-
-  .cardWide {
-    grid-column: span 2;
+    grid-column: span 12;
   }
 }
 
