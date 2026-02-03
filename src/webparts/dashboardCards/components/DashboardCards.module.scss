@@ -22,14 +22,18 @@
 }
 
 // ============================================
-// 12-COLUMN GRID SYSTEM
-// Desktop: Large cards span 8, Medium cards span 4
+// HIERARCHICAL 12-COLUMN GRID SYSTEM
+// Large cards (8 cols) and Medium cards (4 cols) don't squash each other
 // ============================================
 .cardGrid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 24px;
   align-content: start;
+  // Prevent squishing - ensure consistent row heights
+  grid-auto-rows: minmax(400px, auto);
+  // Fill gaps intelligently without reordering
+  grid-auto-flow: row dense;
 }
 
 // Category header - spans full width
@@ -64,29 +68,32 @@
 // Large Card - Master-Detail layout (8 of 12 columns = 2/3 width)
 .cardLarge {
   grid-column: span 8;
+  grid-row: span 1;
   min-height: 440px;
   max-height: 480px;
   overflow: hidden;
 
   > div {
     height: 100%;
-    min-height: inherit;
-    max-height: inherit;
+    display: flex;
+    flex-direction: column;
   }
 }
 
 // Medium Card - Standard list layout (4 of 12 columns = 1/3 width)
 .cardMedium {
   grid-column: span 4;
-  min-width: 320px;
+  grid-row: span 1;
   min-height: 400px;
   max-height: 440px;
   overflow: hidden;
+  // Align to top of row - don't stretch to match Large card height
+  align-self: start;
 
   > div {
     height: 100%;
-    min-height: inherit;
-    max-height: inherit;
+    display: flex;
+    flex-direction: column;
   }
 }
 
