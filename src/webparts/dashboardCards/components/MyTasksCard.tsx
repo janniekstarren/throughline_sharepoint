@@ -107,7 +107,7 @@ const useStyles = makeStyles({
   taskItem: {
     display: 'flex',
     alignItems: 'flex-start',
-    padding: tokens.spacingVerticalS,
+    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
     borderRadius: tokens.borderRadiusSmall,
     backgroundColor: tokens.colorNeutralBackground2,
     textDecoration: 'none',
@@ -157,7 +157,8 @@ const useStyles = makeStyles({
   taskMeta: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalM,
+    flexWrap: 'wrap',
+    gap: '2px 8px',
     marginTop: tokens.spacingVerticalXS,
     color: tokens.colorNeutralForeground3,
   },
@@ -165,12 +166,15 @@ const useStyles = makeStyles({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+    flex: '1 1 auto',
+    minWidth: '60px',
   },
   dueDate: {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacingHorizontalXXS,
     flexShrink: 0,
+    whiteSpace: 'nowrap',
   },
   overdueDue: {
     color: tokens.colorPaletteRedForeground1,

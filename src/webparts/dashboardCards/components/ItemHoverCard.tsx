@@ -7,18 +7,15 @@ import {
   Button,
   Badge,
   Persona,
-  Divider,
-  Text,
-  Caption1,
-  Caption1Strong,
-  Body1,
-  Body1Strong,
   makeStyles,
   tokens,
   mergeClasses,
   FluentProvider,
   webLightTheme,
   Theme,
+  Caption1,
+  Body1,
+  Body1Strong,
 } from '@fluentui/react-components';
 import {
   // Email actions
@@ -76,114 +73,138 @@ export interface IItemHoverCardProps {
   theme?: Theme;
 }
 
-// Fluent 2 styles using makeStyles and design tokens
-// Following Fluent 2 design guidelines: softer shadows, larger radius, more whitespace
+// Fluent 2 consistent styles - matches existing card patterns
 const useStyles = makeStyles({
   popoverSurface: {
     minWidth: '320px',
-    maxWidth: '400px',
+    maxWidth: '380px',
     padding: '0',
-    borderRadius: tokens.borderRadiusLarge, // Fluent 2: larger border radius
-    boxShadow: tokens.shadow8, // Fluent 2: softer shadow
+    borderRadius: tokens.borderRadiusMedium,
+    boxShadow: tokens.shadow16,
     backgroundColor: tokens.colorNeutralBackground1,
-    border: 'none', // Fluent 2: rely on shadow, not border
+    border: `1px solid ${tokens.colorNeutralStroke1}`,
     overflow: 'hidden',
   },
+
   header: {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacingHorizontalS,
-    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`, // More padding
-    backgroundColor: tokens.colorNeutralBackground1, // Same as content
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    backgroundColor: tokens.colorNeutralBackground2,
   },
+
   headerIcon: {
     fontSize: '20px',
     color: tokens.colorBrandForeground1,
+    flexShrink: 0,
   },
-  headerText: {
-    color: tokens.colorNeutralForeground2,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    fontSize: tokens.fontSizeBase200,
+
+  headerTextGroup: {
+    flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
   },
+
+  headerLabel: {
+    color: tokens.colorNeutralForeground3,
+  },
+
+  headerTitle: {
+    color: tokens.colorNeutralForeground1,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+
   content: {
-    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`, // More horizontal padding
+    padding: tokens.spacingVerticalM,
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacingVerticalM, // More breathing room
+    gap: tokens.spacingVerticalS,
+    maxHeight: '260px',
+    overflowY: 'auto',
   },
-  title: {
-    color: tokens.colorNeutralForeground1,
-    lineHeight: tokens.lineHeightBase400,
-  },
+
   field: {
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacingVerticalXXS,
+    gap: '2px',
   },
+
+  fieldLabel: {
+    color: tokens.colorNeutralForeground3,
+  },
+
+  fieldValue: {
+    color: tokens.colorNeutralForeground1,
+  },
+
+  fieldValueSecondary: {
+    color: tokens.colorNeutralForeground3,
+  },
+
   fieldRow: {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacingHorizontalS,
   },
+
   fieldIcon: {
     fontSize: '16px',
     color: tokens.colorNeutralForeground3,
     flexShrink: 0,
   },
-  label: {
-    color: tokens.colorNeutralForeground3,
-    fontSize: tokens.fontSizeBase200,
-  },
-  value: {
-    color: tokens.colorNeutralForeground1,
-  },
-  subValue: {
-    color: tokens.colorNeutralForeground3,
-    fontSize: tokens.fontSizeBase200,
-  },
+
   overdue: {
     color: tokens.colorPaletteRedForeground1,
   },
+
   preview: {
     color: tokens.colorNeutralForeground2,
-    lineHeight: tokens.lineHeightBase300,
+    fontSize: tokens.fontSizeBase200,
+    lineHeight: '1.5',
     maxHeight: '60px',
     overflow: 'hidden',
-    textOverflow: 'ellipsis',
     display: '-webkit-box',
     WebkitLineClamp: 3,
     WebkitBoxOrient: 'vertical',
     padding: tokens.spacingVerticalS,
     backgroundColor: tokens.colorNeutralBackground2,
-    borderRadius: tokens.borderRadiusMedium,
-    marginTop: tokens.spacingVerticalXS,
+    borderRadius: tokens.borderRadiusSmall,
   },
+
   badges: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: tokens.spacingHorizontalS,
-    marginTop: tokens.spacingVerticalS,
+    gap: tokens.spacingHorizontalXS,
   },
+
   personaSection: {
-    marginBottom: tokens.spacingVerticalM,
+    paddingBottom: tokens.spacingVerticalXS,
   },
-  divider: {
-    margin: '0',
-  },
+
   toolbar: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalL}`,
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
     backgroundColor: tokens.colorNeutralBackground2,
     borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+    gap: tokens.spacingHorizontalS,
   },
-  actions: {
+
+  actionsLeft: {
     display: 'flex',
     gap: tokens.spacingHorizontalXS,
   },
+
+  actionsRight: {
+    display: 'flex',
+    gap: tokens.spacingHorizontalXS,
+  },
+
   dangerousButton: {
     color: tokens.colorPaletteRedForeground1,
     ':hover': {
@@ -191,6 +212,7 @@ const useStyles = makeStyles({
       backgroundColor: tokens.colorPaletteRedBackground1,
     },
   },
+
   triggerWrapper: {
     display: 'block',
     width: '100%',
@@ -226,8 +248,9 @@ const ActionButton: React.FC<IActionButtonProps> = ({ icon, label, onClick, prim
   );
 };
 
-// Hover delay in milliseconds - prevents popover from appearing too quickly
+// Hover delay in milliseconds
 const HOVER_DELAY = 400;
+const CLOSE_DELAY = 300;
 
 export const ItemHoverCard: React.FC<IItemHoverCardProps> = ({
   children,
@@ -238,47 +261,40 @@ export const ItemHoverCard: React.FC<IItemHoverCardProps> = ({
 }) => {
   const styles = useStyles();
   const [isOpen, setIsOpen] = React.useState(false);
-  const [isHovering, setIsHovering] = React.useState(false);
   const triggerRef = React.useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const popoverRef = React.useRef<HTMLDivElement>(null);
+  const openTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Handle hover with delay
-  React.useEffect(() => {
-    if (isHovering) {
-      // Start timeout to open popover after delay
-      hoverTimeoutRef.current = setTimeout(() => {
-        setIsOpen(true);
-      }, HOVER_DELAY);
-    } else {
-      // Clear timeout if mouse leaves before delay completes
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-        hoverTimeoutRef.current = null;
-      }
+  const clearTimeouts = (): void => {
+    if (openTimeoutRef.current) {
+      clearTimeout(openTimeoutRef.current);
+      openTimeoutRef.current = null;
     }
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  };
 
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, [isHovering]);
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => clearTimeouts();
+  }, []);
 
   // Close popover on scroll
   React.useEffect(() => {
     if (!isOpen) return;
 
     const handleScroll = (): void => {
+      clearTimeouts();
       setIsOpen(false);
-      setIsHovering(false);
     };
 
-    // Listen for scroll events on all scrollable ancestors
     const scrollableParent = triggerRef.current?.closest('[class*="cardContent"]');
     if (scrollableParent) {
       scrollableParent.addEventListener('scroll', handleScroll, { passive: true });
     }
-    // Also listen on window for any other scroll events
     window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
 
     return () => {
@@ -289,27 +305,29 @@ export const ItemHoverCard: React.FC<IItemHoverCardProps> = ({
     };
   }, [isOpen]);
 
-  const handleMouseEnter = (): void => {
-    setIsHovering(true);
+  const handleTriggerMouseEnter = (): void => {
+    clearTimeouts();
+    openTimeoutRef.current = setTimeout(() => {
+      setIsOpen(true);
+    }, HOVER_DELAY);
   };
 
-  const handleMouseLeave = (): void => {
-    setIsHovering(false);
-    // Close after a small delay to allow moving to popover
-    setTimeout(() => {
+  const handleTriggerMouseLeave = (): void => {
+    clearTimeouts();
+    closeTimeoutRef.current = setTimeout(() => {
       setIsOpen(false);
-    }, 200);
+    }, CLOSE_DELAY);
   };
 
-  // Keep popover open when mouse enters the popover surface
   const handlePopoverMouseEnter = (): void => {
-    setIsHovering(true);
+    clearTimeouts();
   };
 
-  // Close when mouse leaves the popover surface
   const handlePopoverMouseLeave = (): void => {
-    setIsHovering(false);
-    setIsOpen(false);
+    clearTimeouts();
+    closeTimeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, CLOSE_DELAY);
   };
 
   const handleAction = (action: string): void => {
@@ -342,29 +360,28 @@ export const ItemHoverCard: React.FC<IItemHoverCardProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  // Email content and actions
+  // Email content
   const renderEmailContent = (email: IEmailMessage): JSX.Element => (
     <>
       <div className={styles.header}>
         <Mail24Regular className={styles.headerIcon} />
-        <Caption1Strong className={styles.headerText}>Email</Caption1Strong>
+        <div className={styles.headerTextGroup}>
+          <Caption1 className={styles.headerLabel}>Email</Caption1>
+          <Body1Strong className={styles.headerTitle}>{email.subject || '(No subject)'}</Body1Strong>
+        </div>
       </div>
       <div className={styles.content}>
         <div className={styles.field}>
-          <Caption1 className={styles.label}>From</Caption1>
-          <Body1Strong className={styles.value}>{email.from.name}</Body1Strong>
-          <Caption1 className={styles.subValue}>{email.from.email}</Caption1>
+          <Caption1 className={styles.fieldLabel}>From</Caption1>
+          <Body1 className={styles.fieldValue}>{email.from.name}</Body1>
+          <Caption1 className={styles.fieldValueSecondary}>{email.from.email}</Caption1>
         </div>
         <div className={styles.field}>
-          <Caption1 className={styles.label}>Subject</Caption1>
-          <Body1 className={styles.value}>{email.subject || '(No subject)'}</Body1>
-        </div>
-        <div className={styles.field}>
-          <Caption1 className={styles.label}>Received</Caption1>
-          <Caption1 className={styles.value}>{formatDateTime(email.receivedDateTime)}</Caption1>
+          <Caption1 className={styles.fieldLabel}>Received</Caption1>
+          <Body1 className={styles.fieldValue}>{formatDateTime(email.receivedDateTime)}</Body1>
         </div>
         {email.bodyPreview && (
-          <Text size={200} className={styles.preview}>{email.bodyPreview}</Text>
+          <div className={styles.preview}>{email.bodyPreview}</div>
         )}
         <div className={styles.badges}>
           {email.importance === 'high' && (
@@ -377,136 +394,95 @@ export const ItemHoverCard: React.FC<IItemHoverCardProps> = ({
           )}
         </div>
       </div>
-      <Divider className={styles.divider} />
       <div className={styles.toolbar}>
-        <div className={styles.actions}>
-          <ActionButton
-            icon={<ArrowReply20Regular />}
-            label="Reply"
-            onClick={() => handleAction('reply')}
-          />
-          <ActionButton
-            icon={<ArrowForward20Regular />}
-            label="Forward"
-            onClick={() => handleAction('forward')}
-          />
-          <ActionButton
-            icon={<Flag20Regular />}
-            label="Flag"
-            onClick={() => handleAction('flag')}
-          />
-          <ActionButton
-            icon={<MailRead20Regular />}
-            label={email.isRead ? 'Mark as unread' : 'Mark as read'}
-            onClick={() => handleAction('markRead')}
-          />
-          <ActionButton
-            icon={<Delete20Regular />}
-            label="Delete"
-            onClick={() => handleAction('delete')}
-            dangerous
-          />
+        <div className={styles.actionsLeft}>
+          <ActionButton icon={<ArrowReply20Regular />} label="Reply" onClick={() => handleAction('reply')} />
+          <ActionButton icon={<ArrowForward20Regular />} label="Forward" onClick={() => handleAction('forward')} />
+          <ActionButton icon={<Flag20Regular />} label="Flag" onClick={() => handleAction('flag')} />
+          <ActionButton icon={<MailRead20Regular />} label={email.isRead ? 'Mark as unread' : 'Mark as read'} onClick={() => handleAction('markRead')} />
+          <ActionButton icon={<Delete20Regular />} label="Delete" onClick={() => handleAction('delete')} dangerous />
         </div>
-        <ActionButton
-          icon={<Open20Regular />}
-          label="Open in Outlook"
-          onClick={() => openExternal(email.webLink)}
-          primary
-        />
+        <div className={styles.actionsRight}>
+          <ActionButton icon={<Open20Regular />} label="Open in Outlook" onClick={() => openExternal(email.webLink)} primary />
+        </div>
       </div>
     </>
   );
 
-  // Event content and actions
+  // Event content
   const renderEventContent = (event: ICalendarEvent): JSX.Element => (
     <>
       <div className={styles.header}>
         <CalendarLtr24Regular className={styles.headerIcon} />
-        <Caption1Strong className={styles.headerText}>Event</Caption1Strong>
+        <div className={styles.headerTextGroup}>
+          <Caption1 className={styles.headerLabel}>Event</Caption1>
+          <Body1Strong className={styles.headerTitle}>{event.subject}</Body1Strong>
+        </div>
       </div>
       <div className={styles.content}>
-        <Body1Strong className={styles.title}>{event.subject}</Body1Strong>
-        <div className={styles.fieldRow}>
-          <CalendarLtr24Regular className={styles.fieldIcon} />
-          <Body1 className={styles.value}>
+        <div className={styles.field}>
+          <Caption1 className={styles.fieldLabel}>Date</Caption1>
+          <Body1 className={styles.fieldValue}>
             {event.isAllDay
               ? event.start.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })
-              : event.start.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
-            }
+              : event.start.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
           </Body1>
         </div>
         {!event.isAllDay && (
           <div className={styles.fieldRow}>
             <Clock16Regular className={styles.fieldIcon} />
-            <Body1 className={styles.value}>{formatTime(event.start)} - {formatTime(event.end)}</Body1>
+            <Body1 className={styles.fieldValue}>{formatTime(event.start)} - {formatTime(event.end)}</Body1>
           </div>
         )}
         {event.location && (
           <div className={styles.fieldRow}>
             <Location16Regular className={styles.fieldIcon} />
-            <Body1 className={styles.value}>{event.location}</Body1>
+            <Body1 className={styles.fieldValue}>{event.location}</Body1>
           </div>
         )}
         {event.isOnlineMeeting && (
-          <Badge appearance="tint" color="brand" size="small" icon={<Video20Regular />}>
-            Teams Meeting
-          </Badge>
+          <div className={styles.badges}>
+            <Badge appearance="tint" color="brand" size="small" icon={<Video20Regular />}>
+              Teams Meeting
+            </Badge>
+          </div>
         )}
       </div>
-      <Divider className={styles.divider} />
       <div className={styles.toolbar}>
-        <div className={styles.actions}>
+        <div className={styles.actionsLeft}>
           {event.isOnlineMeeting && event.onlineMeetingUrl && (
-            <ActionButton
-              icon={<Video20Regular />}
-              label="Join meeting"
-              onClick={() => openExternal(event.onlineMeetingUrl!)}
-              primary
-            />
+            <ActionButton icon={<Video20Regular />} label="Join meeting" onClick={() => openExternal(event.onlineMeetingUrl!)} primary />
           )}
-          <ActionButton
-            icon={<CheckmarkCircle20Regular />}
-            label="Accept"
-            onClick={() => handleAction('accept')}
-          />
-          <ActionButton
-            icon={<QuestionCircle20Regular />}
-            label="Tentative"
-            onClick={() => handleAction('tentative')}
-          />
-          <ActionButton
-            icon={<DismissCircle20Regular />}
-            label="Decline"
-            onClick={() => handleAction('decline')}
-          />
+          <ActionButton icon={<CheckmarkCircle20Regular />} label="Accept" onClick={() => handleAction('accept')} />
+          <ActionButton icon={<QuestionCircle20Regular />} label="Tentative" onClick={() => handleAction('tentative')} />
+          <ActionButton icon={<DismissCircle20Regular />} label="Decline" onClick={() => handleAction('decline')} />
         </div>
-        <ActionButton
-          icon={<Open20Regular />}
-          label="Open in Calendar"
-          onClick={() => openExternal(event.webLink)}
-          primary={!event.isOnlineMeeting}
-        />
+        <div className={styles.actionsRight}>
+          <ActionButton icon={<Open20Regular />} label="Open in Calendar" onClick={() => openExternal(event.webLink)} primary={!event.isOnlineMeeting} />
+        </div>
       </div>
     </>
   );
 
-  // Task content and actions
+  // Task content
   const renderTaskContent = (task: ITaskItem): JSX.Element => (
     <>
       <div className={styles.header}>
         <TaskListSquareLtr24Regular className={styles.headerIcon} />
-        <Caption1Strong className={styles.headerText}>Task</Caption1Strong>
+        <div className={styles.headerTextGroup}>
+          <Caption1 className={styles.headerLabel}>Task</Caption1>
+          <Body1Strong className={styles.headerTitle}>{task.title}</Body1Strong>
+        </div>
       </div>
       <div className={styles.content}>
-        <Body1Strong className={styles.title}>{task.title}</Body1Strong>
         <div className={styles.field}>
-          <Caption1 className={styles.label}>List</Caption1>
-          <Body1 className={styles.value}>{task.listName}</Body1>
+          <Caption1 className={styles.fieldLabel}>List</Caption1>
+          <Body1 className={styles.fieldValue}>{task.listName}</Body1>
         </div>
         {task.dueDateTime && (
           <div className={styles.field}>
-            <Caption1 className={styles.label}>Due</Caption1>
-            <Body1 className={mergeClasses(styles.value, task.isOverdue && styles.overdue)}>
+            <Caption1 className={styles.fieldLabel}>Due</Caption1>
+            <Body1 className={mergeClasses(styles.fieldValue, task.isOverdue && styles.overdue)}>
               {task.dueDateTime.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
             </Body1>
           </div>
@@ -527,135 +503,106 @@ export const ItemHoverCard: React.FC<IItemHoverCardProps> = ({
           )}
         </div>
       </div>
-      <Divider className={styles.divider} />
       <div className={styles.toolbar}>
-        <div className={styles.actions}>
-          <ActionButton
-            icon={<CheckmarkCircle24Regular />}
-            label="Mark complete"
-            onClick={() => handleAction('complete')}
-            primary
-          />
+        <div className={styles.actionsLeft}>
+          <ActionButton icon={<CheckmarkCircle24Regular />} label="Mark complete" onClick={() => handleAction('complete')} primary />
         </div>
-        <ActionButton
-          icon={<Open20Regular />}
-          label="Open in Planner"
-          onClick={() => openExternal('https://tasks.office.com')}
-        />
+        <div className={styles.actionsRight}>
+          <ActionButton icon={<Open20Regular />} label="Open in Planner" onClick={() => openExternal('https://tasks.office.com')} />
+        </div>
       </div>
     </>
   );
 
-  // File content and actions
+  // File content
   const renderFileContent = (file: IFileItem): JSX.Element => (
     <>
       <div className={styles.header}>
         <Document24Regular className={styles.headerIcon} />
-        <Caption1Strong className={styles.headerText}>
-          {file.isFolder ? 'Folder' : (file.fileType?.toUpperCase() || 'File')}
-        </Caption1Strong>
+        <div className={styles.headerTextGroup}>
+          <Caption1 className={styles.headerLabel}>{file.isFolder ? 'Folder' : (file.fileType?.toUpperCase() || 'File')}</Caption1>
+          <Body1Strong className={styles.headerTitle}>{file.name}</Body1Strong>
+        </div>
       </div>
       <div className={styles.content}>
-        <Body1Strong className={styles.title}>{file.name}</Body1Strong>
         {!file.isFolder && (
           <div className={styles.field}>
-            <Caption1 className={styles.label}>Size</Caption1>
-            <Body1 className={styles.value}>{formatFileSize(file.size)}</Body1>
+            <Caption1 className={styles.fieldLabel}>Size</Caption1>
+            <Body1 className={styles.fieldValue}>{formatFileSize(file.size)}</Body1>
           </div>
         )}
         <div className={styles.field}>
-          <Caption1 className={styles.label}>Modified</Caption1>
-          <Caption1 className={styles.value}>{formatDateTime(file.lastModifiedDateTime)}</Caption1>
+          <Caption1 className={styles.fieldLabel}>Modified</Caption1>
+          <Body1 className={styles.fieldValue}>{formatDateTime(file.lastModifiedDateTime)}</Body1>
         </div>
         {file.lastModifiedBy && (
           <div className={styles.field}>
-            <Caption1 className={styles.label}>By</Caption1>
-            <Body1 className={styles.value}>{file.lastModifiedBy}</Body1>
+            <Caption1 className={styles.fieldLabel}>By</Caption1>
+            <Body1 className={styles.fieldValue}>{file.lastModifiedBy}</Body1>
           </div>
         )}
       </div>
-      <Divider className={styles.divider} />
       <div className={styles.toolbar}>
-        <div className={styles.actions}>
+        <div className={styles.actionsLeft}>
           {!file.isFolder && (
             <>
-              <ActionButton
-                icon={<ArrowDownload20Regular />}
-                label="Download"
-                onClick={() => handleAction('download')}
-              />
-              <ActionButton
-                icon={<Link20Regular />}
-                label="Copy link"
-                onClick={() => handleAction('copyLink')}
-              />
+              <ActionButton icon={<ArrowDownload20Regular />} label="Download" onClick={() => handleAction('download')} />
+              <ActionButton icon={<Link20Regular />} label="Copy link" onClick={() => handleAction('copyLink')} />
             </>
           )}
         </div>
-        <ActionButton
-          icon={<Open20Regular />}
-          label="Open in SharePoint"
-          onClick={() => openExternal(file.webUrl)}
-          primary
-        />
+        <div className={styles.actionsRight}>
+          <ActionButton icon={<Open20Regular />} label="Open in SharePoint" onClick={() => openExternal(file.webUrl)} primary />
+        </div>
       </div>
     </>
   );
 
-  // Shared file content and actions
+  // Shared file content
   const renderSharedFileContent = (file: ISharedFile): JSX.Element => (
     <>
       <div className={styles.header}>
         <Document24Regular className={styles.headerIcon} />
-        <Caption1Strong className={styles.headerText}>
-          {file.fileType?.toUpperCase() || 'File'}
-        </Caption1Strong>
+        <div className={styles.headerTextGroup}>
+          <Caption1 className={styles.headerLabel}>{file.fileType?.toUpperCase() || 'File'}</Caption1>
+          <Body1Strong className={styles.headerTitle}>{file.name}</Body1Strong>
+        </div>
       </div>
       <div className={styles.content}>
-        <Body1Strong className={styles.title}>{file.name}</Body1Strong>
         <div className={styles.field}>
-          <Caption1 className={styles.label}>Size</Caption1>
-          <Body1 className={styles.value}>{formatFileSize(file.size)}</Body1>
+          <Caption1 className={styles.fieldLabel}>Size</Caption1>
+          <Body1 className={styles.fieldValue}>{formatFileSize(file.size)}</Body1>
         </div>
         <div className={styles.field}>
-          <Caption1 className={styles.label}>Shared by</Caption1>
-          <Body1 className={styles.value}>{file.sharedBy}</Body1>
+          <Caption1 className={styles.fieldLabel}>Shared by</Caption1>
+          <Body1 className={styles.fieldValue}>{file.sharedBy}</Body1>
         </div>
         <div className={styles.field}>
-          <Caption1 className={styles.label}>Shared</Caption1>
-          <Caption1 className={styles.value}>{formatDateTime(file.sharedDateTime)}</Caption1>
+          <Caption1 className={styles.fieldLabel}>Shared</Caption1>
+          <Body1 className={styles.fieldValue}>{formatDateTime(file.sharedDateTime)}</Body1>
         </div>
       </div>
-      <Divider className={styles.divider} />
       <div className={styles.toolbar}>
-        <div className={styles.actions}>
-          <ActionButton
-            icon={<ArrowDownload20Regular />}
-            label="Download"
-            onClick={() => handleAction('download')}
-          />
-          <ActionButton
-            icon={<Link20Regular />}
-            label="Copy link"
-            onClick={() => handleAction('copyLink')}
-          />
+        <div className={styles.actionsLeft}>
+          <ActionButton icon={<ArrowDownload20Regular />} label="Download" onClick={() => handleAction('download')} />
+          <ActionButton icon={<Link20Regular />} label="Copy link" onClick={() => handleAction('copyLink')} />
         </div>
-        <ActionButton
-          icon={<Open20Regular />}
-          label="Open in SharePoint"
-          onClick={() => openExternal(file.webUrl)}
-          primary
-        />
+        <div className={styles.actionsRight}>
+          <ActionButton icon={<Open20Regular />} label="Open in SharePoint" onClick={() => openExternal(file.webUrl)} primary />
+        </div>
       </div>
     </>
   );
 
-  // Team member content and actions
+  // Team member content
   const renderTeamMemberContent = (member: ITeamMember): JSX.Element => (
     <>
       <div className={styles.header}>
         <Person24Regular className={styles.headerIcon} />
-        <Caption1Strong className={styles.headerText}>Team Member</Caption1Strong>
+        <div className={styles.headerTextGroup}>
+          <Caption1 className={styles.headerLabel}>Team Member</Caption1>
+          <Body1Strong className={styles.headerTitle}>{member.displayName}</Body1Strong>
+        </div>
       </div>
       <div className={styles.content}>
         <div className={styles.personaSection}>
@@ -669,80 +616,67 @@ export const ItemHoverCard: React.FC<IItemHoverCardProps> = ({
           />
         </div>
         <div className={styles.field}>
-          <Caption1 className={styles.label}>Email</Caption1>
-          <Body1 className={styles.value}>{member.email}</Body1>
+          <Caption1 className={styles.fieldLabel}>Email</Caption1>
+          <Body1 className={styles.fieldValue}>{member.email}</Body1>
         </div>
-        <Badge
-          appearance="tint"
-          color={
-            member.presence === 'Available' ? 'success' :
-            member.presence === 'Busy' || member.presence === 'DoNotDisturb' ? 'danger' :
-            member.presence === 'Away' ? 'warning' : 'subtle'
-          }
-          size="small"
-        >
-          {member.presence === 'DoNotDisturb' ? 'Do Not Disturb' : member.presence || 'Unknown'}
-        </Badge>
+        <div className={styles.badges}>
+          <Badge
+            appearance="tint"
+            color={
+              member.presence === 'Available' ? 'success' :
+              member.presence === 'Busy' || member.presence === 'DoNotDisturb' ? 'danger' :
+              member.presence === 'Away' ? 'warning' : 'subtle'
+            }
+            size="small"
+          >
+            {member.presence === 'DoNotDisturb' ? 'Do Not Disturb' : member.presence || 'Unknown'}
+          </Badge>
+        </div>
       </div>
-      <Divider className={styles.divider} />
       <div className={styles.toolbar}>
-        <div className={styles.actions}>
-          <ActionButton
-            icon={<Chat20Regular />}
-            label="Start chat"
-            onClick={() => openExternal(`https://teams.microsoft.com/l/chat/0/0?users=${member.email}`)}
-            primary
-          />
-          <ActionButton
-            icon={<Mail20Regular />}
-            label="Send email"
-            onClick={() => openExternal(`mailto:${member.email}`)}
-          />
-          <ActionButton
-            icon={<CalendarAdd20Regular />}
-            label="Schedule meeting"
-            onClick={() => handleAction('scheduleMeeting')}
-          />
+        <div className={styles.actionsLeft}>
+          <ActionButton icon={<Chat20Regular />} label="Start chat" onClick={() => openExternal(`https://teams.microsoft.com/l/chat/0/0?users=${member.email}`)} primary />
+          <ActionButton icon={<Mail20Regular />} label="Send email" onClick={() => openExternal(`mailto:${member.email}`)} />
+          <ActionButton icon={<CalendarAdd20Regular />} label="Schedule meeting" onClick={() => handleAction('scheduleMeeting')} />
         </div>
+        <div className={styles.actionsRight} />
       </div>
     </>
   );
 
-  // Activity content and actions
+  // Activity content
   const renderActivityContent = (activity: ISiteActivity): JSX.Element => (
     <>
       <div className={styles.header}>
         <Pulse24Regular className={styles.headerIcon} />
-        <Caption1Strong className={styles.headerText}>Activity</Caption1Strong>
+        <div className={styles.headerTextGroup}>
+          <Caption1 className={styles.headerLabel}>Activity</Caption1>
+          <Body1Strong className={styles.headerTitle}>{activity.itemName}</Body1Strong>
+        </div>
       </div>
       <div className={styles.content}>
         <div className={styles.field}>
-          <Caption1 className={styles.label}>Action</Caption1>
-          <Badge appearance="tint" color="brand" size="small">{activity.action}</Badge>
-        </div>
-        <Body1Strong className={styles.title}>{activity.itemName}</Body1Strong>
-        <div className={styles.field}>
-          <Caption1 className={styles.label}>By</Caption1>
-          <Body1 className={styles.value}>{activity.actor}</Body1>
+          <Caption1 className={styles.fieldLabel}>Action</Caption1>
+          <div className={styles.badges}>
+            <Badge appearance="tint" color="brand" size="small">{activity.action}</Badge>
+          </div>
         </div>
         <div className={styles.field}>
-          <Caption1 className={styles.label}>When</Caption1>
-          <Caption1 className={styles.value}>{formatDateTime(activity.timestamp)}</Caption1>
+          <Caption1 className={styles.fieldLabel}>By</Caption1>
+          <Body1 className={styles.fieldValue}>{activity.actor}</Body1>
+        </div>
+        <div className={styles.field}>
+          <Caption1 className={styles.fieldLabel}>When</Caption1>
+          <Body1 className={styles.fieldValue}>{formatDateTime(activity.timestamp)}</Body1>
         </div>
       </div>
       {activity.itemUrl && (
-        <>
-          <Divider className={styles.divider} />
-          <div className={styles.toolbar}>
-            <div className={styles.actions} />
-            <ActionButton
-              icon={<Open20Regular />}
-              label="View item"
-              onClick={() => openExternal(activity.itemUrl!)}
-              primary
-            />
+        <div className={styles.toolbar}>
+          <div className={styles.actionsLeft} />
+          <div className={styles.actionsRight}>
+            <ActionButton icon={<Open20Regular />} label="View item" onClick={() => openExternal(activity.itemUrl!)} primary />
           </div>
-        </>
+        </div>
       )}
     </>
   );
@@ -772,25 +706,31 @@ export const ItemHoverCard: React.FC<IItemHoverCardProps> = ({
     <Popover
       open={isOpen}
       onOpenChange={(_, data) => {
-        // Only allow closing through our custom handlers or popover's own close
         if (!data.open) {
+          clearTimeouts();
           setIsOpen(false);
         }
       }}
-      positioning="after"
+      positioning={{
+        position: 'after',
+        align: 'start',
+        offset: { mainAxis: 4, crossAxis: 0 },
+      }}
       withArrow
+      trapFocus={false}
     >
       <PopoverTrigger disableButtonEnhancement>
         <div
           ref={triggerRef}
           className={styles.triggerWrapper}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
+          onMouseEnter={handleTriggerMouseEnter}
+          onMouseLeave={handleTriggerMouseLeave}
         >
           {children}
         </div>
       </PopoverTrigger>
       <PopoverSurface
+        ref={popoverRef}
         className={styles.popoverSurface}
         onMouseEnter={handlePopoverMouseEnter}
         onMouseLeave={handlePopoverMouseLeave}

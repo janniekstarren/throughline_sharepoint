@@ -102,7 +102,7 @@ const useStyles = makeStyles({
   memberItem: {
     display: 'flex',
     alignItems: 'center',
-    padding: tokens.spacingVerticalS,
+    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
     borderRadius: tokens.borderRadiusSmall,
     backgroundColor: tokens.colorNeutralBackground2,
     textDecoration: 'none',

@@ -32,6 +32,7 @@ import { UpcomingWeekCardLarge } from './UpcomingWeekCardLarge';
 import { FlaggedEmailsCardLarge } from './FlaggedEmailsCardLarge';
 import { HoverCardItemType, IHoverCardItem } from './ItemHoverCard';
 import { Salutation, SalutationType, SalutationSize } from './Salutation';
+import { CategorySection, IOrderedCard } from './CategorySection';
 import { getFluentTheme, ThemeMode } from '../utils/themeUtils';
 import styles from './DashboardCards.module.scss';
 
@@ -54,24 +55,9 @@ import { ICategoryConfig } from '../propertyPane/CardConfigDialog';
 // Re-export for convenience
 export type { ICategoryConfig };
 
-// Card size type - determines how much space a card takes
-export type CardSize = 'large' | 'medium';
-
-// Card sizes - Large cards use master-detail layout, Medium cards use standard list
-const CARD_SIZES: Record<string, CardSize> = {
-  // Large cards (master-detail layout - 8 columns)
-  todaysAgenda: 'large',
-  unreadInbox: 'large',
-  upcomingWeek: 'large',
-  flaggedEmails: 'large',
-  // Medium cards (standard list - 4 columns)
-  myTasks: 'medium',
-  recentFiles: 'medium',
-  sharedWithMe: 'medium',
-  myTeam: 'medium',
-  siteActivity: 'medium',
-  quickLinks: 'medium',
-};
+// Large cards - these get full-width layout (master-detail)
+const LARGE_CARDS = ['todaysAgenda', 'unreadInbox', 'upcomingWeek', 'flaggedEmails'];
+const isLargeCard = (cardId: string): boolean => LARGE_CARDS.includes(cardId);
 
 export interface IDashboardCardsProps {
   context: WebPartContext;
@@ -405,17 +391,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     );
   }
 
-  // Get card size class
-  const getCardSizeClass = (cardId: string): string => {
-    const size = CARD_SIZES[cardId] || 'medium';
-    switch (size) {
-      case 'large':
-        return styles.cardLarge;
-      case 'medium':
-      default:
-        return styles.cardMedium;
-    }
-  };
+  // Card size is now handled by CategorySection (large = full width, medium = masonry)
+  // CARD_SIZES is still used by isLargeCard() to determine layout
 
   // Check if a card is visible based on its visibility setting
   const isCardVisible = (cardId: string): boolean => {
@@ -467,60 +444,65 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     }
   };
 
-  // Render a card wrapped with its size class
-  const renderCard = (cardId: string): React.ReactNode => {
-    if (!isCardVisible(cardId)) return null;
-
-    return (
-      <div key={cardId} className={getCardSizeClass(cardId)}>
-        {renderCardElement(cardId)}
-      </div>
-    );
-  };
-
-  // Get cards grouped by category in the correct order
+  // Get cards grouped by category using CategorySection with masonry layout
+  // Cards are rendered in user-defined order within each category
   const getOrderedCards = (): React.ReactNode[] => {
     const result: React.ReactNode[] = [];
     const hasCategoryConfig = categoryOrder.length > 0 && Object.keys(cardCategoryAssignment).length > 0;
 
     if (!hasCategoryConfig) {
-      // No category config - render cards in simple order
-      cardOrder.forEach(cardId => {
-        const card = renderCard(cardId);
-        if (card) result.push(card);
-      });
-      return result;
+      // No category config - render all cards in a single CategorySection
+      // Maintain user's card order
+      const orderedCards: IOrderedCard[] = cardOrder
+        .filter(id => isCardVisible(id))
+        .map(id => ({
+          id,
+          isLarge: isLargeCard(id),
+          element: renderCardElement(id)
+        }));
+
+      return [
+        <CategorySection
+          key="all"
+          categoryId="all"
+          showTitle={false}
+          orderedCards={orderedCards}
+        />
+      ];
     }
 
-    // Render cards grouped by category
+    // Render each category with its own CategorySection
     categoryOrder.forEach(categoryId => {
       const catConfig = categoryConfig[categoryId];
 
       // Skip hidden categories
       if (catConfig && !catConfig.visible) return;
 
-      // Get cards in this category (maintaining card order)
+      // Get cards in this category (maintaining card order from cardOrder)
       const cardsInCategory = cardOrder.filter(
         cardId => cardCategoryAssignment[cardId] === categoryId && isCardVisible(cardId)
       );
 
       if (cardsInCategory.length === 0) return;
 
-      // Render category header if showTitle is true
-      if (catConfig?.showTitle !== false) {
-        const categoryName = categoryNames[categoryId] || categoryId;
-        result.push(
-          <div key={`category-header-${categoryId}`} className={styles.categoryHeader}>
-            <span className={styles.categoryTitle}>{categoryName}</span>
-          </div>
-        );
-      }
+      // Create ordered cards array that preserves user's order
+      const orderedCards: IOrderedCard[] = cardsInCategory.map(id => ({
+        id,
+        isLarge: isLargeCard(id),
+        element: renderCardElement(id)
+      }));
 
-      // Render cards in this category
-      cardsInCategory.forEach(cardId => {
-        const card = renderCard(cardId);
-        if (card) result.push(card);
-      });
+      const categoryName = categoryNames[categoryId] || categoryId;
+
+      result.push(
+        <CategorySection
+          key={categoryId}
+          categoryId={categoryId}
+          categoryName={categoryName}
+          showTitle={catConfig?.showTitle !== false}
+          orderedCards={orderedCards}
+        />
+      );
     });
 
     return result;
@@ -531,9 +513,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       <FluentProvider theme={currentTheme}>
         <div className={styles.dashboard} ref={portalMountRef}>
           <Salutation type={salutationType} size={salutationSize} userName={userName} />
-          <div className={styles.cardGrid}>
-            {getOrderedCards()}
-          </div>
+          {getOrderedCards()}
         </div>
       </FluentProvider>
     </RendererProvider>

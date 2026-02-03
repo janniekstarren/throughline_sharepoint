@@ -1,116 +1,21 @@
 @import './CardStyles.module.scss';
 
+// ============================================
+// DASHBOARD CONTAINER
+// Simplified - CategorySection handles card layout
+// ============================================
+
 .dashboard {
   padding: 20px;
   position: relative;
   background: transparent;
   min-height: 100vh;
-}
-
-.dashboardContainer {
-  position: relative;
   max-width: 1600px;
   margin: 0 auto;
+  overflow-x: hidden; // Prevent horizontal scroll
 }
 
-.cardGrid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 24px;
-  align-content: start;
-}
-
-// Category header - spans full width
-.categoryHeader {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  margin-top: 8px;
-
-  &:first-child {
-    margin-top: 0;
-  }
-}
-
-.categoryTitle {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--colorNeutralForeground2, #605e5c);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-// Card size variants
-
-// Large Card - Master-Detail layout (8 columns = 2/3 width)
-.cardLarge {
-  grid-column: span 8;
-  min-height: 440px;
-  max-height: 480px;
-
-  // Ensure the card inside fills the container
-  > div {
-    height: 100%;
-    min-height: inherit;
-    max-height: inherit;
-  }
-}
-
-// Medium Card - Standard list layout (4 columns = 1/3 width)
-.cardMedium {
-  grid-column: span 4;
-  min-width: 320px;
-  min-height: 400px;
-  max-height: 440px;
-
-  > div {
-    height: 100%;
-    min-height: inherit;
-    max-height: inherit;
-  }
-}
-
-// Legacy size classes for backwards compatibility
-.cardCompact {
-  grid-column: span 4; // 1/3 width on desktop
-  min-height: 280px;
-  max-height: 360px;
-
-  // Ensure the card inside fills the container
-  > div {
-    height: 100%;
-    min-height: inherit;
-    max-height: inherit;
-  }
-}
-
-.cardStandard {
-  grid-column: span 4; // 1/3 width on desktop
-  min-height: 320px;
-  max-height: 440px;
-
-  > div {
-    height: 100%;
-    min-height: inherit;
-    max-height: inherit;
-  }
-}
-
-.cardWide {
-  grid-column: span 6; // 1/2 width on desktop (2/3 of 3 columns)
-  min-height: 320px;
-  max-height: 440px;
-
-  > div {
-    height: 100%;
-    min-height: inherit;
-    max-height: inherit;
-  }
-}
-
-// Drawer wrapper for proper positioning
+// Drawer wrapper for property pane
 .drawerWrapper {
   position: fixed;
   top: 0;
@@ -124,117 +29,13 @@
   }
 }
 
-// Responsive adjustments
+// ============================================
+// RESPONSIVE ADJUSTMENTS
+// ============================================
 
-// Mobile: Single column layout
 @media (max-width: 768px) {
   .dashboard {
     padding: 12px;
-  }
-
-  .cardGrid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  // All cards take full width on mobile
-  .cardLarge,
-  .cardMedium,
-  .cardCompact,
-  .cardStandard,
-  .cardWide {
-    grid-column: 1 / -1;
-    min-width: auto;
-    min-height: 280px;
-    max-height: none; // Allow natural height on mobile
-  }
-
-  // Large cards need more height on mobile for master-detail
-  .cardLarge {
-    min-height: 400px;
-  }
-}
-
-// Tablet: 8-column layout
-@media (min-width: 769px) and (max-width: 1199px) {
-  .cardGrid {
-    grid-template-columns: repeat(8, 1fr);
-  }
-
-  // Large cards take full width on tablet
-  .cardLarge {
-    grid-column: span 8;
-  }
-
-  // Medium cards take half width on tablet
-  .cardMedium {
-    grid-column: span 4;
-  }
-
-  .cardCompact {
-    grid-column: span 4; // Half width
-  }
-
-  .cardStandard {
-    grid-column: span 4; // Half width
-  }
-
-  .cardWide {
-    grid-column: span 8; // Full width
-  }
-}
-
-// Desktop: 12-column layout
-@media (min-width: 1200px) {
-  .cardGrid {
-    grid-template-columns: repeat(12, 1fr);
-  }
-
-  // Large cards take 8 columns (2/3 width)
-  .cardLarge {
-    grid-column: span 8;
-  }
-
-  // Medium cards take 4 columns (1/3 width)
-  .cardMedium {
-    grid-column: span 4;
-  }
-
-  .cardCompact {
-    grid-column: span 4; // 1/3 width
-  }
-
-  .cardStandard {
-    grid-column: span 4; // 1/3 width
-  }
-
-  .cardWide {
-    grid-column: span 6; // 1/2 width
-  }
-}
-
-// Large desktop: 12-column with more breathing room
-@media (min-width: 1600px) {
-  // Large cards stay at 8 columns
-  .cardLarge {
-    grid-column: span 8;
-  }
-
-  // Medium cards take 4 columns
-  .cardMedium {
-    grid-column: span 4;
-  }
-
-  .cardCompact {
-    grid-column: span 3; // 1/4 width
-  }
-
-  .cardStandard {
-    grid-column: span 4; // 1/3 width
-  }
-
-  .cardWide {
-    grid-column: span 6; // 1/2 width
   }
 }
 

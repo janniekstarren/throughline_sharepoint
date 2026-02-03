@@ -106,12 +106,12 @@ const useStyles = makeStyles({
   fileItem: {
     display: 'flex',
     alignItems: 'center',
-    padding: tokens.spacingVerticalS,
+    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
     borderRadius: tokens.borderRadiusSmall,
     backgroundColor: tokens.colorNeutralBackground2,
     textDecoration: 'none',
     color: 'inherit',
-    gap: tokens.spacingHorizontalM,
+    gap: tokens.spacingHorizontalS,
     transitionProperty: 'background-color',
     transitionDuration: tokens.durationNormal,
     transitionTimingFunction: tokens.curveEasyEase,
@@ -152,7 +152,8 @@ const useStyles = makeStyles({
   fileMeta: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
+    flexWrap: 'wrap',
+    gap: '2px 8px',
     marginTop: tokens.spacingVerticalXS,
     color: tokens.colorNeutralForeground3,
   },
@@ -160,13 +161,16 @@ const useStyles = makeStyles({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    maxWidth: '120px',
+    flex: '1 1 auto',
+    minWidth: '40px',
   },
   modifiedTime: {
     flexShrink: 0,
+    whiteSpace: 'nowrap',
   },
   fileSize: {
     flexShrink: 0,
+    whiteSpace: 'nowrap',
   },
 });
 
