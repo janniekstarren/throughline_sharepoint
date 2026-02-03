@@ -1,12 +1,10 @@
 import * as React from 'react';
 import {
-  makeStyles,
   tokens,
   Text,
   Caption1,
   Body1,
   Body1Strong,
-  Badge,
   Theme,
   Spinner,
 } from '@fluentui/react-components';
@@ -21,8 +19,8 @@ import {
   Person16Regular,
 } from '@fluentui/react-icons';
 import { ISharedFile } from '../services/GraphService';
-import { MotionWrapper } from './MotionWrapper';
 import { ItemHoverCard, HoverCardItemType, IHoverCardItem } from './ItemHoverCard';
+import { useCardStyles, CardEnter, ListItemEnter } from './cardStyles';
 
 export interface ISharedWithMeCardProps {
   files: ISharedFile[];
@@ -33,148 +31,6 @@ export interface ISharedWithMeCardProps {
   title?: string;
 }
 
-// Fluent UI 9 styles using makeStyles and design tokens
-const useStyles = makeStyles({
-  card: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '400px',
-    backgroundColor: tokens.colorNeutralBackground1,
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
-    boxShadow: tokens.shadow4,
-  },
-  cardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    backgroundColor: tokens.colorNeutralBackground2,
-    flexShrink: 0,
-  },
-  cardIcon: {
-    fontSize: '20px',
-    color: tokens.colorBrandForeground1,
-  },
-  cardTitle: {
-    flex: 1,
-    color: tokens.colorNeutralForeground1,
-  },
-  cardContent: {
-    flex: 1,
-    padding: tokens.spacingVerticalM,
-    overflowY: 'auto',
-    minHeight: 0,
-  },
-  errorContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: tokens.spacingVerticalXXL,
-    color: tokens.colorNeutralForeground3,
-    gap: tokens.spacingVerticalS,
-  },
-  errorIcon: {
-    fontSize: '24px',
-    color: tokens.colorPaletteRedForeground1,
-  },
-  emptyState: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: tokens.spacingVerticalXXL,
-    color: tokens.colorNeutralForeground3,
-    gap: tokens.spacingVerticalS,
-  },
-  emptyIcon: {
-    fontSize: '32px',
-    color: tokens.colorNeutralForeground4,
-  },
-  loadingContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: tokens.spacingVerticalXXL,
-    flex: 1,
-  },
-  fileList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.spacingVerticalS,
-  },
-  fileItem: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: tokens.spacingVerticalS,
-    borderRadius: tokens.borderRadiusSmall,
-    backgroundColor: tokens.colorNeutralBackground2,
-    textDecoration: 'none',
-    color: 'inherit',
-    gap: tokens.spacingHorizontalM,
-    transitionProperty: 'background-color',
-    transitionDuration: tokens.durationNormal,
-    transitionTimingFunction: tokens.curveEasyEase,
-    cursor: 'pointer',
-    border: 'none',
-    outline: 'none',
-    width: '100%',
-    textAlign: 'left',
-    ':hover': {
-      backgroundColor: tokens.colorNeutralBackground3,
-    },
-    ':focus-visible': {
-      outlineStyle: 'solid',
-      outlineWidth: '2px',
-      outlineColor: tokens.colorBrandStroke1,
-      outlineOffset: '2px',
-    },
-  },
-  fileIcon: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '20px',
-    color: tokens.colorNeutralForeground2,
-    flexShrink: 0,
-  },
-  fileDetails: {
-    flex: 1,
-    minWidth: 0,
-    overflow: 'hidden',
-  },
-  fileName: {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    color: tokens.colorNeutralForeground1,
-  },
-  fileMeta: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
-    marginTop: tokens.spacingVerticalXS,
-    color: tokens.colorNeutralForeground3,
-  },
-  sharedBy: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    maxWidth: '120px',
-  },
-  sharedDate: {
-    flexShrink: 0,
-  },
-  fileSize: {
-    flexShrink: 0,
-  },
-});
 
 // File icon component using Fluent UI 9 icons
 const FileTypeIcon: React.FC<{ fileType?: string }> = ({ fileType }) => {
@@ -202,7 +58,7 @@ const FileTypeIcon: React.FC<{ fileType?: string }> = ({ fileType }) => {
 };
 
 export const SharedWithMeCard: React.FC<ISharedWithMeCardProps> = ({ files, loading, error, onAction, theme, title }) => {
-  const styles = useStyles();
+  const styles = useCardStyles();
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -223,69 +79,79 @@ export const SharedWithMeCard: React.FC<ISharedWithMeCardProps> = ({ files, load
   };
 
   return (
-    <div className={styles.card}>
-      <div className={styles.cardHeader}>
-        <PeopleSwap24Regular className={styles.cardIcon} />
-        <Body1Strong className={styles.cardTitle}>{title || 'Shared With Me'}</Body1Strong>
-        {!loading && files.length > 0 && (
-          <Badge appearance="filled" color="brand" size="small">{files.length}</Badge>
-        )}
-      </div>
-      <div className={styles.cardContent}>
-        {loading ? (
-          <div className={styles.loadingContainer}>
-            <Spinner size="medium" />
+    <CardEnter visible={true}>
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <div className={styles.cardIconWrapper}>
+            <PeopleSwap24Regular className={styles.cardIcon} />
           </div>
-        ) : error ? (
-          <div className={styles.errorContainer}>
-            <ErrorCircle24Regular className={styles.errorIcon} />
-            <Text>{error}</Text>
-          </div>
-        ) : files.length === 0 ? (
-          <MotionWrapper visible={true}>
+          <Body1Strong className={styles.cardTitle}>{title || 'Shared With Me'}</Body1Strong>
+          {!loading && files.length > 0 && (
+            <span className={styles.badge}>{files.length}</span>
+          )}
+        </div>
+        <div className={styles.cardContent}>
+          {loading ? (
+            <div className={styles.loadingContainer}>
+              <Spinner size="medium" />
+            </div>
+          ) : error ? (
+            <div className={styles.errorContainer}>
+              <ErrorCircle24Regular className={styles.errorIcon} />
+              <Text>{error}</Text>
+            </div>
+          ) : files.length === 0 ? (
             <div className={styles.emptyState}>
               <Folder24Regular className={styles.emptyIcon} />
               <Text>No shared files</Text>
             </div>
-          </MotionWrapper>
-        ) : (
-          <MotionWrapper visible={true}>
-            <div className={styles.fileList}>
-              {files.map(file => (
-                <ItemHoverCard
-                  key={file.id}
-                  item={file}
-                  itemType="sharedFile"
-                  onAction={onAction}
-                  theme={theme}
-                >
-                  <div
-                    className={styles.fileItem}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <div className={styles.fileIcon}>
-                      <FileTypeIcon fileType={file.fileType} />
-                    </div>
-                    <div className={styles.fileDetails}>
-                      <Body1 className={styles.fileName}>{file.name}</Body1>
-                      <div className={styles.fileMeta}>
-                        <Caption1 className={styles.sharedBy}>
-                          <Person16Regular />
-                          {file.sharedBy}
-                        </Caption1>
-                        <Caption1 className={styles.sharedDate}>{formatDate(file.sharedDateTime)}</Caption1>
-                        <Caption1 className={styles.fileSize}>{formatFileSize(file.size)}</Caption1>
+          ) : (
+            <div className={styles.itemList}>
+              {files.map((file, index) => (
+                <ListItemEnter key={file.id} visible={true}>
+                  <div style={{ animationDelay: `${index * 50}ms` }}>
+                    <ItemHoverCard
+                      item={file}
+                      itemType="sharedFile"
+                      onAction={onAction}
+                      theme={theme}
+                    >
+                      <div
+                        className={styles.item}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '20px',
+                          color: tokens.colorNeutralForeground2,
+                          flexShrink: 0
+                        }}>
+                          <FileTypeIcon fileType={file.fileType} />
+                        </div>
+                        <div className={styles.itemContent}>
+                          <Body1 className={styles.itemTitle}>{file.name}</Body1>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                            <Caption1 className={styles.itemMeta} style={{ display: 'flex', alignItems: 'center', gap: '4px', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <Person16Regular />
+                              {file.sharedBy}
+                            </Caption1>
+                            <Caption1 className={styles.itemMeta}>{formatDate(file.sharedDateTime)}</Caption1>
+                            <Caption1 className={styles.itemMeta}>{formatFileSize(file.size)}</Caption1>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    </ItemHoverCard>
                   </div>
-                </ItemHoverCard>
+                </ListItemEnter>
               ))}
             </div>
-          </MotionWrapper>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </CardEnter>
   );
 };
 

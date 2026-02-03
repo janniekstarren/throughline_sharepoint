@@ -1,23 +1,39 @@
 @import './CardStyles.module.scss';
 
+// ============================================
+// DASHBOARD CONTAINER
+// Prevents horizontal scrolling
+// ============================================
 .dashboard {
   padding: 20px;
   position: relative;
   background: transparent;
   min-height: 100vh;
+  overflow-x: hidden; // Prevent horizontal scroll
+  box-sizing: border-box;
 }
 
 .dashboardContainer {
   position: relative;
   max-width: 1600px;
   margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
+// ============================================
+// HIERARCHICAL GRID SYSTEM
+// Uses CSS Grid with auto-fit for fluid layout
+// ============================================
 .cardGrid {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 24px;
+  gap: 20px;
   align-content: start;
+  width: 100%;
+  box-sizing: border-box;
+
+  // Default: flexible grid that adapts to content
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 // Category header - spans full width
@@ -26,11 +42,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 0;
-  margin-top: 8px;
+  padding: 12px 0 8px;
+  margin-top: 4px;
 
   &:first-child {
     margin-top: 0;
+    padding-top: 0;
   }
 }
 
@@ -42,15 +59,18 @@
   letter-spacing: 0.5px;
 }
 
-// Card size variants
+// ============================================
+// CARD SIZE VARIANTS
+// All cards use flexible sizing without min-width
+// ============================================
 
-// Large Card - Master-Detail layout (8 columns = 2/3 width)
+// Large Card - Master-Detail layout
 .cardLarge {
-  grid-column: span 8;
-  min-height: 440px;
+  grid-column: 1 / -1; // Full width by default
+  min-height: 420px;
   max-height: 480px;
+  overflow: hidden;
 
-  // Ensure the card inside fills the container
   > div {
     height: 100%;
     min-height: inherit;
@@ -58,12 +78,11 @@
   }
 }
 
-// Medium Card - Standard list layout (4 columns = 1/3 width)
+// Medium Card - Standard list layout
 .cardMedium {
-  grid-column: span 4;
-  min-width: 320px;
-  min-height: 400px;
-  max-height: 440px;
+  min-height: 380px;
+  max-height: 420px;
+  overflow: hidden;
 
   > div {
     height: 100%;
@@ -72,13 +91,12 @@
   }
 }
 
-// Legacy size classes for backwards compatibility
+// Legacy size classes (kept for compatibility)
 .cardCompact {
-  grid-column: span 4; // 1/3 width on desktop
   min-height: 280px;
   max-height: 360px;
+  overflow: hidden;
 
-  // Ensure the card inside fills the container
   > div {
     height: 100%;
     min-height: inherit;
@@ -87,9 +105,9 @@
 }
 
 .cardStandard {
-  grid-column: span 4; // 1/3 width on desktop
   min-height: 320px;
-  max-height: 440px;
+  max-height: 420px;
+  overflow: hidden;
 
   > div {
     height: 100%;
@@ -99,9 +117,10 @@
 }
 
 .cardWide {
-  grid-column: span 6; // 1/2 width on desktop (2/3 of 3 columns)
+  grid-column: 1 / -1; // Full width
   min-height: 320px;
-  max-height: 440px;
+  max-height: 420px;
+  overflow: hidden;
 
   > div {
     height: 100%;
@@ -124,10 +143,13 @@
   }
 }
 
-// Responsive adjustments
+// ============================================
+// RESPONSIVE BREAKPOINTS
+// Mobile-first approach
+// ============================================
 
-// Mobile: Single column layout
-@media (max-width: 768px) {
+// Mobile: Single column (< 768px)
+@media (max-width: 767px) {
   .dashboard {
     padding: 12px;
   }
@@ -137,104 +159,102 @@
     gap: 16px;
   }
 
-  // All cards take full width on mobile
   .cardLarge,
   .cardMedium,
   .cardCompact,
   .cardStandard,
   .cardWide {
     grid-column: 1 / -1;
-    min-width: auto;
-    min-height: 280px;
-    max-height: none; // Allow natural height on mobile
+    min-height: 300px;
+    max-height: none;
   }
 
-  // Large cards need more height on mobile for master-detail
   .cardLarge {
-    min-height: 400px;
+    min-height: 380px;
   }
 }
 
-// Tablet: 8-column layout
-@media (min-width: 769px) and (max-width: 1199px) {
+// Tablet: 2-column grid (768px - 1199px)
+@media (min-width: 768px) and (max-width: 1199px) {
   .cardGrid {
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
   }
 
-  // Large cards take full width on tablet
   .cardLarge {
-    grid-column: span 8;
+    grid-column: 1 / -1; // Full width
   }
 
-  // Medium cards take half width on tablet
   .cardMedium {
-    grid-column: span 4;
+    grid-column: span 1; // Half width
   }
 
   .cardCompact {
-    grid-column: span 4; // Half width
+    grid-column: span 1;
   }
 
   .cardStandard {
-    grid-column: span 4; // Half width
+    grid-column: span 1;
   }
 
   .cardWide {
-    grid-column: span 8; // Full width
+    grid-column: 1 / -1;
   }
 }
 
-// Desktop: 12-column layout
-@media (min-width: 1200px) {
+// Desktop: 3-column grid (1200px - 1599px)
+@media (min-width: 1200px) and (max-width: 1599px) {
   .cardGrid {
-    grid-template-columns: repeat(12, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
   }
 
-  // Large cards take 8 columns (2/3 width)
   .cardLarge {
-    grid-column: span 8;
+    grid-column: span 2; // 2/3 width
   }
 
-  // Medium cards take 4 columns (1/3 width)
   .cardMedium {
-    grid-column: span 4;
+    grid-column: span 1; // 1/3 width
   }
 
   .cardCompact {
-    grid-column: span 4; // 1/3 width
+    grid-column: span 1;
   }
 
   .cardStandard {
-    grid-column: span 4; // 1/3 width
+    grid-column: span 1;
   }
 
   .cardWide {
-    grid-column: span 6; // 1/2 width
+    grid-column: span 2;
   }
 }
 
-// Large desktop: 12-column with more breathing room
+// Large Desktop: 3-column with more space (>= 1600px)
 @media (min-width: 1600px) {
-  // Large cards stay at 8 columns
-  .cardLarge {
-    grid-column: span 8;
+  .cardGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
   }
 
-  // Medium cards take 4 columns
+  .cardLarge {
+    grid-column: span 2;
+  }
+
   .cardMedium {
-    grid-column: span 4;
+    grid-column: span 1;
   }
 
   .cardCompact {
-    grid-column: span 3; // 1/4 width
+    grid-column: span 1;
   }
 
   .cardStandard {
-    grid-column: span 4; // 1/3 width
+    grid-column: span 1;
   }
 
   .cardWide {
-    grid-column: span 6; // 1/2 width
+    grid-column: span 2;
   }
 }
 

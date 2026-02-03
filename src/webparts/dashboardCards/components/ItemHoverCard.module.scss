@@ -1,83 +1,82 @@
+@import './CardStyles.module.scss';
+
 .popoverSurface {
   min-width: 320px;
   max-width: 380px;
   padding: 0;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+  border-radius: $border-radius-card;
+  box-shadow: $shadow-elevated;
+  overflow: hidden;
 }
 
 .header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background-color: #f5f5f5;
-  border-bottom: 1px solid #e0e0e0;
-  border-radius: 8px 8px 0 0;
-  font-size: 12px;
+  gap: 10px;
+  padding: 14px 16px;
+  background: transparent;
+  border-radius: $border-radius-card $border-radius-card 0 0;
+  font-size: 11px;
   font-weight: 600;
-  color: #616161;
+  color: $color-text-tertiary;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .headerIcon {
   font-size: 16px;
-  color: #0078d4;
+  color: $color-brand;
 }
 
 .content {
-  padding: 16px;
+  padding: 0 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
-  color: #323130;
+  color: $color-text-primary;
   line-height: 1.4;
+  letter-spacing: -0.01em;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .fieldIcon {
   font-size: 14px;
-  color: #605e5c;
+  color: $color-text-secondary;
   margin-right: 6px;
 }
 
 .label {
-  font-size: 11px;
-  font-weight: 500;
-  color: #8a8886;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  @extend .itemMeta;
 }
 
 .value {
-  font-size: 13px;
-  color: #323130;
+  font-size: 14px;
+  color: $color-text-primary;
 }
 
 .subValue {
-  font-size: 12px;
-  color: #605e5c;
+  font-size: 13px;
+  color: $color-text-secondary;
 }
 
 .overdue {
-  color: #d83b01;
+  color: $color-error;
   font-weight: 500;
 }
 
 .preview {
   font-size: 13px;
-  color: #605e5c;
+  color: $color-text-secondary;
   line-height: 1.5;
   max-height: 60px;
   overflow: hidden;
@@ -85,10 +84,10 @@
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  padding: 8px 12px;
-  background-color: #faf9f8;
-  border-radius: 4px;
-  border-left: 3px solid #e0e0e0;
+  padding: 10px 14px;
+  background-color: $color-background;
+  border-radius: $border-radius-item;
+  border-left: 3px solid $color-brand;
 }
 
 .badges {
@@ -104,6 +103,9 @@
 
 .divider {
   margin: 0;
+  border: none;
+  height: 1px;
+  background: $color-border;
 }
 
 .toolbar {
@@ -111,8 +113,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background-color: #faf9f8;
-  border-radius: 0 0 8px 8px;
+  background: transparent;
+  border-top: 1px solid $color-border;
 }
 
 .actions {
@@ -121,11 +123,11 @@
 }
 
 .dangerousButton {
-  color: #d83b01;
+  color: $color-error;
 
   &:hover {
-    color: #a52a00;
-    background-color: rgba(216, 59, 1, 0.1);
+    color: darken($color-error, 10%);
+    background-color: rgba($color-error, 0.1);
   }
 }
 

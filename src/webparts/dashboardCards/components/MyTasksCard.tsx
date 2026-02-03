@@ -1,13 +1,11 @@
 import * as React from 'react';
 import {
-  makeStyles,
   tokens,
   mergeClasses,
   Text,
   Caption1,
   Body1,
   Body1Strong,
-  Badge,
   Checkbox,
   Theme,
   Spinner,
@@ -20,8 +18,8 @@ import {
   CalendarLtr16Regular,
 } from '@fluentui/react-icons';
 import { ITaskItem } from '../services/GraphService';
-import { MotionWrapper } from './MotionWrapper';
 import { ItemHoverCard, HoverCardItemType, IHoverCardItem } from './ItemHoverCard';
+import { useCardStyles, CardEnter, ListItemEnter } from './cardStyles';
 
 export interface IMyTasksCardProps {
   tasks: ITaskItem[];
@@ -32,153 +30,8 @@ export interface IMyTasksCardProps {
   title?: string;
 }
 
-const useStyles = makeStyles({
-  card: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '400px',
-    backgroundColor: tokens.colorNeutralBackground1,
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
-    boxShadow: tokens.shadow4,
-  },
-  cardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    backgroundColor: tokens.colorNeutralBackground2,
-    flexShrink: 0,
-  },
-  cardIcon: {
-    fontSize: '20px',
-    color: tokens.colorBrandForeground1,
-  },
-  cardTitle: {
-    flex: 1,
-    color: tokens.colorNeutralForeground1,
-  },
-  cardContent: {
-    flex: 1,
-    padding: tokens.spacingVerticalM,
-    overflowY: 'auto',
-    minHeight: 0,
-  },
-  errorContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: tokens.spacingVerticalXXL,
-    color: tokens.colorNeutralForeground3,
-    gap: tokens.spacingVerticalS,
-  },
-  errorIcon: {
-    fontSize: '24px',
-    color: tokens.colorPaletteRedForeground1,
-  },
-  emptyState: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: tokens.spacingVerticalXXL,
-    color: tokens.colorNeutralForeground3,
-    gap: tokens.spacingVerticalS,
-  },
-  emptyIcon: {
-    fontSize: '32px',
-    color: tokens.colorPaletteGreenForeground1,
-  },
-  loadingContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: tokens.spacingVerticalXXL,
-    flex: 1,
-  },
-  taskList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.spacingVerticalXS,
-  },
-  taskItem: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    padding: tokens.spacingVerticalS,
-    borderRadius: tokens.borderRadiusSmall,
-    backgroundColor: tokens.colorNeutralBackground2,
-    textDecoration: 'none',
-    color: 'inherit',
-    gap: tokens.spacingHorizontalS,
-    transitionProperty: 'background-color',
-    transitionDuration: tokens.durationNormal,
-    transitionTimingFunction: tokens.curveEasyEase,
-    cursor: 'pointer',
-    ':hover': {
-      backgroundColor: tokens.colorNeutralBackground3,
-    },
-    ':focus-visible': {
-      outlineStyle: 'solid',
-      outlineWidth: '2px',
-      outlineColor: tokens.colorBrandStroke1,
-      outlineOffset: '2px',
-    },
-  },
-  overdue: {
-    borderLeft: `3px solid ${tokens.colorPaletteRedBorder1}`,
-  },
-  checkbox: {
-    flexShrink: 0,
-  },
-  taskContent: {
-    flex: 1,
-    minWidth: 0,
-    overflow: 'hidden',
-  },
-  taskTitle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
-    color: tokens.colorNeutralForeground1,
-  },
-  titleText: {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  importantIcon: {
-    color: tokens.colorPaletteRedForeground1,
-    fontSize: '14px',
-    flexShrink: 0,
-  },
-  taskMeta: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalM,
-    marginTop: tokens.spacingVerticalXS,
-    color: tokens.colorNeutralForeground3,
-  },
-  listName: {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  dueDate: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalXXS,
-    flexShrink: 0,
-  },
-  overdueDue: {
-    color: tokens.colorPaletteRedForeground1,
-  },
-});
-
 export const MyTasksCard: React.FC<IMyTasksCardProps> = ({ tasks, loading, error, onAction, theme, title }) => {
-  const styles = useStyles();
+  const styles = useCardStyles();
 
   const formatDueDate = (date: Date | undefined): string => {
     if (!date) return '';
@@ -197,79 +50,86 @@ export const MyTasksCard: React.FC<IMyTasksCardProps> = ({ tasks, loading, error
   };
 
   return (
-    <div className={styles.card}>
-      <div className={styles.cardHeader}>
-        <TaskListSquareLtr24Regular className={styles.cardIcon} />
-        <Body1Strong className={styles.cardTitle}>{title || 'My Tasks'}</Body1Strong>
-        {!loading && tasks.length > 0 && (
-          <Badge appearance="filled" color="brand" size="small">{tasks.length}</Badge>
-        )}
-      </div>
-      <div className={styles.cardContent}>
-        {loading ? (
-          <div className={styles.loadingContainer}>
-            <Spinner size="medium" />
+    <CardEnter visible={true}>
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <div className={styles.cardIconWrapper}>
+            <TaskListSquareLtr24Regular className={styles.cardIcon} />
           </div>
-        ) : error ? (
-          <div className={styles.errorContainer}>
-            <ErrorCircle24Regular className={styles.errorIcon} />
-            <Text>{error}</Text>
-          </div>
-        ) : tasks.length === 0 ? (
-          <MotionWrapper visible={true}>
+          <Body1Strong className={styles.cardTitle}>{title || 'My Tasks'}</Body1Strong>
+          {!loading && tasks.length > 0 && (
+            <span className={styles.badge}>{tasks.length}</span>
+          )}
+        </div>
+        <div className={styles.cardContent}>
+          {loading ? (
+            <div className={styles.loadingContainer}>
+              <Spinner size="medium" />
+            </div>
+          ) : error ? (
+            <div className={styles.errorContainer}>
+              <ErrorCircle24Regular className={styles.errorIcon} />
+              <Text>{error}</Text>
+            </div>
+          ) : tasks.length === 0 ? (
             <div className={styles.emptyState}>
               <CheckmarkCircle24Regular className={styles.emptyIcon} />
               <Text>All tasks completed!</Text>
             </div>
-          </MotionWrapper>
-        ) : (
-          <MotionWrapper visible={true}>
-            <div className={styles.taskList}>
-              {tasks.map(task => (
-                <ItemHoverCard
-                  key={task.id}
-                  item={task}
-                  itemType="task"
-                  onAction={onAction}
-                  theme={theme}
-                >
-                  <div
-                    className={mergeClasses(
-                      styles.taskItem,
-                      task.isOverdue && styles.overdue
-                    )}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <Checkbox checked={false} disabled className={styles.checkbox} />
-                    <div className={styles.taskContent}>
-                      <div className={styles.taskTitle}>
-                        {task.importance === 'high' && (
-                          <Important16Filled className={styles.importantIcon} />
+          ) : (
+            <div className={styles.itemList}>
+              {tasks.map((task, index) => (
+                <ListItemEnter key={task.id} visible={true}>
+                  <div style={{ animationDelay: `${index * 50}ms` }}>
+                    <ItemHoverCard
+                      item={task}
+                      itemType="task"
+                      onAction={onAction}
+                      theme={theme}
+                    >
+                      <div
+                        className={mergeClasses(
+                          styles.item,
+                          task.isOverdue && styles.itemHighlight,
+                          task.isOverdue && styles.itemHighlightError
                         )}
-                        <Body1 className={styles.titleText}>{task.title}</Body1>
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <Checkbox checked={false} disabled style={{ flexShrink: 0 }} />
+                        <div className={styles.itemContent}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {task.importance === 'high' && (
+                              <Important16Filled style={{ color: tokens.colorPaletteRedForeground1, fontSize: '14px', flexShrink: 0 }} />
+                            )}
+                            <Body1 className={styles.itemTitle}>{task.title}</Body1>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '2px' }}>
+                            <Caption1 className={styles.itemMeta}>{task.listName}</Caption1>
+                            {task.dueDateTime && (
+                              <Caption1 style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                color: task.isOverdue ? tokens.colorPaletteRedForeground1 : tokens.colorNeutralForeground4,
+                                fontSize: '11px'
+                              }}>
+                                <CalendarLtr16Regular style={{ fontSize: '12px' }} />
+                                {formatDueDate(task.dueDateTime)}
+                              </Caption1>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className={styles.taskMeta}>
-                        <Caption1 className={styles.listName}>{task.listName}</Caption1>
-                        {task.dueDateTime && (
-                          <Caption1 className={mergeClasses(
-                            styles.dueDate,
-                            task.isOverdue && styles.overdueDue
-                          )}>
-                            <CalendarLtr16Regular />
-                            {formatDueDate(task.dueDateTime)}
-                          </Caption1>
-                        )}
-                      </div>
-                    </div>
+                    </ItemHoverCard>
                   </div>
-                </ItemHoverCard>
+                </ListItemEnter>
               ))}
             </div>
-          </MotionWrapper>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </CardEnter>
   );
 };
 

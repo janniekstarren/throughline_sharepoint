@@ -1,127 +1,75 @@
+@import './CardStyles.module.scss';
+
+// Inherit base card styles
 .card {
-  display: flex;
-  flex-direction: column;
-  height: 400px;
-  background-color: white;
-  border: 1px solid #edebe9;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  @extend .card;
 }
 
 .cardHeader {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #edebe9;
-  background-color: #faf9f8;
-  font-size: 14px;
-  font-weight: 600;
-  color: #323130;
-  flex-shrink: 0;
+  @extend .cardHeader;
 }
 
 .cardIcon {
-  font-size: 16px;
-  color: #0078d4;
-}
-
-.badge {
-  margin-left: auto;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background-color: #0078d4;
-  color: white;
-  font-size: 12px;
-  font-weight: 600;
+  @extend .cardIcon;
 }
 
 .cardContent {
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;
-  min-height: 0;
+  @extend .cardContent;
 }
 
+// Badge in header
+.badge {
+  @extend .badge;
+  @extend .badgeBrand;
+}
+
+// State containers
 .loadingContainer,
 .errorContainer,
 .emptyState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 32px;
-  color: #605e5c;
-  gap: 8px;
+  @extend .stateContainer;
 }
 
 .errorIcon {
-  font-size: 24px;
-  color: #d83b01;
+  @extend .stateIcon;
+  color: $color-error;
 }
 
 .emptyIcon {
-  font-size: 32px;
-  color: #107c10;
+  @extend .stateIcon;
+  color: $color-success;
 }
 
+// Email list
 .emailList {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  @extend .itemList;
 }
 
 .emailItem {
-  display: flex;
-  align-items: flex-start;
-  padding: 12px;
-  border-radius: 4px;
-  background-color: #faf9f8;
-  text-decoration: none;
-  color: inherit;
-  gap: 12px;
-  transition: background-color 0.2s ease;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #edebe9;
-  }
-
-  &:focus-visible {
-    outline: 2px solid #0078d4;
-    outline-offset: 2px;
-  }
+  @extend .item;
 }
 
 .avatar {
-  flex-shrink: 0;
+  @extend .avatar;
 }
 
 .emailContent {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
+  @extend .itemContent;
 }
 
 .emailHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .senderName {
-  font-size: 13px;
-  font-weight: 600;
-  color: #323130;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @extend .itemTitle;
 }
 
 .receivedTime {
-  font-size: 11px;
-  color: #a19f9d;
+  @extend .timeSub;
   flex-shrink: 0;
   margin-left: 8px;
 }
@@ -131,8 +79,8 @@
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: #323130;
-  margin-bottom: 4px;
+  color: $color-text-primary;
+  margin-bottom: 2px;
 
   span {
     overflow: hidden;
@@ -142,20 +90,20 @@
 }
 
 .importanceIcon {
-  color: #d83b01;
+  color: $color-error;
   font-size: 12px;
   flex-shrink: 0;
 }
 
 .attachmentIcon {
-  color: #605e5c;
+  color: $color-text-secondary;
   font-size: 12px;
   flex-shrink: 0;
 }
 
 .emailPreview {
   font-size: 12px;
-  color: #605e5c;
+  color: $color-text-secondary;
   line-height: 1.4;
   overflow: hidden;
   display: -webkit-box;

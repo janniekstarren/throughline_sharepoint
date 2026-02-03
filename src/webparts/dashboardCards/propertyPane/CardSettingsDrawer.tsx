@@ -7,9 +7,8 @@ import {
   Switch,
   Button,
   Label,
-  Divider,
 } from '@fluentui/react-components';
-import { Dismiss24Regular, ArrowReset24Regular } from '@fluentui/react-icons';
+import { Dismiss20Regular, ArrowReset20Regular } from '@fluentui/react-icons';
 
 export interface ICardSettingsDrawerProps {
   open: boolean;
@@ -32,13 +31,15 @@ const useStyles = makeStyles({
     bottom: 0,
     width: '300px',
     backgroundColor: tokens.colorNeutralBackground1,
-    borderLeft: `1px solid ${tokens.colorNeutralStroke1}`,
-    boxShadow: tokens.shadow16,
+    borderLeft: 'none',
+    boxShadow: '-6px 0 24px rgba(0,0,0,0.06), -2px 0 8px rgba(0,0,0,0.04)',
     display: 'flex',
     flexDirection: 'column',
     zIndex: 100,
     transform: 'translateX(100%)',
-    transition: 'transform 0.3s ease',
+    transitionProperty: 'transform',
+    transitionDuration: '0.25s',
+    transitionTimingFunction: 'cubic-bezier(0.33, 0, 0.67, 1)',
   },
   drawerOpen: {
     transform: 'translateX(0)',
@@ -47,63 +48,111 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: tokens.spacingVerticalM,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    backgroundColor: tokens.colorNeutralBackground2,
+    padding: '20px',
+    borderBottom: 'none',
   },
   headerTitle: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
+    gap: '12px',
   },
   headerIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    background: `linear-gradient(135deg, ${tokens.colorBrandBackground2} 0%, rgba(0, 102, 204, 0.08) 100%)`,
     color: tokens.colorBrandForeground1,
-    fontSize: '20px',
+    fontSize: '18px',
   },
   headerText: {
-    fontWeight: tokens.fontWeightSemibold,
-    fontSize: tokens.fontSizeBase300,
+    fontWeight: '600',
+    fontSize: '16px',
+    color: tokens.colorNeutralForeground1,
+    letterSpacing: '-0.01em',
   },
   closeButton: {
     minWidth: '32px',
+    width: '32px',
+    height: '32px',
+    padding: 0,
+    borderRadius: '8px',
+    transitionProperty: 'background-color',
+    transitionDuration: '0.15s',
+    ':hover': {
+      backgroundColor: tokens.colorNeutralBackground3,
+    },
   },
   body: {
     flex: 1,
-    padding: tokens.spacingVerticalL,
+    padding: '20px',
+    paddingTop: '8px',
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacingVerticalL,
+    gap: '20px',
     overflowY: 'auto',
+    // Custom scrollbar
+    '::-webkit-scrollbar': {
+      width: '6px',
+    },
+    '::-webkit-scrollbar-track': {
+      background: 'transparent',
+    },
+    '::-webkit-scrollbar-thumb': {
+      background: 'rgba(0, 0, 0, 0.1)',
+      borderRadius: '3px',
+    },
   },
   field: {
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacingVerticalXS,
+    gap: '8px',
   },
   label: {
-    fontWeight: tokens.fontWeightSemibold,
-    fontSize: tokens.fontSizeBase200,
+    fontWeight: '500',
+    fontSize: '13px',
     color: tokens.colorNeutralForeground1,
   },
   input: {
     width: '100%',
+    '& input': {
+      borderRadius: '8px',
+    },
+    '& .fui-Input': {
+      borderRadius: '8px',
+    },
+    '& .fui-Input__input': {
+      borderRadius: '8px',
+    },
   },
   switchField: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    padding: '16px',
+    marginTop: '4px',
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderRadius: '10px',
+    border: 'none',
+  },
+  hint: {
+    fontSize: '12px',
+    color: tokens.colorNeutralForeground3,
+    lineHeight: '1.4',
   },
   footer: {
-    padding: tokens.spacingVerticalM,
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+    padding: '16px 20px',
+    borderTop: 'none',
     backgroundColor: tokens.colorNeutralBackground2,
   },
   resetButton: {
     width: '100%',
-  },
-  hint: {
-    fontSize: tokens.fontSizeBase100,
-    color: tokens.colorNeutralForeground3,
+    justifyContent: 'center',
+    height: '36px',
+    borderRadius: '8px',
+    fontWeight: '500',
   },
 });
 
@@ -153,11 +202,11 @@ export const CardSettingsDrawer: React.FC<ICardSettingsDrawerProps> = ({
       <div className={styles.header}>
         <div className={styles.headerTitle}>
           <span className={styles.headerIcon}>{icon}</span>
-          <Text className={styles.headerText}>Card Settings</Text>
+          <Text className={styles.headerText}>Settings</Text>
         </div>
         <Button
           appearance="subtle"
-          icon={<Dismiss24Regular />}
+          icon={<Dismiss20Regular />}
           className={styles.closeButton}
           onClick={onClose}
           title="Close"
@@ -177,19 +226,18 @@ export const CardSettingsDrawer: React.FC<ICardSettingsDrawerProps> = ({
             onBlur={handleTitleBlur}
             onKeyDown={handleKeyDown}
             placeholder={defaultTitle}
+            size="small"
           />
           <Text className={styles.hint}>
             Default: {defaultTitle}
           </Text>
         </div>
 
-        <Divider />
-
         <div className={styles.switchField}>
           <div className={styles.field}>
-            <Label className={styles.label}>Show Card</Label>
+            <Label className={styles.label}>Visible</Label>
             <Text className={styles.hint}>
-              {visible ? 'Card is visible on dashboard' : 'Card is hidden'}
+              {visible ? 'Shown on dashboard' : 'Hidden'}
             </Text>
           </div>
           <Switch
@@ -201,8 +249,9 @@ export const CardSettingsDrawer: React.FC<ICardSettingsDrawerProps> = ({
 
       <div className={styles.footer}>
         <Button
-          appearance="secondary"
-          icon={<ArrowReset24Regular />}
+          appearance="subtle"
+          size="small"
+          icon={<ArrowReset20Regular />}
           className={styles.resetButton}
           onClick={handleReset}
           disabled={!isCustomTitle && visible}

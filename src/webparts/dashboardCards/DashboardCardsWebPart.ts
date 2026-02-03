@@ -172,6 +172,16 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     // Get custom card titles (default to empty object if not set)
     const cardTitles = this.properties.cardTitles || {};
 
+    // Get category configuration
+    const categoryOrder = this.properties.categoryOrder && this.properties.categoryOrder.length > 0
+      ? this.properties.categoryOrder
+      : DEFAULT_CATEGORY_ORDER;
+
+    const categoryNames = this.properties.categoryNames || {};
+    const categoryConfig = this.properties.categoryConfig || this._getDefaultCategoryConfig();
+    const cardCategoryAssignment = this.properties.cardCategoryAssignment || this._getDefaultCardCategoryAssignment();
+    const categoryIcons = this.properties.categoryIcons || {};
+
     const element: React.ReactElement<IDashboardCardsProps> = React.createElement(
       DashboardCards,
       {
@@ -182,6 +192,11 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
         cardVisibility,
         cardOrder,
         cardTitles,
+        categoryOrder,
+        categoryNames,
+        categoryConfig,
+        cardCategoryAssignment,
+        categoryIcons,
       }
     );
 

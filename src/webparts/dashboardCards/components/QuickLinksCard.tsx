@@ -1,5 +1,8 @@
 import * as React from 'react';
 import {
+  Body1Strong,
+} from '@fluentui/react-components';
+import {
   Link24Regular,
   Mail24Regular,
   PeopleTeam24Regular,
@@ -9,8 +12,7 @@ import {
   Notebook24Regular,
 } from '@fluentui/react-icons';
 import { IQuickLink } from '../services/GraphService';
-import { MotionWrapper } from './MotionWrapper';
-import styles from './QuickLinksCard.module.scss';
+import { useCardStyles, CardEnter, ListItemEnter } from './cardStyles';
 
 export interface IQuickLinksCardProps {
   links: IQuickLink[];
@@ -49,35 +51,40 @@ const defaultLinks: IQuickLink[] = [
 ];
 
 export const QuickLinksCard: React.FC<IQuickLinksCardProps> = ({ links, title }) => {
+  const styles = useCardStyles();
   const displayLinks = links.length > 0 ? links : defaultLinks;
 
   return (
-    <div className={styles.card}>
-      <div className={styles.cardHeader}>
-        <Link24Regular className={styles.cardIcon} />
-        <span>{title || 'Quick Links'}</span>
-      </div>
-      <div className={styles.cardContent}>
-        <MotionWrapper visible={true}>
-          <div className={styles.linkGrid}>
-            {displayLinks.map(link => (
-              <a
-                key={link.id}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.linkItem}
-              >
-                <div className={styles.linkIcon}>
-                  <QuickLinkIcon iconName={link.icon} />
-                </div>
-                <span className={styles.linkTitle}>{link.title}</span>
-              </a>
+    <CardEnter visible={true}>
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <div className={styles.cardIconWrapper}>
+            <Link24Regular className={styles.cardIcon} />
+          </div>
+          <Body1Strong className={styles.cardTitle}>{title || 'Quick Links'}</Body1Strong>
+        </div>
+        <div className={styles.cardContent}>
+          <div className={styles.gridLayout}>
+            {displayLinks.map((link, index) => (
+              <ListItemEnter key={link.id} visible={true}>
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.gridItem}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className={styles.gridItemIcon}>
+                    <QuickLinkIcon iconName={link.icon} />
+                  </div>
+                  <span className={styles.gridItemLabel}>{link.title}</span>
+                </a>
+              </ListItemEnter>
             ))}
           </div>
-        </MotionWrapper>
+        </div>
       </div>
-    </div>
+    </CardEnter>
   );
 };
 
