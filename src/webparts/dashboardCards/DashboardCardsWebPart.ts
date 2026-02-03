@@ -31,9 +31,20 @@ const CARD_DEFAULT_CATEGORIES: Record<string, string> = {
   sharedWithMe: 'files',
   quickLinks: 'navigation',
   siteActivity: 'people',
+  waitingOnYou: 'email',
 };
 
 export type ThemeMode = 'auto' | 'light' | 'dark';
+
+// Waiting On You card settings
+export interface IWaitingOnYouSettings {
+  staleDays: number;           // Days before a conversation is considered stale (default: 2)
+  includeEmail: boolean;       // Include emails (default: true)
+  includeTeamsChats: boolean;  // Include Teams chats (default: true)
+  includeChannels: boolean;    // Include channel messages (default: false)
+  includeMentions: boolean;    // Include @mentions in Teams messages (default: true)
+  showChart: boolean;          // Show the trend chart (default: true)
+}
 
 export interface IDashboardCardsWebPartProps {
   salutationType: SalutationType;
@@ -51,6 +62,7 @@ export interface IDashboardCardsWebPartProps {
   showSharedWithMe: boolean;
   showQuickLinks: boolean;
   showSiteActivity: boolean;
+  showWaitingOnYou: boolean;
   // Card order
   cardOrder: string[];
   // Custom card titles
@@ -65,6 +77,8 @@ export interface IDashboardCardsWebPartProps {
   cardCategoryAssignment: Record<string, string>;
   // Custom category icons
   categoryIcons: Record<string, string>;
+  // Waiting On You card settings
+  waitingOnYouSettings: IWaitingOnYouSettings;
 }
 
 export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashboardCardsWebPartProps> {
@@ -162,23 +176,41 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       showSharedWithMe: this.properties.showSharedWithMe !== false,
       showQuickLinks: this.properties.showQuickLinks !== false,
       showSiteActivity: this.properties.showSiteActivity !== false,
+      showWaitingOnYou: this.properties.showWaitingOnYou !== false,
     };
 
-    // Get card order (default if not set)
-    const cardOrder = this.properties.cardOrder && this.properties.cardOrder.length > 0
+    // Get card order (default if not set, and ensure new cards are included)
+    let cardOrder = this.properties.cardOrder && this.properties.cardOrder.length > 0
       ? this.properties.cardOrder
       : DEFAULT_CARD_ORDER;
+
+    // Ensure any new cards from DEFAULT_CARD_ORDER are added to the end
+    const missingCards = DEFAULT_CARD_ORDER.filter(cardId => !cardOrder.includes(cardId));
+    if (missingCards.length > 0) {
+      cardOrder = [...cardOrder, ...missingCards];
+    }
 
     // Get custom card titles (default to empty object if not set)
     const cardTitles = this.properties.cardTitles || {};
 
-    // Get category configuration
+    // Get category configuration - use defaults if not set
     const categoryOrder = this.properties.categoryOrder && this.properties.categoryOrder.length > 0
       ? this.properties.categoryOrder
-      : [];
+      : [...DEFAULT_CATEGORY_ORDER];
     const categoryNames = this.properties.categoryNames || {};
-    const categoryConfig = this.properties.categoryConfig || {};
-    const cardCategoryAssignment = this.properties.cardCategoryAssignment || {};
+    const categoryConfig = this.properties.categoryConfig && Object.keys(this.properties.categoryConfig).length > 0
+      ? this.properties.categoryConfig
+      : this._getDefaultCategoryConfig();
+    // Get card category assignment, ensuring new cards have default assignments
+    let cardCategoryAssignment = this.properties.cardCategoryAssignment || {};
+    // Add default category assignments for any missing cards
+    const missingAssignments = DEFAULT_CARD_ORDER.filter(cardId => !cardCategoryAssignment[cardId]);
+    if (missingAssignments.length > 0) {
+      cardCategoryAssignment = { ...cardCategoryAssignment };
+      missingAssignments.forEach(cardId => {
+        cardCategoryAssignment[cardId] = CARD_DEFAULT_CATEGORIES[cardId] || 'available';
+      });
+    }
     const categoryIcons = this.properties.categoryIcons || {};
 
     const element: React.ReactElement<IDashboardCardsProps> = React.createElement(
@@ -196,6 +228,14 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
         categoryConfig,
         cardCategoryAssignment,
         categoryIcons,
+        waitingOnYouSettings: this.properties.waitingOnYouSettings || {
+          staleDays: 2,
+          includeEmail: true,
+          includeTeamsChats: true,
+          includeChannels: false,
+          includeMentions: true,
+          showChart: true,
+        },
       }
     );
 
@@ -299,6 +339,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       sharedWithMe: 'showSharedWithMe',
       quickLinks: 'showQuickLinks',
       siteActivity: 'showSiteActivity',
+      waitingOnYou: 'showWaitingOnYou',
     };
 
     // Update card order
@@ -354,11 +395,18 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       sharedWithMe: this.properties.showSharedWithMe !== false,
       quickLinks: this.properties.showQuickLinks !== false,
       siteActivity: this.properties.showSiteActivity !== false,
+      waitingOnYou: this.properties.showWaitingOnYou !== false,
     };
 
-    const cardOrder = this.properties.cardOrder && this.properties.cardOrder.length > 0
+    // Get card order and ensure new cards are included
+    let cardOrder = this.properties.cardOrder && this.properties.cardOrder.length > 0
       ? this.properties.cardOrder
       : DEFAULT_CARD_ORDER;
+    // Ensure any new cards from DEFAULT_CARD_ORDER are added to the end
+    const missingCards = DEFAULT_CARD_ORDER.filter(cardId => !cardOrder.includes(cardId));
+    if (missingCards.length > 0) {
+      cardOrder = [...cardOrder, ...missingCards];
+    }
 
     const cardTitles = this.properties.cardTitles || {};
     const categoryNames = this.properties.categoryNames || {};
@@ -366,10 +414,28 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       ? this.properties.categoryOrder
       : [...DEFAULT_CATEGORY_ORDER];
     const categoryConfig = this.properties.categoryConfig || this._getDefaultCategoryConfig();
-    const cardCategoryAssignment = this.properties.cardCategoryAssignment || this._getDefaultCardCategoryAssignment();
+    // Get card category assignment, ensuring new cards have default assignments
+    let cardCategoryAssignment = this.properties.cardCategoryAssignment || this._getDefaultCardCategoryAssignment();
+    const missingAssignments = DEFAULT_CARD_ORDER.filter(cardId => !cardCategoryAssignment[cardId]);
+    if (missingAssignments.length > 0) {
+      cardCategoryAssignment = { ...cardCategoryAssignment };
+      missingAssignments.forEach(cardId => {
+        cardCategoryAssignment[cardId] = CARD_DEFAULT_CATEGORIES[cardId] || 'available';
+      });
+    }
 
     // Get Fluent theme from SharePoint context
     const theme = getFluentTheme(this.context);
+
+    // Get Waiting On You settings with defaults
+    const waitingOnYouSettings: IWaitingOnYouSettings = this.properties.waitingOnYouSettings || {
+      staleDays: 2,
+      includeEmail: true,
+      includeTeamsChats: true,
+      includeChannels: false,
+      includeMentions: true,
+      showChart: true,
+    };
 
     // Create the dialog with proper FluentProvider wrapping
     const cardConfigDialog = React.createElement(CardConfigDialog, {
@@ -384,6 +450,11 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       cardCategoryAssignment,
       categoryIcons: this.properties.categoryIcons || {},
       onSave: (config: ICardConfig) => this._handleDialogSave(config),
+      waitingOnYouSettings,
+      onWaitingOnYouSettingsChanged: (settings: IWaitingOnYouSettings) => {
+        this.properties.waitingOnYouSettings = settings;
+        this.render();
+      },
     });
 
     const dialogElement = React.createElement(
@@ -463,6 +534,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       sharedWithMe: this.properties.showSharedWithMe !== false,
       quickLinks: this.properties.showQuickLinks !== false,
       siteActivity: this.properties.showSiteActivity !== false,
+      waitingOnYou: this.properties.showWaitingOnYou !== false,
     };
 
     // Map cardId to property name
@@ -477,6 +549,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       sharedWithMe: 'showSharedWithMe',
       quickLinks: 'showQuickLinks',
       siteActivity: 'showSiteActivity',
+      waitingOnYou: 'showWaitingOnYou',
     };
 
     const categoryNames = this.properties.categoryNames || {};
@@ -484,7 +557,25 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       ? this.properties.categoryOrder
       : [...DEFAULT_CATEGORY_ORDER];
     const categoryConfig = this.properties.categoryConfig || this._getDefaultCategoryConfig();
-    const cardCategoryAssignment = this.properties.cardCategoryAssignment || this._getDefaultCardCategoryAssignment();
+
+    // Get card order and ensure new cards are included
+    let cardOrder = this.properties.cardOrder && this.properties.cardOrder.length > 0
+      ? this.properties.cardOrder
+      : DEFAULT_CARD_ORDER;
+    const missingCards = DEFAULT_CARD_ORDER.filter(cardId => !cardOrder.includes(cardId));
+    if (missingCards.length > 0) {
+      cardOrder = [...cardOrder, ...missingCards];
+    }
+
+    // Get card category assignment, ensuring new cards have default assignments
+    let cardCategoryAssignment = this.properties.cardCategoryAssignment || this._getDefaultCardCategoryAssignment();
+    const missingAssignments = DEFAULT_CARD_ORDER.filter(cardId => !cardCategoryAssignment[cardId]);
+    if (missingAssignments.length > 0) {
+      cardCategoryAssignment = { ...cardCategoryAssignment };
+      missingAssignments.forEach(cardId => {
+        cardCategoryAssignment[cardId] = CARD_DEFAULT_CATEGORIES[cardId] || 'available';
+      });
+    }
 
     return [
       PropertyPaneConfigureButton('configureCards', {
@@ -493,7 +584,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       }),
       PropertyPaneCardOrder('cardOrder', {
         label: strings.CardOrderLabel,
-        cardOrder: this.properties.cardOrder || DEFAULT_CARD_ORDER,
+        cardOrder,
         cardVisibility,
         categoryNames,
         categoryOrder,

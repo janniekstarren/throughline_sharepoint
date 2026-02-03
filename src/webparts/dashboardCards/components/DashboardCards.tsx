@@ -7,6 +7,7 @@ import {
   Theme,
   Spinner,
 } from '@fluentui/react-components';
+import { MSGraphClientV3 } from '@microsoft/sp-http';
 import {
   GraphService,
   ICalendarEvent,
@@ -30,6 +31,8 @@ import { TodaysAgendaCardLarge } from './TodaysAgendaCardLarge';
 import { UnreadInboxCardLarge } from './UnreadInboxCardLarge';
 import { UpcomingWeekCardLarge } from './UpcomingWeekCardLarge';
 import { FlaggedEmailsCardLarge } from './FlaggedEmailsCardLarge';
+// Waiting On You card
+import { WaitingOnYouCard } from './WaitingOnYouCard';
 import { HoverCardItemType, IHoverCardItem } from './ItemHoverCard';
 import { Salutation, SalutationType, SalutationSize } from './Salutation';
 import { CategorySection, IOrderedCard } from './CategorySection';
@@ -47,6 +50,7 @@ export interface ICardVisibility {
   showSharedWithMe: boolean;
   showQuickLinks: boolean;
   showSiteActivity: boolean;
+  showWaitingOnYou: boolean;
 }
 
 // Import ICategoryConfig from CardConfigDialog
@@ -69,6 +73,16 @@ const DEFAULT_CATEGORY_ICONS: Record<string, string> = {
   navigation: 'link',
 };
 
+// Waiting On You card settings
+export interface IWaitingOnYouSettings {
+  staleDays: number;
+  includeEmail: boolean;
+  includeTeamsChats: boolean;
+  includeChannels: boolean;
+  includeMentions: boolean;
+  showChart: boolean;
+}
+
 export interface IDashboardCardsProps {
   context: WebPartContext;
   salutationType: SalutationType;
@@ -83,6 +97,8 @@ export interface IDashboardCardsProps {
   categoryConfig?: Record<string, ICategoryConfig>;
   cardCategoryAssignment?: Record<string, string>;
   categoryIcons?: Record<string, string>;
+  // Waiting On You settings
+  waitingOnYouSettings?: IWaitingOnYouSettings;
 }
 
 // Default card titles
@@ -97,10 +113,21 @@ const DEFAULT_CARD_TITLES: Record<string, string> = {
   sharedWithMe: 'Shared With Me',
   quickLinks: 'Quick Links',
   siteActivity: 'Site Activity',
+  waitingOnYou: 'Waiting On You',
 };
 
 // Create a renderer for Fluent UI 9 that targets the document
 const renderer = createDOMRenderer(document);
+
+// Default Waiting On You settings
+const DEFAULT_WAITING_ON_YOU_SETTINGS: IWaitingOnYouSettings = {
+  staleDays: 2,
+  includeEmail: true,
+  includeTeamsChats: true,
+  includeChannels: false,
+  includeMentions: true,
+  showChart: true,
+};
 
 export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   context,
@@ -115,6 +142,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   categoryConfig = {},
   cardCategoryAssignment = {},
   categoryIcons = {},
+  waitingOnYouSettings = DEFAULT_WAITING_ON_YOU_SETTINGS,
 }) => {
   // Helper to get card title (custom or default)
   const getCardTitle = (cardId: string): string => {
@@ -137,6 +165,22 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
 
   // Create a ref for the portal mount node
   const portalMountRef = React.useRef<HTMLDivElement>(null);
+
+  // Graph client for WaitingOnYou card
+  const [graphClient, setGraphClient] = React.useState<MSGraphClientV3 | undefined>(undefined);
+
+  // Initialize Graph client
+  React.useEffect(() => {
+    context.msGraphClientFactory
+      .getClient('3')
+      .then((client: MSGraphClientV3) => {
+        setGraphClient(client);
+      })
+      .catch((err: Error) => {
+        console.error('Failed to get Graph client:', err);
+      });
+  }, [context]);
+
   // Today's events
   const [events, setEvents] = React.useState<ICalendarEvent[]>([]);
   const [eventsLoading, setEventsLoading] = React.useState<boolean>(true);
@@ -417,6 +461,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       sharedWithMe: cardVisibility.showSharedWithMe,
       quickLinks: cardVisibility.showQuickLinks,
       siteActivity: cardVisibility.showSiteActivity,
+      waitingOnYou: cardVisibility.showWaitingOnYou,
     };
     return visibilityMap[cardId] ?? false;
   };
@@ -449,6 +494,18 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
         return <QuickLinksCard links={quickLinks} title={cardTitle} />;
       case 'siteActivity':
         return <SiteActivityCard activities={siteActivity} loading={siteActivityLoading} error={siteActivityError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+      case 'waitingOnYou':
+        return (
+          <WaitingOnYouCard
+            graphClient={graphClient || null}
+            showChart={waitingOnYouSettings.showChart}
+            staleDays={waitingOnYouSettings.staleDays}
+            includeEmail={waitingOnYouSettings.includeEmail}
+            includeTeamsChats={waitingOnYouSettings.includeTeamsChats}
+            includeChannels={waitingOnYouSettings.includeChannels}
+            includeMentions={waitingOnYouSettings.includeMentions}
+          />
+        );
       default:
         return null;
     }

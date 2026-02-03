@@ -32,6 +32,15 @@ import {
 } from '@fluentui/react-icons';
 import { ICategoryConfig, DEFAULT_CATEGORY_ORDER, CATEGORIES } from './CardConfigDialog';
 
+// Waiting On You card settings
+export interface IWaitingOnYouSettings {
+  staleDays: number;
+  includeEmail: boolean;
+  includeTeamsChats: boolean;
+  includeChannels: boolean;
+  showChart: boolean;
+}
+
 export interface ICardOrderEditorProps {
   label: string;
   cardOrder: string[];
@@ -48,6 +57,9 @@ export interface ICardOrderEditorProps {
   onCardCategoryChanged: (cardId: string, categoryId: string) => void;
   onCategoryAdded: (categoryId: string, name: string) => void;
   onCategoryDeleted: (categoryId: string) => void;
+  // Waiting On You settings
+  waitingOnYouSettings?: IWaitingOnYouSettings;
+  onWaitingOnYouSettingsChanged?: (settings: IWaitingOnYouSettings) => void;
 }
 
 // Card display names mapping
@@ -62,6 +74,7 @@ const cardDisplayNames: Record<string, string> = {
   sharedWithMe: 'Shared With Me',
   quickLinks: 'Quick Links',
   siteActivity: 'Site Activity',
+  waitingOnYou: 'Waiting On You',
 };
 
 // Category icons
@@ -87,6 +100,7 @@ export const DEFAULT_CARD_ORDER: string[] = [
   'sharedWithMe',
   'quickLinks',
   'siteActivity',
+  'waitingOnYou',
 ];
 
 const useStyles = makeStyles({
@@ -349,6 +363,7 @@ export const CardOrderEditor: React.FC<ICardOrderEditorProps> = ({
   onCardCategoryChanged,
   onCategoryAdded,
   onCategoryDeleted,
+  // Note: waitingOnYouSettings are configured in the CardConfigDialog, not here
 }) => {
   const styles = useStyles();
 
@@ -362,13 +377,41 @@ export const CardOrderEditor: React.FC<ICardOrderEditorProps> = ({
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState<string | null>(null);
   const [newCategoryCounter, setNewCategoryCounter] = React.useState(1);
 
-  // Ensure we have valid data
-  const currentOrder = cardOrder && cardOrder.length > 0 ? cardOrder : DEFAULT_CARD_ORDER;
+  // Ensure we have valid data - include any missing cards from DEFAULT_CARD_ORDER
+  const baseOrder = cardOrder && cardOrder.length > 0 ? cardOrder : DEFAULT_CARD_ORDER;
+  const missingCards = DEFAULT_CARD_ORDER.filter(cardId => !baseOrder.includes(cardId));
+  const currentOrder = missingCards.length > 0 ? [...baseOrder, ...missingCards] : baseOrder;
   const currentCategoryOrder = categoryOrder && categoryOrder.length > 0 ? categoryOrder : [...DEFAULT_CATEGORY_ORDER];
+
+  // Default category assignments for cards
+  const defaultCategoryMap: Record<string, string> = {
+    todaysAgenda: 'calendar',
+    unreadInbox: 'email',
+    myTasks: 'tasks',
+    recentFiles: 'files',
+    upcomingWeek: 'calendar',
+    flaggedEmails: 'email',
+    myTeam: 'people',
+    sharedWithMe: 'files',
+    quickLinks: 'navigation',
+    siteActivity: 'people',
+    waitingOnYou: 'email',
+  };
+
+  // Ensure all cards have category assignments
+  const effectiveCategoryAssignment = React.useMemo(() => {
+    const result = { ...cardCategoryAssignment };
+    DEFAULT_CARD_ORDER.forEach(cardId => {
+      if (!result[cardId]) {
+        result[cardId] = defaultCategoryMap[cardId] || 'available';
+      }
+    });
+    return result;
+  }, [cardCategoryAssignment]);
 
   // Get cards in a category
   const getCardsInCategory = (categoryId: string): string[] => {
-    return currentOrder.filter(cardId => cardCategoryAssignment[cardId] === categoryId);
+    return currentOrder.filter(cardId => effectiveCategoryAssignment[cardId] === categoryId);
   };
 
   // Get category config
@@ -507,7 +550,7 @@ export const CardOrderEditor: React.FC<ICardOrderEditorProps> = ({
         onOrderChanged(newOrder);
 
         // Update category assignment if moving to different category
-        const sourceCategoryId = cardCategoryAssignment[sourceCardId];
+        const sourceCategoryId = effectiveCategoryAssignment[sourceCardId];
         if (sourceCategoryId !== targetCategoryId) {
           onCardCategoryChanged(sourceCardId, targetCategoryId);
         }

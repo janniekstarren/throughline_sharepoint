@@ -11,6 +11,15 @@ import {
 } from '@fluentui/react-components';
 import { Dismiss24Regular, ArrowReset24Regular } from '@fluentui/react-icons';
 
+export interface IWaitingOnYouSettings {
+  staleDays: number;
+  includeEmail: boolean;
+  includeTeamsChats: boolean;
+  includeChannels: boolean;
+  includeMentions: boolean;  // Include @mentions in Teams messages
+  showChart: boolean;
+}
+
 export interface ICardSettingsDrawerProps {
   open: boolean;
   cardId: string;
@@ -22,6 +31,9 @@ export interface ICardSettingsDrawerProps {
   onTitleChange: (title: string) => void;
   onVisibilityChange: (visible: boolean) => void;
   onReset: () => void;
+  // Waiting On You specific settings
+  waitingOnYouSettings?: IWaitingOnYouSettings;
+  onWaitingOnYouSettingsChanged?: (settings: IWaitingOnYouSettings) => void;
 }
 
 const useStyles = makeStyles({
@@ -118,6 +130,8 @@ export const CardSettingsDrawer: React.FC<ICardSettingsDrawerProps> = ({
   onTitleChange,
   onVisibilityChange,
   onReset,
+  waitingOnYouSettings,
+  onWaitingOnYouSettingsChanged,
 }) => {
   const styles = useStyles();
   const [localTitle, setLocalTitle] = React.useState(title);
@@ -197,6 +211,102 @@ export const CardSettingsDrawer: React.FC<ICardSettingsDrawerProps> = ({
             onChange={(_, data) => onVisibilityChange(data.checked)}
           />
         </div>
+
+        {/* Waiting On You specific settings */}
+        {cardId === 'waitingOnYou' && waitingOnYouSettings && onWaitingOnYouSettingsChanged && (
+          <>
+            <Divider />
+            <Text className={styles.label} style={{ marginBottom: '8px' }}>Card Settings</Text>
+
+            <div className={styles.field}>
+              <Label className={styles.label} htmlFor="staleDays">
+                Stale after (days)
+              </Label>
+              <Input
+                id="staleDays"
+                className={styles.input}
+                type="number"
+                min={1}
+                max={30}
+                value={String(waitingOnYouSettings.staleDays)}
+                onChange={(_, data) => {
+                  const value = parseInt(data.value, 10);
+                  if (!isNaN(value) && value >= 1 && value <= 30) {
+                    onWaitingOnYouSettingsChanged({ ...waitingOnYouSettings, staleDays: value });
+                  }
+                }}
+              />
+              <Text className={styles.hint}>
+                Messages older than this many days are considered stale
+              </Text>
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Include Email</Label>
+                <Text className={styles.hint}>
+                  Show emails waiting for response
+                </Text>
+              </div>
+              <Switch
+                checked={waitingOnYouSettings.includeEmail}
+                onChange={(_, data) => onWaitingOnYouSettingsChanged({ ...waitingOnYouSettings, includeEmail: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Include Teams Chats</Label>
+                <Text className={styles.hint}>
+                  Show Teams chats waiting for response
+                </Text>
+              </div>
+              <Switch
+                checked={waitingOnYouSettings.includeTeamsChats}
+                onChange={(_, data) => onWaitingOnYouSettingsChanged({ ...waitingOnYouSettings, includeTeamsChats: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Include Channels</Label>
+                <Text className={styles.hint}>
+                  Show channel messages waiting for response
+                </Text>
+              </div>
+              <Switch
+                checked={waitingOnYouSettings.includeChannels}
+                onChange={(_, data) => onWaitingOnYouSettingsChanged({ ...waitingOnYouSettings, includeChannels: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Include @Mentions</Label>
+                <Text className={styles.hint}>
+                  Show messages where you were @mentioned
+                </Text>
+              </div>
+              <Switch
+                checked={waitingOnYouSettings.includeMentions}
+                onChange={(_, data) => onWaitingOnYouSettingsChanged({ ...waitingOnYouSettings, includeMentions: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Show Chart</Label>
+                <Text className={styles.hint}>
+                  Display trend chart in card
+                </Text>
+              </div>
+              <Switch
+                checked={waitingOnYouSettings.showChart}
+                onChange={(_, data) => onWaitingOnYouSettingsChanged({ ...waitingOnYouSettings, showChart: data.checked })}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       <div className={styles.footer}>

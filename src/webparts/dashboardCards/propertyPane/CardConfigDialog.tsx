@@ -45,6 +45,7 @@ import {
   Link24Regular,
   History24Regular,
   Grid24Regular,
+  PersonClock24Regular,
   // Icons for icon picker
   Home24Regular,
   Star24Regular,
@@ -143,7 +144,7 @@ import {
   Fingerprint24Regular,
 } from '@fluentui/react-icons';
 import { MiniCard } from './MiniCard';
-import { CardSettingsDrawer } from './CardSettingsDrawer';
+import { CardSettingsDrawer, IWaitingOnYouSettings } from './CardSettingsDrawer';
 
 export interface ICategoryConfig {
   id: string;
@@ -174,6 +175,9 @@ export interface ICardConfigDialogProps {
   cardCategoryAssignment?: Record<string, string>;
   categoryIcons?: Record<string, string>;
   onSave: (config: ICardConfig) => void;
+  // Waiting On You settings
+  waitingOnYouSettings?: IWaitingOnYouSettings;
+  onWaitingOnYouSettingsChanged?: (settings: IWaitingOnYouSettings) => void;
 }
 
 export type CategoryId = 'calendar' | 'email' | 'tasks' | 'files' | 'people' | 'navigation' | 'available' | string;
@@ -382,6 +386,7 @@ const CARD_DEFINITIONS: Record<string, { icon: React.ReactElement; defaultTitle:
   sharedWithMe: { icon: <Share24Regular />, defaultTitle: 'Shared With Me', defaultCategory: 'files' },
   quickLinks: { icon: <Link24Regular />, defaultTitle: 'Quick Links', defaultCategory: 'navigation' },
   siteActivity: { icon: <History24Regular />, defaultTitle: 'Site Activity', defaultCategory: 'people' },
+  waitingOnYou: { icon: <PersonClock24Regular />, defaultTitle: 'Waiting On You', defaultCategory: 'email' },
 };
 
 const ALL_CARD_IDS = Object.keys(CARD_DEFINITIONS);
@@ -875,6 +880,8 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
   cardCategoryAssignment: initialCardCategoryAssignment,
   categoryIcons: initialCategoryIcons,
   onSave,
+  waitingOnYouSettings,
+  onWaitingOnYouSettingsChanged,
 }) => {
   const styles = useStyles();
 
@@ -1749,6 +1756,8 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
                 onTitleChange={(title) => handleTitleChange(selectedCard, title)}
                 onVisibilityChange={(visible) => setCardVisibility(prev => ({ ...prev, [selectedCard]: visible }))}
                 onReset={() => handleReset(selectedCard)}
+                waitingOnYouSettings={waitingOnYouSettings}
+                onWaitingOnYouSettingsChanged={onWaitingOnYouSettingsChanged}
               />
             )}
           </div>
