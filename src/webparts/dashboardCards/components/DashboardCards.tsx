@@ -14,7 +14,7 @@ import {
   ITeamMember,
   ISharedFile,
 } from '../services/GraphService';
-import { useDashboardData } from '../hooks/useDashboardData';
+import { useDashboardData, DataMode } from '../hooks/useDashboardData';
 // Medium card components (standard list)
 import { MyTasksCard } from './MyTasksCard';
 import { RecentFilesCard } from './RecentFilesCard';
@@ -98,6 +98,8 @@ export interface IDashboardCardsProps {
   cardVisibility: ICardVisibility;
   cardOrder: string[];
   cardTitles: Record<string, string>;
+  // Data mode: 'api' for live Graph data, 'test' for mock data
+  dataMode: DataMode;
   // Category configuration
   categoryOrder?: string[];
   categoryNames?: Record<string, string>;
@@ -156,6 +158,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   cardVisibility,
   cardOrder,
   cardTitles,
+  dataMode,
   categoryOrder = [],
   categoryNames = {},
   categoryConfig = {},
@@ -202,7 +205,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   }, [context]);
 
   // Consolidated dashboard data hook - replaces 27 individual useState calls
-  const { state: dashboardData } = useDashboardData(context);
+  // Supports both API mode (live Graph data) and Test mode (mock data)
+  const { state: dashboardData } = useDashboardData(context, dataMode);
 
   // Action handler for hover card actions
   // This will be extended in Phase 2/3 to call Graph API for real actions
@@ -339,6 +343,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
             includeTeamsChats={waitingOnYouSettings.includeTeamsChats}
             includeChannels={waitingOnYouSettings.includeChannels}
             includeMentions={waitingOnYouSettings.includeMentions}
+            dataMode={dataMode}
           />
         );
       case 'waitingOnOthers':
@@ -352,6 +357,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
               includeMentions: waitingOnOthersSettings.includeMentions,
               showChart: waitingOnOthersSettings.showChart,
             }}
+            dataMode={dataMode}
           />
         );
       default:

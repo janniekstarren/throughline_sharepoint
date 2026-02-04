@@ -30,6 +30,13 @@ declare interface IDashboardCardsWebPartStrings {
   CardOrderGroupName: string;
   CardOrderLabel: string;
   ConfigureCardsButton: string;
+  ThemeModeLabel: string;
+  ThemeModeAuto: string;
+  ThemeModeLight: string;
+  ThemeModeDark: string;
+  DataModeLabel: string;
+  DataModeApi: string;
+  DataModeTest: string;
   AppLocalEnvironmentSharePoint: string;
   AppLocalEnvironmentTeams: string;
   AppLocalEnvironmentOffice: string;

@@ -24,10 +24,12 @@ import {
 } from '@fluentui/react-icons';
 import { MSGraphClientV3 } from '@microsoft/sp-http';
 
-import { ViewMode } from '../../models/WaitingOnYou';
+import { ViewMode, GroupedWaitingData, WaitingDebtTrend, WaitingFilter } from '../../models/WaitingOnYou';
 import { useWaitingOnYou } from '../../hooks/useWaitingOnYou';
 import { useSnooze } from '../../hooks/useSnooze';
 import { useWaitingOnYouStyles } from './WaitingOnYouCard.styles';
+import { DataMode } from '../../services/testData';
+import { getTestWaitingOnYouData, getTestWaitingOnYouTrend } from '../../services/testData/waitingOnYou';
 
 import { PeopleView } from './views/PeopleView';
 import { TeamsView } from './views/TeamsView';
@@ -43,6 +45,7 @@ export interface WaitingOnYouCardProps {
   includeTeamsChats?: boolean;
   includeChannels?: boolean;
   includeMentions?: boolean;
+  dataMode?: DataMode;
 }
 
 export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
@@ -53,28 +56,44 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
   includeTeamsChats = true,
   includeChannels = false,
   includeMentions = true,
+  dataMode = 'api',
 }) => {
   const styles = useWaitingOnYouStyles();
 
-  // Main data hook - pass settings as initial filter
-  const {
-    data,
-    trendData,
-    isLoading,
-    error,
-    lastRefreshed,
-    viewMode,
-    setViewMode,
-    expandedGroups,
-    toggleGroup,
-    filter,
-    updateFilter,
-    refresh,
-    dismissConversation,
-    snoozeConversation,
-    unsnoozeConversation
-  } = useWaitingOnYou({
-    graphClient,
+  // Test data state (used when dataMode === 'test')
+  const [testData, setTestData] = React.useState<GroupedWaitingData | null>(null);
+  const [testTrendData, setTestTrendData] = React.useState<WaitingDebtTrend | null>(null);
+  const [testLoading, setTestLoading] = React.useState(dataMode === 'test');
+  const [testViewMode, setTestViewMode] = React.useState<ViewMode>('people');
+  const [testExpandedGroups, setTestExpandedGroups] = React.useState<Set<string>>(new Set());
+  const [testFilter, setTestFilter] = React.useState<WaitingFilter>({
+    minStaleDuration: staleDays * 24,
+    maxResults: 50,
+    includeEmail,
+    includeTeamsChats,
+    includeChannelMessages: includeChannels,
+    includeMentions,
+    relationshipFilter: 'all',
+    hideSnoozed: false
+  });
+
+  // Load test data when in test mode
+  React.useEffect(() => {
+    if (dataMode === 'test') {
+      setTestLoading(true);
+      // Simulate loading delay
+      const timer = setTimeout(() => {
+        setTestData(getTestWaitingOnYouData());
+        setTestTrendData(getTestWaitingOnYouTrend());
+        setTestLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [dataMode]);
+
+  // Main data hook - pass settings as initial filter (only used in API mode)
+  const apiHook = useWaitingOnYou({
+    graphClient: dataMode === 'api' ? graphClient : null,
     initialFilter: {
       minStaleDuration: staleDays * 24, // Convert days to hours
       includeEmail,
@@ -83,6 +102,48 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
       includeMentions,
     }
   });
+
+  // Select between API and test data based on mode
+  const data = dataMode === 'test' ? testData : apiHook.data;
+  const trendData = dataMode === 'test' ? testTrendData : apiHook.trendData;
+  const isLoading = dataMode === 'test' ? testLoading : apiHook.isLoading;
+  const error = dataMode === 'test' ? null : apiHook.error;
+  const lastRefreshed = dataMode === 'test' ? new Date() : apiHook.lastRefreshed;
+  const viewMode = dataMode === 'test' ? testViewMode : apiHook.viewMode;
+  const setViewMode = dataMode === 'test' ? setTestViewMode : apiHook.setViewMode;
+  const expandedGroups = dataMode === 'test' ? testExpandedGroups : apiHook.expandedGroups;
+  const filter = dataMode === 'test' ? testFilter : apiHook.filter;
+
+  const toggleGroup = dataMode === 'test'
+    ? (groupId: string) => {
+        setTestExpandedGroups(prev => {
+          const next = new Set(prev);
+          if (next.has(groupId)) next.delete(groupId);
+          else next.add(groupId);
+          return next;
+        });
+      }
+    : apiHook.toggleGroup;
+
+  const updateFilter = dataMode === 'test'
+    ? (updates: Partial<WaitingFilter>) => setTestFilter(prev => ({ ...prev, ...updates }))
+    : apiHook.updateFilter;
+
+  const refresh = dataMode === 'test'
+    ? async () => {
+        setTestLoading(true);
+        setTimeout(() => {
+          setTestData(getTestWaitingOnYouData());
+          setTestTrendData(getTestWaitingOnYouTrend());
+          setTestLoading(false);
+        }, 500);
+      }
+    : apiHook.refresh;
+
+  // These actions are no-ops in test mode
+  const dismissConversation = dataMode === 'test' ? () => {} : apiHook.dismissConversation;
+  const snoozeConversation = dataMode === 'test' ? () => {} : apiHook.snoozeConversation;
+  const unsnoozeConversation = dataMode === 'test' ? () => {} : apiHook.unsnoozeConversation;
 
   // Snooze dialog hook
   const {

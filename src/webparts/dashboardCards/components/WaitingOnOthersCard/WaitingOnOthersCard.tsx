@@ -32,34 +32,68 @@ import { ListView } from './views/ListView';
 import { WaitingTrendChart } from './components/WaitingTrendChart';
 import { ReminderComposer } from './components/ReminderComposer';
 import { SnoozeDialog } from '../WaitingOnYouCard/components/SnoozeDialog'; // Reuse from WaitingOnYou
-import { PendingResponse, ViewMode } from '../../models/WaitingOnOthers';
+import { PendingResponse, ViewMode, GroupedPendingData, PendingTrendData } from '../../models/WaitingOnOthers';
 import { WaitingOnOthersService } from '../../services/WaitingOnOthersService';
 import { useStyles } from './WaitingOnOthersCard.styles';
+import { DataMode } from '../../services/testData';
+import { getTestWaitingOnOthersData, getTestWaitingOnOthersTrend } from '../../services/testData/waitingOnOthers';
 
 interface WaitingOnOthersCardProps {
   context: WebPartContext;
   settings?: IWaitingOnOthersSettings;
+  dataMode?: DataMode;
 }
 
 export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
   context,
-  settings = DEFAULT_WAITING_ON_OTHERS_SETTINGS
+  settings = DEFAULT_WAITING_ON_OTHERS_SETTINGS,
+  dataMode = 'api'
 }) => {
   const styles = useStyles();
 
-  const {
-    data,
-    trendData,
-    isLoading,
-    error,
-    lastRefreshed,
-    updateFilter,
-    refresh,
-    resolveItem,
-    snoozeItem,
-    unsnoozeItem,
-    recordReminderSent
-  } = useWaitingOnOthers(context, settings);
+  // Test data state (used when dataMode === 'test')
+  const [testData, setTestData] = useState<GroupedPendingData | null>(null);
+  const [testTrendData, setTestTrendData] = useState<PendingTrendData | null>(null);
+  const [testLoading, setTestLoading] = useState(dataMode === 'test');
+
+  // Load test data when in test mode
+  React.useEffect(() => {
+    if (dataMode === 'test') {
+      setTestLoading(true);
+      // Simulate loading delay
+      const timer = setTimeout(() => {
+        setTestData(getTestWaitingOnOthersData());
+        setTestTrendData(getTestWaitingOnOthersTrend());
+        setTestLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [dataMode]);
+
+  // API hook (only used when dataMode === 'api')
+  const apiHook = useWaitingOnOthers(context, settings);
+
+  // Select between API and test data based on mode
+  const data = dataMode === 'test' ? testData : apiHook.data;
+  const trendData = dataMode === 'test' ? testTrendData : apiHook.trendData;
+  const isLoading = dataMode === 'test' ? testLoading : apiHook.isLoading;
+  const error = dataMode === 'test' ? null : apiHook.error;
+  const lastRefreshed = dataMode === 'test' ? new Date() : apiHook.lastRefreshed;
+  const updateFilter = dataMode === 'test' ? () => {} : apiHook.updateFilter;
+  const refresh = dataMode === 'test'
+    ? async () => {
+        setTestLoading(true);
+        setTimeout(() => {
+          setTestData(getTestWaitingOnOthersData());
+          setTestTrendData(getTestWaitingOnOthersTrend());
+          setTestLoading(false);
+        }, 500);
+      }
+    : apiHook.refresh;
+  const resolveItem = dataMode === 'test' ? () => {} : apiHook.resolveItem;
+  const snoozeItem = dataMode === 'test' ? () => {} : apiHook.snoozeItem;
+  const unsnoozeItem = dataMode === 'test' ? () => {} : apiHook.unsnoozeItem;
+  const recordReminderSent = dataMode === 'test' ? () => {} : apiHook.recordReminderSent;
 
   const [viewMode, setViewMode] = useState<ViewMode>('people');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());

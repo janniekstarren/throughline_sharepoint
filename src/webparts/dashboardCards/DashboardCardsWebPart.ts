@@ -56,11 +56,16 @@ export interface IWaitingOnOthersSettings {
   showChart: boolean;          // Show the trend chart (default: true)
 }
 
+// Data mode type
+export type DataMode = 'api' | 'test';
+
 export interface IDashboardCardsWebPartProps {
   salutationType: SalutationType;
   salutationSize: SalutationSize;
   // Theme mode
   themeMode: ThemeMode;
+  // Data mode: 'api' for live Graph data, 'test' for mock data
+  dataMode: DataMode;
   // Card visibility toggles
   showTodaysAgenda: boolean;
   showUnreadInbox: boolean;
@@ -234,6 +239,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
         salutationType: this.properties.salutationType || 'timeBased',
         salutationSize: this.properties.salutationSize || 'h4',
         themeMode: this.properties.themeMode || 'light',
+        dataMode: this.properties.dataMode || 'api',
         cardVisibility,
         cardOrder,
         cardTitles,
@@ -718,13 +724,21 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
   private getAppearanceFields(): IPropertyPaneGroup['groupFields'] {
     return [
       PropertyPaneDropdown('themeMode', {
-        label: 'Theme Mode',
+        label: strings.ThemeModeLabel,
         options: [
-          { key: 'auto', text: 'Auto (follow system)' },
-          { key: 'light', text: 'Light' },
-          { key: 'dark', text: 'Dark' },
+          { key: 'auto', text: strings.ThemeModeAuto },
+          { key: 'light', text: strings.ThemeModeLight },
+          { key: 'dark', text: strings.ThemeModeDark },
         ],
         selectedKey: this.properties.themeMode || 'light',
+      }),
+      PropertyPaneDropdown('dataMode', {
+        label: strings.DataModeLabel,
+        options: [
+          { key: 'api', text: strings.DataModeApi },
+          { key: 'test', text: strings.DataModeTest },
+        ],
+        selectedKey: this.properties.dataMode || 'api',
       }),
     ];
   }

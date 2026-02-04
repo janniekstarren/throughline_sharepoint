@@ -1,6 +1,7 @@
 // ============================================
 // useDashboardData Hook - Consolidated dashboard state management
 // Replaces 27+ individual useState calls with a single unified state
+// Supports both API Mode (live data) and Test Data Mode (mock data)
 // ============================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -16,6 +17,10 @@ import {
   ISiteActivity,
   IQuickLink
 } from '../services/GraphService';
+import { getTestData, simulateDelay, DataMode } from '../services/testData';
+
+// Re-export DataMode for consumers
+export type { DataMode } from '../services/testData';
 
 // ============================================
 // Types
@@ -87,14 +92,24 @@ const createInitialState = (): DashboardDataState => ({
 // Hook Implementation
 // ============================================
 
-export function useDashboardData(context: WebPartContext): UseDashboardDataReturn {
+/**
+ * Consolidated dashboard data hook
+ * @param context - SharePoint WebPart context
+ * @param dataMode - 'api' for live Graph data, 'test' for mock data
+ */
+export function useDashboardData(
+  context: WebPartContext,
+  dataMode: DataMode = 'api'
+): UseDashboardDataReturn {
   const [state, setState] = useState<DashboardDataState>(createInitialState);
   const graphServiceRef = useRef<GraphService | null>(null);
 
-  // Initialize GraphService once
+  // Initialize GraphService once (only needed for API mode)
   useEffect(() => {
-    graphServiceRef.current = new GraphService(context);
-  }, [context]);
+    if (dataMode === 'api') {
+      graphServiceRef.current = new GraphService(context);
+    }
+  }, [context, dataMode]);
 
   // Helper to update a specific data state
   const updateDataState = useCallback(<K extends keyof DashboardDataState>(
@@ -107,7 +122,7 @@ export function useDashboardData(context: WebPartContext): UseDashboardDataRetur
     }));
   }, []);
 
-  // Generic fetch function
+  // Generic fetch function for API mode
   const fetchData = useCallback(async <K extends keyof DashboardDataState>(
     key: K,
     fetcher: () => Promise<DashboardDataState[K]['data']>,
@@ -123,7 +138,7 @@ export function useDashboardData(context: WebPartContext): UseDashboardDataRetur
     }
   }, [updateDataState]);
 
-  // Individual fetch functions
+  // Individual fetch functions for API mode
   const fetchEvents = useCallback(async (): Promise<void> => {
     if (!graphServiceRef.current) return;
     await fetchData('events', () => graphServiceRef.current!.getTodaysEvents(), 'Failed to load calendar events.');
@@ -169,8 +184,42 @@ export function useDashboardData(context: WebPartContext): UseDashboardDataRetur
     await fetchData('siteActivity', () => graphServiceRef.current!.getSiteActivity(), 'Failed to load site activity.');
   }, [fetchData]);
 
+  // Load test data with simulated delay
+  const loadTestData = useCallback(async (): Promise<void> => {
+    console.log('Dashboard running in Test Data mode');
+
+    // Set all states to loading
+    setState(createInitialState());
+
+    // Simulate network delay for realistic UX
+    await simulateDelay(500);
+
+    // Load test data
+    const testData = getTestData();
+
+    // Update all states with test data
+    setState({
+      events: { data: testData.events, loading: false, error: undefined },
+      emails: { data: testData.emails, loading: false, error: undefined },
+      tasks: { data: testData.tasks, loading: false, error: undefined },
+      files: { data: testData.files, loading: false, error: undefined },
+      weekEvents: { data: testData.weekEvents, loading: false, error: undefined },
+      flaggedEmails: { data: testData.flaggedEmails, loading: false, error: undefined },
+      teamMembers: { data: testData.teamMembers, loading: false, error: undefined },
+      sharedFiles: { data: testData.sharedFiles, loading: false, error: undefined },
+      siteActivity: { data: testData.siteActivity, loading: false, error: undefined },
+      quickLinks: { data: testData.quickLinks, loading: false, error: undefined },
+    });
+  }, []);
+
   // Refresh a specific data type
   const refresh = useCallback(async (dataType: keyof DashboardDataState): Promise<void> => {
+    if (dataMode === 'test') {
+      // In test mode, just reload all test data
+      await loadTestData();
+      return;
+    }
+
     const fetcherMap: Record<keyof DashboardDataState, () => Promise<void>> = {
       events: fetchEvents,
       emails: fetchEmails,
@@ -184,10 +233,10 @@ export function useDashboardData(context: WebPartContext): UseDashboardDataRetur
       quickLinks: async () => { /* Quick links are static */ },
     };
     await fetcherMap[dataType]();
-  }, [fetchEvents, fetchEmails, fetchTasks, fetchFiles, fetchWeekEvents, fetchFlaggedEmails, fetchTeamMembers, fetchSharedFiles, fetchSiteActivity]);
+  }, [dataMode, loadTestData, fetchEvents, fetchEmails, fetchTasks, fetchFiles, fetchWeekEvents, fetchFlaggedEmails, fetchTeamMembers, fetchSharedFiles, fetchSiteActivity]);
 
-  // Refresh all data
-  const refreshAll = useCallback(async (): Promise<void> => {
+  // Refresh all data (API mode)
+  const refreshAllApi = useCallback(async (): Promise<void> => {
     await Promise.all([
       fetchEvents(),
       fetchEmails(),
@@ -201,12 +250,23 @@ export function useDashboardData(context: WebPartContext): UseDashboardDataRetur
     ]);
   }, [fetchEvents, fetchEmails, fetchTasks, fetchFiles, fetchWeekEvents, fetchFlaggedEmails, fetchTeamMembers, fetchSharedFiles, fetchSiteActivity]);
 
-  // Initial fetch on mount
-  useEffect(() => {
-    if (graphServiceRef.current) {
-      refreshAll().catch(console.error);
+  // Refresh all data (handles both modes)
+  const refreshAll = useCallback(async (): Promise<void> => {
+    if (dataMode === 'test') {
+      await loadTestData();
+    } else {
+      await refreshAllApi();
     }
-  }, [context]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dataMode, loadTestData, refreshAllApi]);
+
+  // Initial fetch on mount or when dataMode changes
+  useEffect(() => {
+    if (dataMode === 'test') {
+      loadTestData().catch(console.error);
+    } else if (graphServiceRef.current) {
+      refreshAllApi().catch(console.error);
+    }
+  }, [context, dataMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Check if any data is still loading
   const isAnyLoading = Object.values(state).some(s => s.loading);
