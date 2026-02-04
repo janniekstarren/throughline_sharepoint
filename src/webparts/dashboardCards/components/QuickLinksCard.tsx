@@ -1,9 +1,13 @@
+// ============================================
+// QuickLinksCard - Displays quick access links
+// Refactored to use shared components
+// ============================================
+
 import * as React from 'react';
 import {
-  makeStyles,
   tokens,
-  Body1Strong,
   Caption1,
+  makeStyles,
 } from '@fluentui/react-components';
 import {
   Link24Regular,
@@ -16,45 +20,16 @@ import {
 } from '@fluentui/react-icons';
 import { IQuickLink } from '../services/GraphService';
 import { MotionWrapper } from './MotionWrapper';
+import { BaseCard, CardHeader } from './shared';
+import { useCardStyles } from './cardStyles';
 
 export interface IQuickLinksCardProps {
   links: IQuickLink[];
   title?: string;
 }
 
-// Fluent UI 9 styles using makeStyles and design tokens
-const useStyles = makeStyles({
-  card: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '400px',
-    backgroundColor: tokens.colorNeutralBackground1,
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
-    boxShadow: tokens.shadow4,
-  },
-  cardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    backgroundColor: tokens.colorNeutralBackground2,
-    flexShrink: 0,
-  },
-  cardIcon: {
-    fontSize: '20px',
-    color: tokens.colorBrandForeground1,
-  },
-  cardTitle: {
-    color: tokens.colorNeutralForeground1,
-  },
-  cardContent: {
-    flex: 1,
-    padding: tokens.spacingVerticalM,
-    overflowY: 'auto',
-    minHeight: 0,
-  },
+// QuickLinks-specific styles (grid layout is unique to this card)
+const useQuickLinksStyles = makeStyles({
   linkGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
@@ -97,10 +72,10 @@ const useStyles = makeStyles({
     fontSize: '24px',
   },
   linkTitle: {
-    textAlign: 'center',
+    textAlign: 'center' as const,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    whiteSpace: 'nowrap' as const,
     maxWidth: '100%',
     color: tokens.colorNeutralForeground1,
   },
@@ -138,36 +113,39 @@ const defaultLinks: IQuickLink[] = [
 ];
 
 export const QuickLinksCard: React.FC<IQuickLinksCardProps> = ({ links, title }) => {
-  const styles = useStyles();
+  const styles = useCardStyles();
+  const quickLinksStyles = useQuickLinksStyles();
   const displayLinks = links.length > 0 ? links : defaultLinks;
 
   return (
-    <div className={styles.card}>
-      <div className={styles.cardHeader}>
-        <Link24Regular className={styles.cardIcon} />
-        <Body1Strong className={styles.cardTitle}>{title || 'Quick Links'}</Body1Strong>
-      </div>
+    <BaseCard testId="quick-links-card">
+      <CardHeader
+        icon={<Link24Regular />}
+        title={title || 'Quick Links'}
+        iconWrapperStyle={{ backgroundColor: tokens.colorBrandForeground1 }}
+        iconStyle={{ color: tokens.colorNeutralBackground1 }}
+      />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>
-          <div className={styles.linkGrid}>
+          <div className={quickLinksStyles.linkGrid}>
             {displayLinks.map(link => (
               <a
                 key={link.id}
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={styles.linkItem}
+                className={quickLinksStyles.linkItem}
               >
-                <div className={styles.linkIcon}>
+                <div className={quickLinksStyles.linkIcon}>
                   <QuickLinkIcon iconName={link.icon} />
                 </div>
-                <Caption1 className={styles.linkTitle}>{link.title}</Caption1>
+                <Caption1 className={quickLinksStyles.linkTitle}>{link.title}</Caption1>
               </a>
             ))}
           </div>
         </MotionWrapper>
       </div>
-    </div>
+    </BaseCard>
   );
 };
 
