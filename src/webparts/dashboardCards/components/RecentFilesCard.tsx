@@ -94,7 +94,6 @@ export const RecentFilesCard: React.FC<IRecentFilesCardProps> = ({
         <CardHeader
           icon={<History24Regular />}
           title={title || 'Recent Files'}
-          iconWrapperStyle={{ backgroundColor: tokens.colorPaletteBlueForeground2 }}
         />
         <EmptyState
           icon={<FolderOpen24Regular />}
@@ -116,7 +115,6 @@ export const RecentFilesCard: React.FC<IRecentFilesCardProps> = ({
         icon={<History24Regular />}
         title={title || 'Recent Files'}
         badge={files.length > 0 ? files.length : undefined}
-        iconWrapperStyle={{ backgroundColor: tokens.colorPaletteBlueForeground2 }}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

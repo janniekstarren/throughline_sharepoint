@@ -64,7 +64,6 @@ export const TodaysAgendaCard: React.FC<ITodaysAgendaCardProps> = ({
         <CardHeader
           icon={<CalendarLtr24Regular />}
           title={title || "Today's Agenda"}
-          iconWrapperStyle={{ backgroundColor: tokens.colorPalettePurpleForeground2 }}
         />
         <EmptyState
           icon={<CalendarLtr24Regular />}
@@ -86,7 +85,6 @@ export const TodaysAgendaCard: React.FC<ITodaysAgendaCardProps> = ({
         icon={<CalendarLtr24Regular />}
         title={title || "Today's Agenda"}
         badge={events.length > 0 ? events.length : undefined}
-        iconWrapperStyle={{ backgroundColor: tokens.colorPalettePurpleForeground2 }}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

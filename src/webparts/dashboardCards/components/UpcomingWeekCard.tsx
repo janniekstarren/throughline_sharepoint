@@ -84,7 +84,6 @@ export const UpcomingWeekCard: React.FC<IUpcomingWeekCardProps> = ({
         <CardHeader
           icon={<CalendarWeekNumbers24Regular />}
           title={title || 'Upcoming Week'}
-          iconWrapperStyle={{ backgroundColor: tokens.colorPaletteCranberryForeground2 }}
         />
         <EmptyState
           icon={<CalendarLtr24Regular />}
@@ -107,7 +106,6 @@ export const UpcomingWeekCard: React.FC<IUpcomingWeekCardProps> = ({
         title={title || 'Upcoming Week'}
         badge={events.length > 0 ? events.length : undefined}
         badgeVariant="brand"
-        iconWrapperStyle={{ backgroundColor: tokens.colorPaletteCranberryForeground2 }}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

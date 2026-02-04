@@ -110,7 +110,6 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
         <CardHeader
           icon={<Pulse24Regular />}
           title={title || 'Site Activity'}
-          iconWrapperStyle={{ backgroundColor: tokens.colorPaletteMarigoldForeground2 }}
         />
         <EmptyState
           icon={<History24Regular />}
@@ -132,7 +131,6 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
         icon={<Pulse24Regular />}
         title={title || 'Site Activity'}
         badge={activities.length > 0 ? activities.length : undefined}
-        iconWrapperStyle={{ backgroundColor: tokens.colorPaletteMarigoldForeground2 }}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

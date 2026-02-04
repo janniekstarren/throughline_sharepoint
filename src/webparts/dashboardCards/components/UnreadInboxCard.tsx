@@ -65,7 +65,6 @@ export const UnreadInboxCard: React.FC<IUnreadInboxCardProps> = ({
         <CardHeader
           icon={<Mail24Regular />}
           title={title || 'Unread Inbox'}
-          iconWrapperStyle={{ backgroundColor: tokens.colorBrandForeground1 }}
         />
         <EmptyState
           icon={<MailInbox24Regular />}
@@ -88,7 +87,6 @@ export const UnreadInboxCard: React.FC<IUnreadInboxCardProps> = ({
         title={title || 'Unread Inbox'}
         badge={emails.length > 0 ? emails.length : undefined}
         badgeVariant="brand"
-        iconWrapperStyle={{ backgroundColor: tokens.colorBrandForeground1 }}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

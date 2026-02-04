@@ -9,16 +9,12 @@ import {
 } from '@fluentui/react-components';
 import { MSGraphClientV3 } from '@microsoft/sp-http';
 import {
-  GraphService,
-  ICalendarEvent,
   IEmailMessage,
-  ITaskItem,
   IFileItem,
   ITeamMember,
   ISharedFile,
-  ISiteActivity,
-  IQuickLink
 } from '../services/GraphService';
+import { useDashboardData } from '../hooks/useDashboardData';
 // Medium card components (standard list)
 import { MyTasksCard } from './MyTasksCard';
 import { RecentFilesCard } from './RecentFilesCard';
@@ -205,53 +201,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       });
   }, [context]);
 
-  // Today's events
-  const [events, setEvents] = React.useState<ICalendarEvent[]>([]);
-  const [eventsLoading, setEventsLoading] = React.useState<boolean>(true);
-  const [eventsError, setEventsError] = React.useState<string | undefined>(undefined);
-
-  // Unread emails
-  const [emails, setEmails] = React.useState<IEmailMessage[]>([]);
-  const [emailsLoading, setEmailsLoading] = React.useState<boolean>(true);
-  const [emailsError, setEmailsError] = React.useState<string | undefined>(undefined);
-
-  // Tasks
-  const [tasks, setTasks] = React.useState<ITaskItem[]>([]);
-  const [tasksLoading, setTasksLoading] = React.useState<boolean>(true);
-  const [tasksError, setTasksError] = React.useState<string | undefined>(undefined);
-
-  // Recent files
-  const [files, setFiles] = React.useState<IFileItem[]>([]);
-  const [filesLoading, setFilesLoading] = React.useState<boolean>(true);
-  const [filesError, setFilesError] = React.useState<string | undefined>(undefined);
-
-  // Upcoming week events
-  const [weekEvents, setWeekEvents] = React.useState<ICalendarEvent[]>([]);
-  const [weekEventsLoading, setWeekEventsLoading] = React.useState<boolean>(true);
-  const [weekEventsError, setWeekEventsError] = React.useState<string | undefined>(undefined);
-
-  // Flagged emails
-  const [flaggedEmails, setFlaggedEmails] = React.useState<IEmailMessage[]>([]);
-  const [flaggedEmailsLoading, setFlaggedEmailsLoading] = React.useState<boolean>(true);
-  const [flaggedEmailsError, setFlaggedEmailsError] = React.useState<string | undefined>(undefined);
-
-  // Team members
-  const [teamMembers, setTeamMembers] = React.useState<ITeamMember[]>([]);
-  const [teamMembersLoading, setTeamMembersLoading] = React.useState<boolean>(true);
-  const [teamMembersError, setTeamMembersError] = React.useState<string | undefined>(undefined);
-
-  // Shared files
-  const [sharedFiles, setSharedFiles] = React.useState<ISharedFile[]>([]);
-  const [sharedFilesLoading, setSharedFilesLoading] = React.useState<boolean>(true);
-  const [sharedFilesError, setSharedFilesError] = React.useState<string | undefined>(undefined);
-
-  // Site activity
-  const [siteActivity, setSiteActivity] = React.useState<ISiteActivity[]>([]);
-  const [siteActivityLoading, setSiteActivityLoading] = React.useState<boolean>(true);
-  const [siteActivityError, setSiteActivityError] = React.useState<string | undefined>(undefined);
-
-  // Quick links (static for now)
-  const [quickLinks] = React.useState<IQuickLink[]>([]);
+  // Consolidated dashboard data hook - replaces 27 individual useState calls
+  const { state: dashboardData } = useDashboardData(context);
 
   // Action handler for hover card actions
   // This will be extended in Phase 2/3 to call Graph API for real actions
@@ -319,147 +270,6 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     }
   }, []);
 
-  React.useEffect(() => {
-    const graphService = new GraphService(context);
-
-    const fetchEvents = async (): Promise<void> => {
-      try {
-        setEventsLoading(true);
-        setEventsError(undefined);
-        const todaysEvents = await graphService.getTodaysEvents();
-        setEvents(todaysEvents);
-      } catch (err) {
-        console.error('Error fetching events:', err);
-        setEventsError('Failed to load calendar events.');
-      } finally {
-        setEventsLoading(false);
-      }
-    };
-
-    const fetchEmails = async (): Promise<void> => {
-      try {
-        setEmailsLoading(true);
-        setEmailsError(undefined);
-        const unreadEmails = await graphService.getUnreadEmails(10);
-        setEmails(unreadEmails);
-      } catch (err) {
-        console.error('Error fetching emails:', err);
-        setEmailsError('Failed to load emails.');
-      } finally {
-        setEmailsLoading(false);
-      }
-    };
-
-    const fetchTasks = async (): Promise<void> => {
-      try {
-        setTasksLoading(true);
-        setTasksError(undefined);
-        const myTasks = await graphService.getTasks(10);
-        setTasks(myTasks);
-      } catch (err) {
-        console.error('Error fetching tasks:', err);
-        setTasksError('Failed to load tasks.');
-      } finally {
-        setTasksLoading(false);
-      }
-    };
-
-    const fetchFiles = async (): Promise<void> => {
-      try {
-        setFilesLoading(true);
-        setFilesError(undefined);
-        const recentFiles = await graphService.getRecentFiles(10);
-        setFiles(recentFiles);
-      } catch (err) {
-        console.error('Error fetching files:', err);
-        setFilesError('Failed to load files.');
-      } finally {
-        setFilesLoading(false);
-      }
-    };
-
-    const fetchWeekEvents = async (): Promise<void> => {
-      try {
-        setWeekEventsLoading(true);
-        setWeekEventsError(undefined);
-        const upcomingEvents = await graphService.getUpcomingWeekEvents();
-        setWeekEvents(upcomingEvents);
-      } catch (err) {
-        console.error('Error fetching week events:', err);
-        setWeekEventsError('Failed to load upcoming events.');
-      } finally {
-        setWeekEventsLoading(false);
-      }
-    };
-
-    const fetchFlaggedEmails = async (): Promise<void> => {
-      try {
-        setFlaggedEmailsLoading(true);
-        setFlaggedEmailsError(undefined);
-        const flagged = await graphService.getFlaggedEmails(10);
-        setFlaggedEmails(flagged);
-      } catch (err) {
-        console.error('Error fetching flagged emails:', err);
-        setFlaggedEmailsError('Failed to load flagged emails.');
-      } finally {
-        setFlaggedEmailsLoading(false);
-      }
-    };
-
-    const fetchTeamMembers = async (): Promise<void> => {
-      try {
-        setTeamMembersLoading(true);
-        setTeamMembersError(undefined);
-        const members = await graphService.getTeamMembers();
-        setTeamMembers(members);
-      } catch (err) {
-        console.error('Error fetching team members:', err);
-        setTeamMembersError('Failed to load team members.');
-      } finally {
-        setTeamMembersLoading(false);
-      }
-    };
-
-    const fetchSharedFiles = async (): Promise<void> => {
-      try {
-        setSharedFilesLoading(true);
-        setSharedFilesError(undefined);
-        const shared = await graphService.getSharedWithMe(10);
-        setSharedFiles(shared);
-      } catch (err) {
-        console.error('Error fetching shared files:', err);
-        setSharedFilesError('Failed to load shared files.');
-      } finally {
-        setSharedFilesLoading(false);
-      }
-    };
-
-    const fetchSiteActivity = async (): Promise<void> => {
-      try {
-        setSiteActivityLoading(true);
-        setSiteActivityError(undefined);
-        const activity = await graphService.getSiteActivity();
-        setSiteActivity(activity);
-      } catch (err) {
-        console.error('Error fetching site activity:', err);
-        setSiteActivityError('Failed to load site activity.');
-      } finally {
-        setSiteActivityLoading(false);
-      }
-    };
-
-    // Fetch all data
-    fetchEvents().catch(console.error);
-    fetchEmails().catch(console.error);
-    fetchTasks().catch(console.error);
-    fetchFiles().catch(console.error);
-    fetchWeekEvents().catch(console.error);
-    fetchFlaggedEmails().catch(console.error);
-    fetchTeamMembers().catch(console.error);
-    fetchSharedFiles().catch(console.error);
-    fetchSiteActivity().catch(console.error);
-  }, [context]);
-
   // Wait for theme to be ready
   if (!currentTheme) {
     return (
@@ -499,26 +309,26 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     switch (cardId) {
       // Large cards (master-detail layout)
       case 'todaysAgenda':
-        return <TodaysAgendaCardLarge events={events} loading={eventsLoading} error={eventsError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return <TodaysAgendaCardLarge events={dashboardData.events.data} loading={dashboardData.events.loading} error={dashboardData.events.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'unreadInbox':
-        return <UnreadInboxCardLarge emails={emails} loading={emailsLoading} error={emailsError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return <UnreadInboxCardLarge emails={dashboardData.emails.data} loading={dashboardData.emails.loading} error={dashboardData.emails.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'upcomingWeek':
-        return <UpcomingWeekCardLarge events={weekEvents} loading={weekEventsLoading} error={weekEventsError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return <UpcomingWeekCardLarge events={dashboardData.weekEvents.data} loading={dashboardData.weekEvents.loading} error={dashboardData.weekEvents.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'flaggedEmails':
-        return <FlaggedEmailsCardLarge emails={flaggedEmails} loading={flaggedEmailsLoading} error={flaggedEmailsError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return <FlaggedEmailsCardLarge emails={dashboardData.flaggedEmails.data} loading={dashboardData.flaggedEmails.loading} error={dashboardData.flaggedEmails.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       // Medium cards (standard list)
       case 'myTasks':
-        return <MyTasksCard tasks={tasks} loading={tasksLoading} error={tasksError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return <MyTasksCard tasks={dashboardData.tasks.data} loading={dashboardData.tasks.loading} error={dashboardData.tasks.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'recentFiles':
-        return <RecentFilesCard files={files} loading={filesLoading} error={filesError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return <RecentFilesCard files={dashboardData.files.data} loading={dashboardData.files.loading} error={dashboardData.files.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'myTeam':
-        return <MyTeamCard members={teamMembers} loading={teamMembersLoading} error={teamMembersError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return <MyTeamCard members={dashboardData.teamMembers.data} loading={dashboardData.teamMembers.loading} error={dashboardData.teamMembers.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'sharedWithMe':
-        return <SharedWithMeCard files={sharedFiles} loading={sharedFilesLoading} error={sharedFilesError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return <SharedWithMeCard files={dashboardData.sharedFiles.data} loading={dashboardData.sharedFiles.loading} error={dashboardData.sharedFiles.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'quickLinks':
-        return <QuickLinksCard links={quickLinks} title={cardTitle} />;
+        return <QuickLinksCard links={dashboardData.quickLinks.data} title={cardTitle} />;
       case 'siteActivity':
-        return <SiteActivityCard activities={siteActivity} loading={siteActivityLoading} error={siteActivityError} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return <SiteActivityCard activities={dashboardData.siteActivity.data} loading={dashboardData.siteActivity.loading} error={dashboardData.siteActivity.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
       case 'waitingOnYou':
         return (
           <WaitingOnYouCard

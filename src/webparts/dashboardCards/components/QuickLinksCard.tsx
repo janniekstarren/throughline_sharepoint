@@ -122,8 +122,6 @@ export const QuickLinksCard: React.FC<IQuickLinksCardProps> = ({ links, title })
       <CardHeader
         icon={<Link24Regular />}
         title={title || 'Quick Links'}
-        iconWrapperStyle={{ backgroundColor: tokens.colorBrandForeground1 }}
-        iconStyle={{ color: tokens.colorNeutralBackground1 }}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

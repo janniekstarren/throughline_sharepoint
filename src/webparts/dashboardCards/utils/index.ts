@@ -13,3 +13,16 @@ export {
   analyzeText,
   type TextAnalysisResult
 } from './textAnalysis';
+
+export {
+  removeItemFromGroups,
+  updateItemInGroups,
+  snoozeItemInGroups,
+  unsnoozeItemInGroups,
+  countTotalItems,
+  countSnoozedItems,
+  dismissFromGroupedData,
+  snoozeInGroupedData,
+  unsnoozeInGroupedData,
+  type GroupedData
+} from './groupedDataUpdater';

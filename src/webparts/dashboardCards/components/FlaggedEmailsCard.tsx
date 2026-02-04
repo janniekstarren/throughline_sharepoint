@@ -62,8 +62,6 @@ export const FlaggedEmailsCard: React.FC<IFlaggedEmailsCardProps> = ({
         <CardHeader
           icon={<Flag24Filled />}
           title={title || 'Flagged Emails'}
-          iconWrapperStyle={{ backgroundColor: tokens.colorPaletteRedForeground1 }}
-          iconStyle={{ color: tokens.colorNeutralBackground1 }}
         />
         <EmptyState
           icon={<FlagOff24Regular />}
@@ -86,8 +84,6 @@ export const FlaggedEmailsCard: React.FC<IFlaggedEmailsCardProps> = ({
         title={title || 'Flagged Emails'}
         badge={emails.length > 0 ? emails.length : undefined}
         badgeVariant="danger"
-        iconWrapperStyle={{ backgroundColor: tokens.colorPaletteRedForeground1 }}
-        iconStyle={{ color: tokens.colorNeutralBackground1 }}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

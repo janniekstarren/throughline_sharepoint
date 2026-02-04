@@ -4,7 +4,7 @@
 // ============================================
 
 import * as React from 'react';
-import { Text, mergeClasses } from '@fluentui/react-components';
+import { Text, mergeClasses, Tooltip } from '@fluentui/react-components';
 import { useCardStyles } from '../cardStyles';
 
 export type BadgeVariant = 'brand' | 'warning' | 'danger' | 'success';
@@ -42,6 +42,21 @@ export const CardHeader: React.FC<ICardHeaderProps> = ({
   iconStyle,
 }) => {
   const styles = useCardStyles();
+  const titleRef = React.useRef<HTMLHeadingElement>(null);
+  const [isOverflowing, setIsOverflowing] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkOverflow = (): void => {
+      const el = titleRef.current;
+      if (el) {
+        setIsOverflowing(el.scrollWidth > el.clientWidth);
+      }
+    };
+
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [title]);
 
   const getBadgeClass = (): string => {
     switch (badgeVariant) {
@@ -56,6 +71,12 @@ export const CardHeader: React.FC<ICardHeaderProps> = ({
     }
   };
 
+  const titleElement = (
+    <Text ref={titleRef} className={styles.cardTitle} as="h3">
+      {title}
+    </Text>
+  );
+
   return (
     <div className={mergeClasses(styles.cardHeader, subtle && styles.cardHeaderSubtle, className)}>
       {icon && (
@@ -65,9 +86,13 @@ export const CardHeader: React.FC<ICardHeaderProps> = ({
           </span>
         </div>
       )}
-      <Text className={styles.cardTitle} as="h3">
-        {title}
-      </Text>
+      {isOverflowing ? (
+        <Tooltip content={title} relationship="label">
+          {titleElement}
+        </Tooltip>
+      ) : (
+        titleElement
+      )}
       {badge !== undefined && badge !== null && (
         <span className={getBadgeClass()}>
           {badge}

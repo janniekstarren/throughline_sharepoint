@@ -2,7 +2,7 @@
 // useWaitingOnOthers Hook - Data fetching and state management
 // ============================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 import {
   GroupedPendingData,
@@ -53,6 +53,10 @@ export function useWaitingOnOthers(
     includeMentions: settings.includeMentions
   });
 
+  // Service ref - cached to avoid recreation on every render
+  const serviceRef = useRef<WaitingOnOthersService | null>(null);
+  const servicesInitializedRef = useRef(false);
+
   // Load persisted state on mount
   useEffect(() => {
     try {
@@ -76,32 +80,52 @@ export function useWaitingOnOthers(
     }
   }, []);
 
+  // Initialize service (only once when context is available)
+  useEffect(() => {
+    const initService = async (): Promise<void> => {
+      if (servicesInitializedRef.current || !context) return;
+
+      try {
+        const graphClient = await context.msGraphClientFactory.getClient('3');
+        const userResponse = await graphClient.api('/me').select('id,mail').get();
+
+        // Initialize shared services (cached)
+        const cacheService = new GraphCacheService(graphClient);
+        const userResolver = new UserResolverService(graphClient, userResponse.mail);
+        const photoService = new PhotoService(graphClient);
+
+        serviceRef.current = new WaitingOnOthersService(
+          graphClient,
+          userResponse.id,
+          userResponse.mail,
+          cacheService,
+          userResolver,
+          photoService
+        );
+        servicesInitializedRef.current = true;
+      } catch (err) {
+        console.error('Failed to initialize service:', err);
+        setError(err as Error);
+      }
+    };
+
+    initService();
+  }, [context]);
+
   // Load data
   const loadData = useCallback(async () => {
+    if (!serviceRef.current) {
+      // Service not yet initialized, will be called again after init
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
-      const graphClient = await context.msGraphClientFactory.getClient('3');
-      const userResponse = await graphClient.api('/me').select('id,mail').get();
-
-      // Initialize shared services
-      const cacheService = new GraphCacheService(graphClient);
-      const userResolver = new UserResolverService(graphClient, userResponse.mail);
-      const photoService = new PhotoService(graphClient);
-
-      const service = new WaitingOnOthersService(
-        graphClient,
-        userResponse.id,
-        userResponse.mail,
-        cacheService,
-        userResolver,
-        photoService
-      );
-
       const [pendingData, trend] = await Promise.all([
-        service.getPendingData(filter, persistedState),
-        settings.showChart ? service.getPendingTrend(14) : Promise.resolve(null)
+        serviceRef.current.getPendingData(filter, persistedState),
+        settings.showChart ? serviceRef.current.getPendingTrend(14) : Promise.resolve(null)
       ]);
 
       setData(pendingData);
@@ -113,11 +137,14 @@ export function useWaitingOnOthers(
     } finally {
       setIsLoading(false);
     }
-  }, [context, filter, persistedState, settings.showChart]);
+  }, [filter, persistedState, settings.showChart]);
 
+  // Trigger load when service becomes available or filter/state changes
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (servicesInitializedRef.current) {
+      loadData();
+    }
+  }, [loadData, servicesInitializedRef.current]);
 
   // Update filter when settings change
   useEffect(() => {

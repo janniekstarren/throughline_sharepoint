@@ -92,7 +92,6 @@ export const SharedWithMeCard: React.FC<ISharedWithMeCardProps> = ({
         <CardHeader
           icon={<PeopleSwap24Regular />}
           title={title || 'Shared With Me'}
-          iconWrapperStyle={{ backgroundColor: tokens.colorPaletteTealForeground2 }}
         />
         <EmptyState
           icon={<Folder24Regular />}
@@ -115,7 +114,6 @@ export const SharedWithMeCard: React.FC<ISharedWithMeCardProps> = ({
         title={title || 'Shared With Me'}
         badge={files.length > 0 ? files.length : undefined}
         badgeVariant="brand"
-        iconWrapperStyle={{ backgroundColor: tokens.colorPaletteTealForeground2 }}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

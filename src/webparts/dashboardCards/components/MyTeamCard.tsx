@@ -5,7 +5,6 @@
 
 import * as React from 'react';
 import {
-  tokens,
   Persona,
   PresenceBadgeStatus,
   Theme,
@@ -58,7 +57,6 @@ export const MyTeamCard: React.FC<IMyTeamCardProps> = ({
         <CardHeader
           icon={<People24Regular />}
           title={title || 'My Team'}
-          iconWrapperStyle={{ backgroundColor: tokens.colorPaletteLilacForeground2 }}
         />
         <EmptyState
           icon={<PeopleProhibited24Regular />}
@@ -80,7 +78,6 @@ export const MyTeamCard: React.FC<IMyTeamCardProps> = ({
         icon={<People24Regular />}
         title={title || 'My Team'}
         badge={members.length > 0 ? members.length : undefined}
-        iconWrapperStyle={{ backgroundColor: tokens.colorPaletteLilacForeground2 }}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

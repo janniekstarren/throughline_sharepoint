@@ -74,7 +74,6 @@ export const MyTasksCard: React.FC<IMyTasksCardProps> = ({
         <CardHeader
           icon={<TaskListSquareLtr24Regular />}
           title={title || 'My Tasks'}
-          iconWrapperStyle={{ backgroundColor: tokens.colorPaletteGreenForeground2 }}
         />
         <EmptyState
           icon={<CheckmarkCircle24Regular />}
@@ -97,7 +96,6 @@ export const MyTasksCard: React.FC<IMyTasksCardProps> = ({
         title={title || 'My Tasks'}
         badge={tasks.length > 0 ? tasks.length : undefined}
         badgeVariant="brand"
-        iconWrapperStyle={{ backgroundColor: tokens.colorPaletteGreenForeground2 }}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>
