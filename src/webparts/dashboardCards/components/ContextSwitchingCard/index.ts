@@ -4,9 +4,6 @@
 
 export { ContextSwitchingCard } from './ContextSwitchingCard';
 export { default } from './ContextSwitchingCard';
+export { ContextSwitchingCardLarge } from './ContextSwitchingCardLarge';
 export { useContextSwitchingStyles } from './ContextSwitchingCard.styles';
 export * from './components';
-
-// Note: ContextSwitchingCardLarge to be implemented
-// export { ContextSwitchingCardLarge } from './ContextSwitchingCardLarge';
-// export type { ContextSwitchingCardLargeProps } from './ContextSwitchingCardLarge';

@@ -30,7 +30,7 @@ import { WaitingOnYouCard } from './WaitingOnYouCard';
 import { WaitingOnOthersCard } from './WaitingOnOthersCard';
 import { WaitingOnOthersCardLarge } from './WaitingOnOthersCardLarge';
 // Context Switching card
-import { ContextSwitchingCard } from './ContextSwitchingCard';
+import { ContextSwitchingCard, ContextSwitchingCardLarge } from './ContextSwitchingCard';
 import { Salutation, SalutationType, SalutationSize } from './Salutation';
 import { CategorySection, IOrderedCard } from './CategorySection';
 import { getFluentTheme, ThemeMode } from '../utils/themeUtils';
@@ -61,7 +61,7 @@ export type { ICategoryConfig };
 const LARGE_CARDS = [
   'todaysAgenda', 'upcomingWeek', 'email',
   'myTasks', 'recentFiles', 'sharedWithMe', 'myTeam', 'siteActivity', 'quickLinks',
-  'waitingOnOthers'
+  'waitingOnOthers', 'contextSwitching'
 ];
 
 // Default icon IDs for system categories (matches AVAILABLE_ICONS in CardConfigDialog)
@@ -304,7 +304,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     if (onCardOrderChange) {
       onCardOrderChange(newCardOrder);
     }
-  }, [cardOrder, setUserCardOrder, onCardOrderChange]);
+  }, [cardOrder, cardVisibility, setUserCardOrder, onCardOrderChange]);
 
   // Handle drag start
   const handleDragStart = React.useCallback(() => {
@@ -490,27 +490,53 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
         );
       case 'contextSwitching':
         return wrapWithErrorBoundary(
-          <ContextSwitchingCard
-            graphClient={graphClient}
-            dataMode={dataMode}
-            title={cardTitle}
-            settings={{
-              minSwitchDuration: 30,
-              trackEmail: contextSwitchingSettings.trackEmail,
-              trackTeamsChat: contextSwitchingSettings.trackTeamsChat,
-              trackTeamsChannel: contextSwitchingSettings.trackTeamsChannel,
-              trackMeetings: contextSwitchingSettings.trackMeetings,
-              trackFiles: contextSwitchingSettings.trackFiles,
-              trackTasks: false,
-              focusGoal: contextSwitchingSettings.focusGoal,
-              workingHoursStart: 9,
-              workingHoursEnd: 17,
-              showFocusScore: contextSwitchingSettings.showFocusScore,
-              showHourlyChart: contextSwitchingSettings.showHourlyChart,
-              showDistribution: contextSwitchingSettings.showDistribution,
-              trendDays: 7,
-            }}
-          />
+          isLarge
+            ? <ContextSwitchingCardLarge
+                graphClient={graphClient}
+                dataMode={dataMode}
+                aiDemoMode={dataMode === 'test' && aiDemoMode}
+                title={cardTitle}
+                onToggleSize={() => toggleCardSize(cardId)}
+                settings={{
+                  minSwitchDuration: 30,
+                  trackEmail: contextSwitchingSettings.trackEmail,
+                  trackTeamsChat: contextSwitchingSettings.trackTeamsChat,
+                  trackTeamsChannel: contextSwitchingSettings.trackTeamsChannel,
+                  trackMeetings: contextSwitchingSettings.trackMeetings,
+                  trackFiles: contextSwitchingSettings.trackFiles,
+                  trackTasks: false,
+                  focusGoal: contextSwitchingSettings.focusGoal,
+                  workingHoursStart: 9,
+                  workingHoursEnd: 17,
+                  showFocusScore: contextSwitchingSettings.showFocusScore,
+                  showHourlyChart: contextSwitchingSettings.showHourlyChart,
+                  showDistribution: contextSwitchingSettings.showDistribution,
+                  trendDays: 7,
+                }}
+              />
+            : <ContextSwitchingCard
+                graphClient={graphClient}
+                dataMode={dataMode}
+                aiDemoMode={dataMode === 'test' && aiDemoMode}
+                title={cardTitle}
+                onToggleSize={() => toggleCardSize(cardId)}
+                settings={{
+                  minSwitchDuration: 30,
+                  trackEmail: contextSwitchingSettings.trackEmail,
+                  trackTeamsChat: contextSwitchingSettings.trackTeamsChat,
+                  trackTeamsChannel: contextSwitchingSettings.trackTeamsChannel,
+                  trackMeetings: contextSwitchingSettings.trackMeetings,
+                  trackFiles: contextSwitchingSettings.trackFiles,
+                  trackTasks: false,
+                  focusGoal: contextSwitchingSettings.focusGoal,
+                  workingHoursStart: 9,
+                  workingHoursEnd: 17,
+                  showFocusScore: contextSwitchingSettings.showFocusScore,
+                  showHourlyChart: contextSwitchingSettings.showHourlyChart,
+                  showDistribution: contextSwitchingSettings.showDistribution,
+                  trendDays: 7,
+                }}
+              />
         );
       default:
         return null;

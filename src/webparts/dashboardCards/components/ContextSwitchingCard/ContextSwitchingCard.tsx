@@ -24,7 +24,8 @@ import {
   TimelineRegular,
   DataPieRegular,
   ArrowTrendingRegular,
-  TargetRegular
+  TargetRegular,
+  ArrowMaximizeRegular,
 } from '@fluentui/react-icons';
 import {
   MailRegular,
@@ -62,6 +63,10 @@ interface ContextSwitchingCardProps {
   settings?: ContextSwitchingSettings;
   variant?: 'standard' | 'mini';
   title?: string;
+  /** AI Demo Mode - show AI-enhanced content (only when dataMode === 'test') */
+  aiDemoMode?: boolean;
+  /** Callback to toggle between medium and large card size */
+  onToggleSize?: () => void;
 }
 
 // Get icon for current context
@@ -91,7 +96,9 @@ export const ContextSwitchingCard: React.FC<ContextSwitchingCardProps> = ({
   dataMode = 'api',
   settings = DEFAULT_CONTEXT_SWITCHING_SETTINGS,
   variant = 'standard',
-  title = 'Context Switching'
+  title = 'Context Switching',
+  aiDemoMode = false,
+  onToggleSize,
 }) => {
   const styles = useContextSwitchingStyles();
 
@@ -275,6 +282,16 @@ export const ContextSwitchingCard: React.FC<ContextSwitchingCardProps> = ({
               disabled={loading}
             />
           </Tooltip>
+          {onToggleSize && (
+            <Tooltip content="Expand" relationship="label">
+              <Button
+                appearance="subtle"
+                icon={<ArrowMaximizeRegular />}
+                size="small"
+                onClick={onToggleSize}
+              />
+            </Tooltip>
+          )}
         </div>
       </div>
 
