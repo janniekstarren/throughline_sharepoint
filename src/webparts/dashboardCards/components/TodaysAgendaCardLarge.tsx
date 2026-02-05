@@ -9,7 +9,9 @@ import {
   CalendarLtr24Regular,
   Video16Regular,
   Location16Regular,
+  ContractDownLeft20Regular,
 } from '@fluentui/react-icons';
+import { Button, Tooltip } from '@fluentui/react-components';
 import { ICalendarEvent } from '../services/GraphService';
 import { MasterDetailCard } from './shared/MasterDetailCard';
 import { EventDetailPanel, EventDetailActions } from './shared/EventDetailPanel';
@@ -22,6 +24,8 @@ export interface ITodaysAgendaCardLargeProps {
   onAction?: (action: string, item: IHoverCardItem, itemType: HoverCardItemType) => void;
   theme?: Theme;
   title?: string;
+  /** Callback to toggle between large and medium card size */
+  onToggleSize?: () => void;
 }
 
 const useStyles = makeStyles({
@@ -146,6 +150,7 @@ export const TodaysAgendaCardLarge: React.FC<ITodaysAgendaCardLargeProps> = ({
   onAction,
   theme,
   title = "Today's Agenda",
+  onToggleSize,
 }) => {
   const styles = useStyles();
   const [selectedEvent, setSelectedEvent] = React.useState<ICalendarEvent | undefined>(undefined);
@@ -258,6 +263,19 @@ export const TodaysAgendaCardLarge: React.FC<ITodaysAgendaCardLargeProps> = ({
       error={error}
       emptyMessage="No events scheduled for today"
       emptyIcon={<CalendarLtr24Regular />}
+      headerActions={
+        onToggleSize && (
+          <Tooltip content="Collapse to compact view" relationship="label">
+            <Button
+              appearance="subtle"
+              size="small"
+              icon={<ContractDownLeft20Regular />}
+              onClick={onToggleSize}
+              aria-label="Collapse card"
+            />
+          </Tooltip>
+        )
+      }
     />
   );
 };

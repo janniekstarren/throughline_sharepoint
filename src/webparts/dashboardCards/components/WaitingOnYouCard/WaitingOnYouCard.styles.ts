@@ -16,7 +16,7 @@ export const useWaitingOnYouStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: tokens.spacingVerticalM,
+    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalM}`,
     paddingBottom: tokens.spacingVerticalS,
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
   },
@@ -32,6 +32,7 @@ export const useWaitingOnYouStyles = makeStyles({
   headerTitle: {
     display: 'flex',
     flexDirection: 'column',
+    gap: tokens.spacingVerticalXXS,
   },
   headerActions: {
     display: 'flex',
@@ -45,25 +46,28 @@ export const useWaitingOnYouStyles = makeStyles({
   },
   tabs: {
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    padding: `0 ${tokens.spacingHorizontalM}`,
+    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}`,
   },
   content: {
     flex: 1,
+    minHeight: 0,
     overflow: 'auto',
-    padding: tokens.spacingVerticalM,
+    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalM}`,
   },
+  // Chart section - positioned at bottom before footer for consistency
   chartSection: {
-    marginBottom: tokens.spacingVerticalM,
     backgroundColor: tokens.colorNeutralBackground2,
     borderRadius: tokens.borderRadiusMedium,
+    marginLeft: tokens.spacingHorizontalM,
+    marginRight: tokens.spacingHorizontalM,
+    marginBottom: tokens.spacingVerticalS,
     overflow: 'hidden',
   },
   footer: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: tokens.spacingVerticalS,
-    paddingTop: tokens.spacingVerticalXS,
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
     borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
   },
   lastRefreshed: {
@@ -88,10 +92,11 @@ export const useWaitingOnYouStyles = makeStyles({
   filterBar: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
-    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}`,
+    gap: tokens.spacingHorizontalM,
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
     backgroundColor: tokens.colorNeutralBackground2,
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    flexWrap: 'wrap',
   },
   filterItem: {
     display: 'flex',

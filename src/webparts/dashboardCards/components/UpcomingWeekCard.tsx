@@ -15,6 +15,7 @@ import {
   CalendarLtr24Regular,
   Video16Regular,
   Location16Regular,
+  ArrowExpand20Regular,
 } from '@fluentui/react-icons';
 import { ICalendarEvent } from '../services/GraphService';
 import { MotionWrapper } from './MotionWrapper';
@@ -29,7 +30,11 @@ export interface IUpcomingWeekCardProps {
   onAction?: (action: string, item: IHoverCardItem, itemType: HoverCardItemType) => void;
   theme?: Theme;
   title?: string;
+  /** Callback to toggle between large and medium card size */
+  onToggleSize?: () => void;
 }
+
+import { Button, Tooltip } from '@fluentui/react-components';
 
 interface IGroupedEvents {
   [key: string]: ICalendarEvent[];
@@ -41,7 +46,8 @@ export const UpcomingWeekCard: React.FC<IUpcomingWeekCardProps> = ({
   error,
   onAction,
   theme,
-  title
+  title,
+  onToggleSize,
 }) => {
   const styles = useCardStyles();
 
@@ -77,6 +83,19 @@ export const UpcomingWeekCard: React.FC<IUpcomingWeekCardProps> = ({
   const groupedEvents = groupEventsByDay(events);
   const sortedDays = Object.keys(groupedEvents).sort();
 
+  // Expand button for switching to large card view
+  const expandButton = onToggleSize ? (
+    <Tooltip content="Expand to detailed view" relationship="label">
+      <Button
+        appearance="subtle"
+        size="small"
+        icon={<ArrowExpand20Regular />}
+        onClick={onToggleSize}
+        aria-label="Expand card"
+      />
+    </Tooltip>
+  ) : undefined;
+
   // Empty state
   if (!loading && !error && events.length === 0) {
     return (
@@ -84,6 +103,7 @@ export const UpcomingWeekCard: React.FC<IUpcomingWeekCardProps> = ({
         <CardHeader
           icon={<CalendarWeekNumbers24Regular />}
           title={title || 'Upcoming Week'}
+          actions={expandButton}
         />
         <EmptyState
           icon={<CalendarLtr24Regular />}
@@ -106,6 +126,7 @@ export const UpcomingWeekCard: React.FC<IUpcomingWeekCardProps> = ({
         title={title || 'Upcoming Week'}
         badge={events.length > 0 ? events.length : undefined}
         badgeVariant="brand"
+        actions={expandButton}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

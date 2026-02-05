@@ -58,7 +58,9 @@ export const useCardStyles = makeStyles({
   card: {
     display: 'flex',
     flexDirection: 'column',
+    width: '100%', // Fill the masonry column width
     minHeight: cardTokens.size.cardMinHeight,
+    height: cardTokens.size.cardStandardHeight,
     maxHeight: cardTokens.size.cardMaxHeight,
     backgroundColor: cardTokens.colors.cardBackground,
     borderRadius: cardTokens.borderRadius.card,
@@ -72,10 +74,36 @@ export const useCardStyles = makeStyles({
     },
   },
 
-  // Large card variant
+  // Large card variant (full width, taller)
   cardLarge: {
     minHeight: cardTokens.size.cardLargeMinHeight,
     maxHeight: cardTokens.size.cardLargeMaxHeight,
+  },
+
+  // Height variants for masonry layout
+  cardCompact: {
+    height: cardTokens.size.cardCompactHeight,
+    minHeight: cardTokens.size.cardCompactHeight,
+    maxHeight: cardTokens.size.cardCompactHeight,
+  },
+
+  cardStandard: {
+    height: cardTokens.size.cardStandardHeight,
+    minHeight: cardTokens.size.cardMinHeight,
+    maxHeight: cardTokens.size.cardMaxHeight,
+  },
+
+  cardTall: {
+    height: cardTokens.size.cardTallHeight,
+    minHeight: cardTokens.size.cardStandardHeight,
+    maxHeight: cardTokens.size.cardTallHeight,
+  },
+
+  // Auto height for dynamic content
+  cardAuto: {
+    height: 'auto',
+    minHeight: cardTokens.size.cardMinHeight,
+    maxHeight: cardTokens.size.cardMaxHeight,
   },
 
   // Clean header - NO gray background, NO border
@@ -608,6 +636,69 @@ export const useCardStyles = makeStyles({
   relationshipExternal: {
     backgroundColor: tokens.colorNeutralBackground3,
     color: tokens.colorNeutralForeground2,
+  },
+
+  // ============================================
+  // Card Header Actions (expand, settings, etc.)
+  // ============================================
+
+  // Header action button container
+  cardHeaderActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: cardTokens.spacing.itemGapSmall,
+    marginLeft: 'auto',
+  },
+
+  // Expand button - appears on hover
+  cardExpandButton: {
+    minWidth: '28px',
+    width: '28px',
+    height: '28px',
+    padding: 0,
+    borderRadius: cardTokens.borderRadius.button,
+    color: cardTokens.colors.textTertiary,
+    backgroundColor: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    opacity: 0,
+    transitionProperty: 'opacity, background-color, color',
+    transitionDuration: cardTokens.transition.fast,
+    ':hover': {
+      backgroundColor: cardTokens.colors.subtleBackgroundHover,
+      color: cardTokens.colors.textPrimary,
+    },
+    ':focus-visible': {
+      opacity: 1,
+      ...utilityStyles.focusOutline,
+    },
+  },
+
+  // Show expand button on card hover
+  cardExpandButtonVisible: {
+    opacity: 1,
+  },
+
+  // Settings/more button
+  cardSettingsButton: {
+    minWidth: '28px',
+    width: '28px',
+    height: '28px',
+    padding: 0,
+    borderRadius: cardTokens.borderRadius.button,
+    color: cardTokens.colors.textTertiary,
+    backgroundColor: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    transitionProperty: 'background-color, color',
+    transitionDuration: cardTokens.transition.fast,
+    ':hover': {
+      backgroundColor: cardTokens.colors.subtleBackgroundHover,
+      color: cardTokens.colors.textPrimary,
+    },
+    ':focus-visible': {
+      ...utilityStyles.focusOutline,
+    },
   },
 });
 

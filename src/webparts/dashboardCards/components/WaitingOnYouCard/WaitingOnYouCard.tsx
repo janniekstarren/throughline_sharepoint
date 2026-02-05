@@ -378,17 +378,17 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
         </TabList>
       </div>
 
-      {/* Chart */}
+      {/* Content */}
+      <div className={styles.content}>
+        {renderContent()}
+      </div>
+
+      {/* Chart - positioned at bottom before footer for consistent layout */}
       {showChart && trendData && viewMode === 'people' && (
         <div className={styles.chartSection}>
           <WaitingDebtChart trend={trendData} />
         </div>
       )}
-
-      {/* Content */}
-      <div className={styles.content}>
-        {renderContent()}
-      </div>
 
       {/* Footer */}
       <div className={styles.footer}>

@@ -9,6 +9,8 @@ import {
   Caption1,
   Body1,
   Theme,
+  Button,
+  Tooltip,
 } from '@fluentui/react-components';
 import {
   PeopleSwap24Regular,
@@ -18,6 +20,7 @@ import {
   Image20Regular,
   FolderZip20Regular,
   Person16Regular,
+  ArrowExpand20Regular,
 } from '@fluentui/react-icons';
 import { ISharedFile } from '../services/GraphService';
 import { MotionWrapper } from './MotionWrapper';
@@ -32,6 +35,8 @@ export interface ISharedWithMeCardProps {
   onAction?: (action: string, item: IHoverCardItem, itemType: HoverCardItemType) => void;
   theme?: Theme;
   title?: string;
+  /** Callback to toggle between large and medium card size */
+  onToggleSize?: () => void;
 }
 
 // File icon component using Fluent UI 9 icons
@@ -63,7 +68,8 @@ export const SharedWithMeCard: React.FC<ISharedWithMeCardProps> = ({
   error,
   onAction,
   theme,
-  title
+  title,
+  onToggleSize,
 }) => {
   const styles = useCardStyles();
 
@@ -85,6 +91,19 @@ export const SharedWithMeCard: React.FC<ISharedWithMeCardProps> = ({
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
+  // Expand button for switching to large card view
+  const expandButton = onToggleSize ? (
+    <Tooltip content="Expand to detailed view" relationship="label">
+      <Button
+        appearance="subtle"
+        size="small"
+        icon={<ArrowExpand20Regular />}
+        onClick={onToggleSize}
+        aria-label="Expand card"
+      />
+    </Tooltip>
+  ) : undefined;
+
   // Empty state
   if (!loading && !error && files.length === 0) {
     return (
@@ -92,6 +111,8 @@ export const SharedWithMeCard: React.FC<ISharedWithMeCardProps> = ({
         <CardHeader
           icon={<PeopleSwap24Regular />}
           title={title || 'Shared With Me'}
+          cardId="sharedWithMe"
+          actions={expandButton}
         />
         <EmptyState
           icon={<Folder24Regular />}
@@ -112,8 +133,10 @@ export const SharedWithMeCard: React.FC<ISharedWithMeCardProps> = ({
       <CardHeader
         icon={<PeopleSwap24Regular />}
         title={title || 'Shared With Me'}
+        cardId="sharedWithMe"
         badge={files.length > 0 ? files.length : undefined}
         badgeVariant="brand"
+        actions={expandButton}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

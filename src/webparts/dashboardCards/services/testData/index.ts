@@ -19,6 +19,9 @@ import { getTestQuickLinks } from './quickLinks';
 export { getTestWaitingOnYouData, getTestWaitingOnYouTrend } from './waitingOnYou';
 export { getTestWaitingOnOthersData, getTestWaitingOnOthersTrend } from './waitingOnOthers';
 
+// Re-export Context Switching test data functions
+export { getTestContextSwitchingData, getTestContextSwitchingTrend } from './contextSwitching';
+
 // ============================================
 // Types
 // ============================================

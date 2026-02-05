@@ -62,11 +62,11 @@
     }
 
     &::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.1);
+      background: var(--colorNeutralStroke2, rgba(0, 0, 0, 0.1));
       border-radius: 3px;
 
       &:hover {
-        background: rgba(0, 0, 0, 0.15);
+        background: var(--colorNeutralStroke1, rgba(0, 0, 0, 0.15));
       }
     }
   }
@@ -76,8 +76,8 @@
     margin-bottom: 12px;
     border-radius: 10px !important;
     overflow: hidden;
-    background: #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04);
+    background: var(--colorNeutralBackground1);
+    box-shadow: var(--shadow4, 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04));
   }
 
   .ms-PropertyPaneGroup-group {
@@ -92,7 +92,7 @@
     letter-spacing: -0.01em;
 
     &:hover {
-      background: rgba(0, 0, 0, 0.02);
+      background: var(--colorNeutralBackground2);
     }
   }
 
@@ -100,12 +100,12 @@
   .ms-Dropdown {
     .ms-Dropdown-title {
       border-radius: 8px !important;
-      border-color: rgba(0, 0, 0, 0.1) !important;
+      border-color: var(--colorNeutralStroke1) !important;
       transition: border-color 0.15s ease;
     }
 
     &:hover .ms-Dropdown-title {
-      border-color: rgba(0, 0, 0, 0.2) !important;
+      border-color: var(--colorNeutralStroke1Hover) !important;
     }
 
     .ms-Dropdown-caretDownWrapper {
@@ -115,7 +115,7 @@
 
   .ms-Dropdown-callout {
     border-radius: 8px !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: var(--shadow16) !important;
     border: none !important;
     overflow: hidden;
   }
@@ -125,7 +125,7 @@
     margin: 2px 4px;
 
     &:hover {
-      background: rgba(0, 0, 0, 0.04);
+      background: var(--colorNeutralBackground3);
     }
   }
 
@@ -133,16 +133,16 @@
   .ms-TextField {
     .ms-TextField-fieldGroup {
       border-radius: 8px !important;
-      border-color: rgba(0, 0, 0, 0.1) !important;
+      border-color: var(--colorNeutralStroke1) !important;
       transition: border-color 0.15s ease;
     }
 
     &:hover .ms-TextField-fieldGroup {
-      border-color: rgba(0, 0, 0, 0.2) !important;
+      border-color: var(--colorNeutralStroke1Hover) !important;
     }
 
     &.is-active .ms-TextField-fieldGroup {
-      border-color: #0066cc !important;
+      border-color: var(--colorBrandStroke1) !important;
     }
   }
 
@@ -150,7 +150,7 @@
   .ms-Label {
     font-weight: 500;
     font-size: 13px;
-    color: #1a1a2e;
+    color: var(--colorNeutralForeground1);
   }
 
   // Toggles
@@ -170,10 +170,10 @@
     transition: all 0.15s ease;
 
     &.ms-Button--primary {
-      background: #0066cc;
+      background: var(--colorBrandBackground);
 
       &:hover {
-        background: #0052a3;
+        background: var(--colorBrandBackgroundHover);
       }
     }
   }
@@ -218,10 +218,10 @@
 
   // Link styling
   .ms-Link {
-    color: #0066cc;
+    color: var(--colorBrandForeground1);
 
     &:hover {
-      color: #0052a3;
+      color: var(--colorBrandForegroundLink);
     }
   }
 }

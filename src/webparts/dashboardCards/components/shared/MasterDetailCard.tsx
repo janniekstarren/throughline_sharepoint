@@ -37,6 +37,9 @@ export interface IMasterDetailCardProps<T> {
   emptyMessage?: string;
   emptyIcon?: React.ReactElement;
   selectFirstOnLoad?: boolean;
+
+  // Optional header actions (e.g., collapse button)
+  headerActions?: React.ReactNode;
 }
 
 const useStyles = makeStyles({
@@ -77,6 +80,12 @@ const useStyles = makeStyles({
   },
   badge: {
     marginLeft: 'auto',
+  },
+  headerActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXS,
+    marginLeft: tokens.spacingHorizontalS,
   },
   body: {
     display: 'flex',
@@ -236,6 +245,7 @@ export function MasterDetailCard<T>({
   error,
   emptyMessage = 'No items to display',
   emptyIcon,
+  headerActions,
 }: IMasterDetailCardProps<T>): React.ReactElement {
   const styles = useStyles();
 
@@ -246,6 +256,7 @@ export function MasterDetailCard<T>({
         <div className={styles.header}>
           <div className={styles.iconWrapper}>{icon}</div>
           <Text className={styles.titleText}>{title}</Text>
+          {headerActions && <div className={styles.headerActions}>{headerActions}</div>}
         </div>
         <div className={styles.loadingContainer}>
           <Spinner size="medium" label="Loading..." />
@@ -261,6 +272,7 @@ export function MasterDetailCard<T>({
         <div className={styles.header}>
           <div className={styles.iconWrapper}>{icon}</div>
           <Text className={styles.titleText}>{title}</Text>
+          {headerActions && <div className={styles.headerActions}>{headerActions}</div>}
         </div>
         <div className={styles.errorContainer}>
           <ErrorCircle24Regular className={styles.errorIcon} />
@@ -277,6 +289,7 @@ export function MasterDetailCard<T>({
         <div className={styles.header}>
           <div className={styles.iconWrapper}>{icon}</div>
           <Text className={styles.titleText}>{title}</Text>
+          {headerActions && <div className={styles.headerActions}>{headerActions}</div>}
         </div>
         <div className={styles.body}>
           <div className={styles.masterPanel}>
@@ -319,6 +332,7 @@ export function MasterDetailCard<T>({
             {displayCount}
           </Badge>
         )}
+        {headerActions && <div className={styles.headerActions}>{headerActions}</div>}
       </div>
 
       {/* Body - Master/Detail split */}

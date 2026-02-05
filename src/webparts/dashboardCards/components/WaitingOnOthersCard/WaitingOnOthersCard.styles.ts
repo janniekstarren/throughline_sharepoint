@@ -2,10 +2,14 @@ import { makeStyles, tokens, shorthands } from '@fluentui/react-components';
 
 export const useStyles = makeStyles({
   card: {
+    display: 'flex',
+    flexDirection: 'column',
     width: '100%',
+    height: '100%',
     ...shorthands.borderRadius(tokens.borderRadiusLarge),
     boxShadow: tokens.shadow4,
     backgroundColor: tokens.colorNeutralBackground1,
+    overflow: 'hidden',
   },
   header: {
     display: 'flex',
@@ -20,7 +24,7 @@ export const useStyles = makeStyles({
   },
   headerActions: {
     display: 'flex',
-    gap: tokens.spacingHorizontalXXS,
+    gap: tokens.spacingHorizontalXS,
   },
   subheader: {
     color: tokens.colorNeutralForeground3,
@@ -28,22 +32,27 @@ export const useStyles = makeStyles({
   tabContainer: {
     paddingLeft: tokens.spacingHorizontalM,
     paddingRight: tokens.spacingHorizontalM,
+    paddingTop: tokens.spacingVerticalXS,
   },
   divider: {
     marginTop: tokens.spacingVerticalS,
     marginBottom: tokens.spacingVerticalS,
   },
   content: {
-    maxHeight: '400px',
+    flex: 1,
+    minHeight: 0,
     overflowY: 'auto',
     paddingLeft: tokens.spacingHorizontalM,
     paddingRight: tokens.spacingHorizontalM,
+    paddingTop: tokens.spacingVerticalS,
+    paddingBottom: tokens.spacingVerticalS,
   },
   loadingContainer: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     padding: tokens.spacingVerticalXXL,
+    flex: 1,
   },
   errorContainer: {
     display: 'flex',
@@ -51,6 +60,7 @@ export const useStyles = makeStyles({
     alignItems: 'center',
     gap: tokens.spacingVerticalM,
     padding: tokens.spacingVerticalXXL,
+    flex: 1,
   },
   emptyState: {
     display: 'flex',
@@ -60,6 +70,7 @@ export const useStyles = makeStyles({
     padding: tokens.spacingVerticalXXL,
     textAlign: 'center',
     gap: tokens.spacingVerticalS,
+    flex: 1,
   },
   emptyIcon: {
     fontSize: '48px',
@@ -70,11 +81,21 @@ export const useStyles = makeStyles({
   },
   footer: {
     display: 'flex',
-    justifyContent: 'center',
-    padding: tokens.spacingVerticalS,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
     borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
   },
   footerText: {
-    color: tokens.colorNeutralForeground4,
+    color: tokens.colorNeutralForeground3,
+  },
+  // Chart section styling
+  chartSection: {
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderRadius: tokens.borderRadiusMedium,
+    marginLeft: tokens.spacingHorizontalM,
+    marginRight: tokens.spacingHorizontalM,
+    marginBottom: tokens.spacingVerticalS,
+    overflow: 'hidden',
   },
 });

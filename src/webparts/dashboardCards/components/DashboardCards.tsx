@@ -7,6 +7,7 @@ import {
   Theme,
   Spinner,
 } from '@fluentui/react-components';
+import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import { MSGraphClientV3 } from '@microsoft/sp-http';
 import {
   IEmailMessage,
@@ -15,21 +16,36 @@ import {
   ISharedFile,
 } from '../services/GraphService';
 import { useDashboardData, DataMode } from '../hooks/useDashboardData';
+import { useUserPreferences } from '../hooks/useUserPreferences';
 // Medium card components (standard list)
 import { MyTasksCard } from './MyTasksCard';
 import { RecentFilesCard } from './RecentFilesCard';
 import { MyTeamCard } from './MyTeamCard';
 import { SharedWithMeCard } from './SharedWithMeCard';
 import { QuickLinksCard } from './QuickLinksCard';
+import { QuickLinksCardLarge } from './QuickLinksCardLarge';
 import { SiteActivityCard } from './SiteActivityCard';
+// Large card variants for the above (master-detail layout)
+import { MyTasksCardLarge } from './MyTasksCardLarge';
+import { RecentFilesCardLarge } from './RecentFilesCardLarge';
+import { SharedWithMeCardLarge } from './SharedWithMeCardLarge';
+import { MyTeamCardLarge } from './MyTeamCardLarge';
+import { SiteActivityCardLarge } from './SiteActivityCardLarge';
 // Large card variants (master-detail layout)
 import { TodaysAgendaCardLarge } from './TodaysAgendaCardLarge';
 import { UnreadInboxCardLarge } from './UnreadInboxCardLarge';
 import { UpcomingWeekCardLarge } from './UpcomingWeekCardLarge';
 import { FlaggedEmailsCardLarge } from './FlaggedEmailsCardLarge';
+// Medium card variants (compact list)
+import { TodaysAgendaCard } from './TodaysAgendaCard';
+import { UnreadInboxCard } from './UnreadInboxCard';
+import { UpcomingWeekCard } from './UpcomingWeekCard';
+import { FlaggedEmailsCard } from './FlaggedEmailsCard';
 // Waiting On You card
 import { WaitingOnYouCard } from './WaitingOnYouCard';
 import { WaitingOnOthersCard } from './WaitingOnOthersCard';
+// Context Switching card
+import { ContextSwitchingCard } from './ContextSwitchingCard';
 import { HoverCardItemType, IHoverCardItem } from './ItemHoverCard';
 import { Salutation, SalutationType, SalutationSize } from './Salutation';
 import { CategorySection, IOrderedCard } from './CategorySection';
@@ -49,6 +65,7 @@ export interface ICardVisibility {
   showSiteActivity: boolean;
   showWaitingOnYou: boolean;
   showWaitingOnOthers: boolean;
+  showContextSwitching: boolean;
 }
 
 // Import ICategoryConfig from CardConfigDialog
@@ -58,8 +75,10 @@ import { ICategoryConfig } from '../propertyPane/CardConfigDialog';
 export type { ICategoryConfig };
 
 // Large cards - these get full-width layout (master-detail)
-const LARGE_CARDS = ['todaysAgenda', 'unreadInbox', 'upcomingWeek', 'flaggedEmails'];
-const isLargeCard = (cardId: string): boolean => LARGE_CARDS.includes(cardId);
+const LARGE_CARDS = [
+  'todaysAgenda', 'unreadInbox', 'upcomingWeek', 'flaggedEmails',
+  'myTasks', 'recentFiles', 'sharedWithMe', 'myTeam', 'siteActivity', 'quickLinks'
+];
 
 // Default icon IDs for system categories (matches AVAILABLE_ICONS in CardConfigDialog)
 const DEFAULT_CATEGORY_ICONS: Record<string, string> = {
@@ -90,6 +109,19 @@ export interface IWaitingOnOthersSettings {
   showChart: boolean;
 }
 
+// Context Switching card settings
+export interface IContextSwitchingSettings {
+  trackEmail: boolean;
+  trackTeamsChat: boolean;
+  trackTeamsChannel: boolean;
+  trackMeetings: boolean;
+  trackFiles: boolean;
+  focusGoal: number;
+  showFocusScore: boolean;
+  showHourlyChart: boolean;
+  showDistribution: boolean;
+}
+
 export interface IDashboardCardsProps {
   context: WebPartContext;
   salutationType: SalutationType;
@@ -110,6 +142,14 @@ export interface IDashboardCardsProps {
   waitingOnYouSettings?: IWaitingOnYouSettings;
   // Waiting On Others settings
   waitingOnOthersSettings?: IWaitingOnOthersSettings;
+  // Context Switching settings
+  contextSwitchingSettings?: IContextSwitchingSettings;
+  // Collapsed card IDs (large cards shown as medium) - for persistence
+  collapsedCardIds?: string[];
+  // Callback when collapsed cards change (for persistence)
+  onCollapsedCardsChange?: (cardIds: string[]) => void;
+  // Callback when card order changes via drag-and-drop
+  onCardOrderChange?: (newOrder: string[]) => void;
 }
 
 // Default card titles
@@ -126,6 +166,7 @@ const DEFAULT_CARD_TITLES: Record<string, string> = {
   siteActivity: 'Site Activity',
   waitingOnYou: 'Waiting On You',
   waitingOnOthers: 'Waiting On Others',
+  contextSwitching: 'Context Switching',
 };
 
 // Create a renderer for Fluent UI 9 that targets the document
@@ -150,13 +191,26 @@ const DEFAULT_WAITING_ON_OTHERS_SETTINGS: IWaitingOnOthersSettings = {
   showChart: true,
 };
 
+// Default Context Switching settings
+const DEFAULT_CONTEXT_SWITCHING_SETTINGS: IContextSwitchingSettings = {
+  trackEmail: true,
+  trackTeamsChat: true,
+  trackTeamsChannel: true,
+  trackMeetings: true,
+  trackFiles: true,
+  focusGoal: 25,
+  showFocusScore: true,
+  showHourlyChart: true,
+  showDistribution: true,
+};
+
 export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   context,
   salutationType,
   salutationSize,
   themeMode,
   cardVisibility,
-  cardOrder,
+  cardOrder: defaultCardOrder,
   cardTitles,
   dataMode,
   categoryOrder = [],
@@ -166,11 +220,111 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   categoryIcons = {},
   waitingOnYouSettings = DEFAULT_WAITING_ON_YOU_SETTINGS,
   waitingOnOthersSettings = DEFAULT_WAITING_ON_OTHERS_SETTINGS,
+  contextSwitchingSettings = DEFAULT_CONTEXT_SWITCHING_SETTINGS,
+  collapsedCardIds: defaultCollapsedCardIds = [],
+  onCollapsedCardsChange,
+  onCardOrderChange,
 }) => {
+  // Get current user ID for per-user preferences
+  const userId = context.pageContext?.user?.loginName || '';
+
+  // Use user preferences hook for per-user card order and collapsed state
+  const {
+    cardOrder,
+    collapsedCardIds,
+    setCardOrder: setUserCardOrder,
+    setCollapsedCardIds: setUserCollapsedCardIds,
+  } = useUserPreferences({
+    userId,
+    defaultCardOrder,
+    defaultCollapsedCardIds,
+  });
+
+  // Drag state for switching to grid layout during drag
+  const [isDragging, setIsDragging] = React.useState(false);
+
   // Helper to get card title (custom or default)
   const getCardTitle = (cardId: string): string => {
     return cardTitles[cardId] || DEFAULT_CARD_TITLES[cardId] || cardId;
   };
+
+  // Convert collapsed card IDs to a Set for efficient lookup
+  const collapsedCards = React.useMemo(
+    () => new Set(collapsedCardIds),
+    [collapsedCardIds]
+  );
+
+  // Toggle a card between collapsed (medium) and expanded (large)
+  const toggleCardSize = React.useCallback((cardId: string): void => {
+    const newCollapsedIds = collapsedCards.has(cardId)
+      ? collapsedCardIds.filter(id => id !== cardId)
+      : [...collapsedCardIds, cardId];
+
+    // Save to user preferences (localStorage)
+    setUserCollapsedCardIds(newCollapsedIds);
+
+    // Also notify parent for property pane sync
+    if (onCollapsedCardsChange) {
+      onCollapsedCardsChange(newCollapsedIds);
+    }
+  }, [collapsedCards, collapsedCardIds, setUserCollapsedCardIds, onCollapsedCardsChange]);
+
+  // Check if a card should render as large (considering collapsed state)
+  const isCardLarge = React.useCallback((cardId: string): boolean => {
+    // Only LARGE_CARDS can be large, and only if not collapsed
+    return LARGE_CARDS.includes(cardId) && !collapsedCards.has(cardId);
+  }, [collapsedCards]);
+
+  // Handle drag end - reorder cards
+  const handleDragEnd = React.useCallback((result: DropResult) => {
+    setIsDragging(false);
+
+    if (!result.destination) return;
+
+    const { source, destination } = result;
+    if (source.index === destination.index && source.droppableId === destination.droppableId) return;
+
+    // Get all visible cards in their current order
+    const visibleCards = cardOrder.filter(id => isCardVisible(id));
+
+    // Get the card being dragged
+    const draggedCardId = result.draggableId;
+
+    // Find the source and destination indices in the visible cards array
+    const sourceIndex = visibleCards.indexOf(draggedCardId);
+    if (sourceIndex === -1) return;
+
+    // Calculate the destination index based on drop position
+    // The destination.index from react-beautiful-dnd is relative to the droppable
+    // We need to map it back to the full card order
+    const newVisibleOrder = [...visibleCards];
+    newVisibleOrder.splice(sourceIndex, 1);
+    newVisibleOrder.splice(destination.index, 0, draggedCardId);
+
+    // Rebuild the full cardOrder, preserving hidden cards in their positions
+    const newCardOrder = cardOrder.map(id => {
+      if (visibleCards.includes(id)) {
+        // Replace with the reordered visible card at this position
+        const visibleIndex = cardOrder.filter(cid => visibleCards.includes(cid)).indexOf(id);
+        return newVisibleOrder[visibleIndex];
+      }
+      return id;
+    });
+
+    // Save to user preferences (localStorage)
+    setUserCardOrder(newCardOrder);
+
+    // Also notify parent for property pane sync (optional - admin might want to see changes)
+    if (onCardOrderChange) {
+      onCardOrderChange(newCardOrder);
+    }
+  }, [cardOrder, setUserCardOrder, onCardOrderChange]);
+
+  // Handle drag start
+  const handleDragStart = React.useCallback(() => {
+    setIsDragging(true);
+  }, []);
+
   // Get theme from SharePoint (converts SP theme to Fluent UI v9, respecting theme mode)
   const [currentTheme, setCurrentTheme] = React.useState<Theme | null>(null);
   const [userName, setUserName] = React.useState<string>('');
@@ -301,38 +455,61 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       siteActivity: cardVisibility.showSiteActivity,
       waitingOnYou: cardVisibility.showWaitingOnYou,
       waitingOnOthers: cardVisibility.showWaitingOnOthers,
+      contextSwitching: cardVisibility.showContextSwitching,
     };
     return visibilityMap[cardId] ?? false;
   };
 
   // Render a card by its ID (returns the card element without visibility check)
-  // Uses Large card variants for cards with master-detail layout
+  // Uses Large card variants for cards with master-detail layout unless collapsed
   const renderCardElement = (cardId: string): React.ReactNode => {
     const cardTitle = getCardTitle(cardId);
+    const isLarge = isCardLarge(cardId);
 
     switch (cardId) {
-      // Large cards (master-detail layout)
+      // Cards with both large and medium variants
       case 'todaysAgenda':
-        return <TodaysAgendaCardLarge events={dashboardData.events.data} loading={dashboardData.events.loading} error={dashboardData.events.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return isLarge
+          ? <TodaysAgendaCardLarge events={dashboardData.events.data} loading={dashboardData.events.loading} error={dashboardData.events.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
+          : <TodaysAgendaCard events={dashboardData.events.data} loading={dashboardData.events.loading} error={dashboardData.events.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
       case 'unreadInbox':
-        return <UnreadInboxCardLarge emails={dashboardData.emails.data} loading={dashboardData.emails.loading} error={dashboardData.emails.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return isLarge
+          ? <UnreadInboxCardLarge emails={dashboardData.emails.data} loading={dashboardData.emails.loading} error={dashboardData.emails.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
+          : <UnreadInboxCard emails={dashboardData.emails.data} loading={dashboardData.emails.loading} error={dashboardData.emails.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
       case 'upcomingWeek':
-        return <UpcomingWeekCardLarge events={dashboardData.weekEvents.data} loading={dashboardData.weekEvents.loading} error={dashboardData.weekEvents.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return isLarge
+          ? <UpcomingWeekCardLarge events={dashboardData.weekEvents.data} loading={dashboardData.weekEvents.loading} error={dashboardData.weekEvents.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
+          : <UpcomingWeekCard events={dashboardData.weekEvents.data} loading={dashboardData.weekEvents.loading} error={dashboardData.weekEvents.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
       case 'flaggedEmails':
-        return <FlaggedEmailsCardLarge emails={dashboardData.flaggedEmails.data} loading={dashboardData.flaggedEmails.loading} error={dashboardData.flaggedEmails.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
-      // Medium cards (standard list)
+        return isLarge
+          ? <FlaggedEmailsCardLarge emails={dashboardData.flaggedEmails.data} loading={dashboardData.flaggedEmails.loading} error={dashboardData.flaggedEmails.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
+          : <FlaggedEmailsCard emails={dashboardData.flaggedEmails.data} loading={dashboardData.flaggedEmails.loading} error={dashboardData.flaggedEmails.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
+      // Cards with both large and medium variants (new)
       case 'myTasks':
-        return <MyTasksCard tasks={dashboardData.tasks.data} loading={dashboardData.tasks.loading} error={dashboardData.tasks.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return isLarge
+          ? <MyTasksCardLarge tasks={dashboardData.tasks.data} loading={dashboardData.tasks.loading} error={dashboardData.tasks.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
+          : <MyTasksCard tasks={dashboardData.tasks.data} loading={dashboardData.tasks.loading} error={dashboardData.tasks.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
       case 'recentFiles':
-        return <RecentFilesCard files={dashboardData.files.data} loading={dashboardData.files.loading} error={dashboardData.files.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return isLarge
+          ? <RecentFilesCardLarge files={dashboardData.files.data} loading={dashboardData.files.loading} error={dashboardData.files.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
+          : <RecentFilesCard files={dashboardData.files.data} loading={dashboardData.files.loading} error={dashboardData.files.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
       case 'myTeam':
-        return <MyTeamCard members={dashboardData.teamMembers.data} loading={dashboardData.teamMembers.loading} error={dashboardData.teamMembers.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return isLarge
+          ? <MyTeamCardLarge members={dashboardData.teamMembers.data} loading={dashboardData.teamMembers.loading} error={dashboardData.teamMembers.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
+          : <MyTeamCard members={dashboardData.teamMembers.data} loading={dashboardData.teamMembers.loading} error={dashboardData.teamMembers.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
       case 'sharedWithMe':
-        return <SharedWithMeCard files={dashboardData.sharedFiles.data} loading={dashboardData.sharedFiles.loading} error={dashboardData.sharedFiles.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
-      case 'quickLinks':
-        return <QuickLinksCard links={dashboardData.quickLinks.data} title={cardTitle} />;
+        return isLarge
+          ? <SharedWithMeCardLarge files={dashboardData.sharedFiles.data} loading={dashboardData.sharedFiles.loading} error={dashboardData.sharedFiles.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
+          : <SharedWithMeCard files={dashboardData.sharedFiles.data} loading={dashboardData.sharedFiles.loading} error={dashboardData.sharedFiles.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
       case 'siteActivity':
-        return <SiteActivityCard activities={dashboardData.siteActivity.data} loading={dashboardData.siteActivity.loading} error={dashboardData.siteActivity.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} />;
+        return isLarge
+          ? <SiteActivityCardLarge activities={dashboardData.siteActivity.data} loading={dashboardData.siteActivity.loading} error={dashboardData.siteActivity.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
+          : <SiteActivityCard activities={dashboardData.siteActivity.data} loading={dashboardData.siteActivity.loading} error={dashboardData.siteActivity.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
+      case 'quickLinks':
+        return isLarge
+          ? <QuickLinksCardLarge links={dashboardData.quickLinks.data} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
+          : <QuickLinksCard links={dashboardData.quickLinks.data} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
+      // Analytics cards (medium-only)
       case 'waitingOnYou':
         return (
           <WaitingOnYouCard
@@ -360,6 +537,30 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
             dataMode={dataMode}
           />
         );
+      case 'contextSwitching':
+        return (
+          <ContextSwitchingCard
+            graphClient={graphClient}
+            dataMode={dataMode}
+            title={cardTitle}
+            settings={{
+              minSwitchDuration: 30,
+              trackEmail: contextSwitchingSettings.trackEmail,
+              trackTeamsChat: contextSwitchingSettings.trackTeamsChat,
+              trackTeamsChannel: contextSwitchingSettings.trackTeamsChannel,
+              trackMeetings: contextSwitchingSettings.trackMeetings,
+              trackFiles: contextSwitchingSettings.trackFiles,
+              trackTasks: false,
+              focusGoal: contextSwitchingSettings.focusGoal,
+              workingHoursStart: 9,
+              workingHoursEnd: 17,
+              showFocusScore: contextSwitchingSettings.showFocusScore,
+              showHourlyChart: contextSwitchingSettings.showHourlyChart,
+              showDistribution: contextSwitchingSettings.showDistribution,
+              trendDays: 7,
+            }}
+          />
+        );
       default:
         return null;
     }
@@ -369,6 +570,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   // Cards are rendered in user-defined order within each category
   const getOrderedCards = (): React.ReactNode[] => {
     const result: React.ReactNode[] = [];
+    let globalIndex = 0; // Track global index for drag-and-drop
 
     // Check for valid category configuration:
     // - Must have categories defined
@@ -385,7 +587,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
         .filter(id => isCardVisible(id))
         .map(id => ({
           id,
-          isLarge: isLargeCard(id),
+          isLarge: isCardLarge(id),
           element: renderCardElement(id)
         }));
 
@@ -395,6 +597,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
           categoryId="all"
           showTitle={false}
           orderedCards={orderedCards}
+          isDragging={isDragging}
+          startIndex={0}
         />
       ];
     }
@@ -422,7 +626,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       // Create ordered cards array that preserves user's order
       const orderedCards: IOrderedCard[] = cardsInCategory.map(id => ({
         id,
-        isLarge: isLargeCard(id),
+        isLarge: isCardLarge(id),
         element: renderCardElement(id)
       }));
 
@@ -438,8 +642,12 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
           showTitle={catConfig?.showTitle !== false}
           iconId={iconId}
           orderedCards={orderedCards}
+          isDragging={isDragging}
+          startIndex={globalIndex}
         />
       );
+
+      globalIndex += orderedCards.length;
     });
 
     // Render any unassigned cards at the end (fallback)
@@ -450,7 +658,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     if (unassignedCards.length > 0) {
       const orderedUnassigned: IOrderedCard[] = unassignedCards.map(id => ({
         id,
-        isLarge: isLargeCard(id),
+        isLarge: isCardLarge(id),
         element: renderCardElement(id)
       }));
 
@@ -460,6 +668,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
           categoryId="unassigned"
           showTitle={false}
           orderedCards={orderedUnassigned}
+          isDragging={isDragging}
+          startIndex={globalIndex}
         />
       );
     }
@@ -470,10 +680,15 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   return (
     <RendererProvider renderer={renderer}>
       <FluentProvider theme={currentTheme}>
-        <div className={styles.dashboard} ref={portalMountRef}>
-          <Salutation type={salutationType} size={salutationSize} userName={userName} />
-          {getOrderedCards()}
-        </div>
+        <DragDropContext
+          onDragEnd={handleDragEnd}
+          onDragStart={handleDragStart}
+        >
+          <div className={styles.dashboard} ref={portalMountRef}>
+            <Salutation type={salutationType} size={salutationSize} userName={userName} />
+            {getOrderedCards()}
+          </div>
+        </DragDropContext>
       </FluentProvider>
     </RendererProvider>
   );

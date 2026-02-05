@@ -33,12 +33,12 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'flex-start',
     gap: tokens.spacingHorizontalS,
-    padding: tokens.spacingVerticalXS,
-    paddingLeft: tokens.spacingHorizontalS,
-    paddingRight: tokens.spacingHorizontalS,
-    borderRadius: tokens.borderRadiusSmall,
+    padding: tokens.spacingVerticalS,          // Increased from spacingVerticalXS
+    paddingLeft: tokens.spacingHorizontalM,    // Increased from spacingHorizontalS
+    paddingRight: tokens.spacingHorizontalM,   // Increased for better density
+    borderRadius: tokens.borderRadiusMedium,   // Increased from borderRadiusSmall
     cursor: 'pointer',
-    '&:hover': {
+    ':hover': {
       backgroundColor: tokens.colorNeutralBackground1Hover,
     },
   },
@@ -67,14 +67,13 @@ const useStyles = makeStyles({
     alignItems: 'center',
     gap: tokens.spacingHorizontalXS,
     color: tokens.colorNeutralForeground3,
+    minWidth: 0,        // Enable text truncation in flex children
+    overflow: 'hidden', // Prevent content overflow
   },
   longWait: {
     color: tokens.colorPaletteMarigoldForeground1,
   },
-  badge: {
-    height: '14px',
-    fontSize: '9px',
-  },
+  // Badge uses Fluent 2 size="tiny" - no custom overrides needed
   reminderIndicator: {
     display: 'flex',
     alignItems: 'center',
@@ -162,7 +161,7 @@ export const PendingConversationItem: React.FC<PendingConversationItemProps> = (
             <Text size={100}>{formatDuration(item.waitingDuration)} waiting</Text>
 
             {item.wasQuestion && (
-              <Badge className={styles.badge} appearance="tint" color="informative" size="tiny">?</Badge>
+              <Badge appearance="tint" color="informative" size="small">?</Badge>
             )}
 
             {item.mentionedDeadline && (

@@ -18,19 +18,21 @@
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--colorNeutralForeground2, #605e5c);
+  // Use CSS custom properties that Fluent UI FluentProvider injects
+  // These adapt to light/dark theme automatically
+  color: var(--colorNeutralForeground2);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin: 0 0 16px 0;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--colorNeutralStroke2, #edebe9);
+  border-bottom: 1px solid var(--colorNeutralStroke2);
 }
 
 .categoryIcon {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--colorBrandForeground1, #0078d4);
+  color: var(--colorBrandForeground1);
   font-size: 18px;
 
   > svg {
@@ -67,6 +69,11 @@
 // MASONRY GRID
 // Uses react-masonry-css flexbox layout
 // ============================================
+.masonryWrapper {
+  // Wrapper for masonry grid when not dragging
+  position: relative;
+}
+
 .masonryGrid {
   display: flex;
   width: auto;
@@ -80,11 +87,69 @@
   // Gap between rows (cards in same column)
   > div {
     margin-bottom: 20px;
+    // Cards use their defined height from cardStyles.ts
+    // Min height ensures cards don't collapse
+    min-height: 280px;
 
     &:last-child {
       margin-bottom: 0;
     }
   }
+}
+
+// ============================================
+// DRAG AND DROP STYLES
+// Grid layout used during drag operations
+// ============================================
+.gridLayout {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  min-height: 100px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+
+  @media (max-width: 1600px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Highlight when dragging over a drop zone
+.gridDragOver {
+  background-color: var(--colorBrandBackground2);
+}
+
+// Card wrapper for draggable items
+.draggableCard {
+  position: relative;
+  cursor: grab;
+  min-height: 280px;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+// Card being dragged
+.cardDragging {
+  opacity: 0.95;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  transform: rotate(1deg);
+  z-index: 1000;
+}
+
+// Placeholder styling (dashed outline for drop position)
+// react-beautiful-dnd injects a placeholder element
+:global([data-rbd-placeholder-context-id]) {
+  border: 2px dashed var(--colorBrandStroke1) !important;
+  border-radius: 12px !important;
+  background-color: var(--colorBrandBackground2) !important;
+  min-height: 280px !important;
 }
 
 // ============================================

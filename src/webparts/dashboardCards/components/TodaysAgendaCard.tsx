@@ -16,6 +16,7 @@ import {
   CalendarLtr24Regular,
   Location16Regular,
   Video20Regular,
+  ArrowExpand20Regular,
 } from '@fluentui/react-icons';
 import { ICalendarEvent } from '../services/GraphService';
 import { MotionWrapper } from './MotionWrapper';
@@ -30,7 +31,11 @@ export interface ITodaysAgendaCardProps {
   onAction?: (action: string, item: IHoverCardItem, itemType: HoverCardItemType) => void;
   theme?: Theme;
   title?: string;
+  /** Callback to toggle between large and medium card size */
+  onToggleSize?: () => void;
 }
+
+import { Tooltip } from '@fluentui/react-components';
 
 export const TodaysAgendaCard: React.FC<ITodaysAgendaCardProps> = ({
   events,
@@ -38,7 +43,8 @@ export const TodaysAgendaCard: React.FC<ITodaysAgendaCardProps> = ({
   error,
   onAction,
   theme,
-  title
+  title,
+  onToggleSize,
 }) => {
   const styles = useCardStyles();
 
@@ -57,6 +63,19 @@ export const TodaysAgendaCard: React.FC<ITodaysAgendaCardProps> = ({
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  // Expand button for switching to large card view
+  const expandButton = onToggleSize ? (
+    <Tooltip content="Expand to detailed view" relationship="label">
+      <Button
+        appearance="subtle"
+        size="small"
+        icon={<ArrowExpand20Regular />}
+        onClick={onToggleSize}
+        aria-label="Expand card"
+      />
+    </Tooltip>
+  ) : undefined;
+
   // Empty state
   if (!loading && !error && events.length === 0) {
     return (
@@ -64,6 +83,7 @@ export const TodaysAgendaCard: React.FC<ITodaysAgendaCardProps> = ({
         <CardHeader
           icon={<CalendarLtr24Regular />}
           title={title || "Today's Agenda"}
+          actions={expandButton}
         />
         <EmptyState
           icon={<CalendarLtr24Regular />}
@@ -85,6 +105,7 @@ export const TodaysAgendaCard: React.FC<ITodaysAgendaCardProps> = ({
         icon={<CalendarLtr24Regular />}
         title={title || "Today's Agenda"}
         badge={events.length > 0 ? events.length : undefined}
+        actions={expandButton}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

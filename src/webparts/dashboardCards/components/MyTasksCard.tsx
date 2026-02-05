@@ -11,12 +11,15 @@ import {
   Body1,
   Checkbox,
   Theme,
+  Button,
+  Tooltip,
 } from '@fluentui/react-components';
 import {
   TaskListSquareLtr24Regular,
   CheckmarkCircle24Regular,
   Important16Filled,
   CalendarLtr16Regular,
+  ArrowExpand20Regular,
 } from '@fluentui/react-icons';
 import { ITaskItem } from '../services/GraphService';
 import { MotionWrapper } from './MotionWrapper';
@@ -31,6 +34,8 @@ export interface IMyTasksCardProps {
   onAction?: (action: string, item: IHoverCardItem, itemType: HoverCardItemType) => void;
   theme?: Theme;
   title?: string;
+  /** Callback to toggle between large and medium card size */
+  onToggleSize?: () => void;
 }
 
 export const MyTasksCard: React.FC<IMyTasksCardProps> = ({
@@ -39,7 +44,8 @@ export const MyTasksCard: React.FC<IMyTasksCardProps> = ({
   error,
   onAction,
   theme,
-  title
+  title,
+  onToggleSize,
 }) => {
   const styles = useCardStyles();
 
@@ -67,6 +73,19 @@ export const MyTasksCard: React.FC<IMyTasksCardProps> = ({
     return taskDate < today;
   };
 
+  // Expand button for switching to large card view
+  const expandButton = onToggleSize ? (
+    <Tooltip content="Expand to detailed view" relationship="label">
+      <Button
+        appearance="subtle"
+        size="small"
+        icon={<ArrowExpand20Regular />}
+        onClick={onToggleSize}
+        aria-label="Expand card"
+      />
+    </Tooltip>
+  ) : undefined;
+
   // Empty state
   if (!loading && !error && tasks.length === 0) {
     return (
@@ -74,6 +93,8 @@ export const MyTasksCard: React.FC<IMyTasksCardProps> = ({
         <CardHeader
           icon={<TaskListSquareLtr24Regular />}
           title={title || 'My Tasks'}
+          cardId="myTasks"
+          actions={expandButton}
         />
         <EmptyState
           icon={<CheckmarkCircle24Regular />}
@@ -94,8 +115,10 @@ export const MyTasksCard: React.FC<IMyTasksCardProps> = ({
       <CardHeader
         icon={<TaskListSquareLtr24Regular />}
         title={title || 'My Tasks'}
+        cardId="myTasks"
         badge={tasks.length > 0 ? tasks.length : undefined}
         badgeVariant="brand"
+        actions={expandButton}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

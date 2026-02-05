@@ -17,6 +17,7 @@ import {
   MailInbox24Regular,
   Important16Filled,
   Attach16Regular,
+  ArrowExpand20Regular,
 } from '@fluentui/react-icons';
 import { IEmailMessage } from '../services/GraphService';
 import { MotionWrapper } from './MotionWrapper';
@@ -31,7 +32,11 @@ export interface IUnreadInboxCardProps {
   onAction?: (action: string, item: IHoverCardItem, itemType: HoverCardItemType) => void;
   theme?: Theme;
   title?: string;
+  /** Callback to toggle between large and medium card size */
+  onToggleSize?: () => void;
 }
+
+import { Button, Tooltip } from '@fluentui/react-components';
 
 export const UnreadInboxCard: React.FC<IUnreadInboxCardProps> = ({
   emails,
@@ -39,7 +44,8 @@ export const UnreadInboxCard: React.FC<IUnreadInboxCardProps> = ({
   error,
   onAction,
   theme,
-  title
+  title,
+  onToggleSize,
 }) => {
   const styles = useCardStyles();
 
@@ -58,6 +64,19 @@ export const UnreadInboxCard: React.FC<IUnreadInboxCardProps> = ({
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
+  // Expand button for switching to large card view
+  const expandButton = onToggleSize ? (
+    <Tooltip content="Expand to detailed view" relationship="label">
+      <Button
+        appearance="subtle"
+        size="small"
+        icon={<ArrowExpand20Regular />}
+        onClick={onToggleSize}
+        aria-label="Expand card"
+      />
+    </Tooltip>
+  ) : undefined;
+
   // Empty state
   if (!loading && !error && emails.length === 0) {
     return (
@@ -65,6 +84,7 @@ export const UnreadInboxCard: React.FC<IUnreadInboxCardProps> = ({
         <CardHeader
           icon={<Mail24Regular />}
           title={title || 'Unread Inbox'}
+          actions={expandButton}
         />
         <EmptyState
           icon={<MailInbox24Regular />}
@@ -87,6 +107,7 @@ export const UnreadInboxCard: React.FC<IUnreadInboxCardProps> = ({
         title={title || 'Unread Inbox'}
         badge={emails.length > 0 ? emails.length : undefined}
         badgeVariant="brand"
+        actions={expandButton}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

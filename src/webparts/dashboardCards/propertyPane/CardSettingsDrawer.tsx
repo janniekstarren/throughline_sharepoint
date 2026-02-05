@@ -28,6 +28,24 @@ export interface IWaitingOnOthersSettings {
   showChart: boolean;          // default: true
 }
 
+export interface IContextSwitchingSettings {
+  trackEmail: boolean;         // default: true
+  trackTeamsChat: boolean;     // default: true
+  trackTeamsChannel: boolean;  // default: true
+  trackMeetings: boolean;      // default: true
+  trackFiles: boolean;         // default: true
+  focusGoal: number;           // default: 25 (minutes)
+  showFocusScore: boolean;     // default: true
+  showHourlyChart: boolean;    // default: true
+  showDistribution: boolean;   // default: true
+}
+
+// Card IDs that support large/medium toggle
+export const EXPANDABLE_CARD_IDS = [
+  'todaysAgenda', 'unreadInbox', 'upcomingWeek', 'flaggedEmails',
+  'myTasks', 'recentFiles', 'sharedWithMe', 'myTeam', 'siteActivity', 'quickLinks'
+];
+
 export interface ICardSettingsDrawerProps {
   open: boolean;
   cardId: string;
@@ -45,6 +63,12 @@ export interface ICardSettingsDrawerProps {
   // Waiting On Others specific settings
   waitingOnOthersSettings?: IWaitingOnOthersSettings;
   onWaitingOnOthersSettingsChanged?: (settings: IWaitingOnOthersSettings) => void;
+  // Context Switching specific settings
+  contextSwitchingSettings?: IContextSwitchingSettings;
+  onContextSwitchingSettingsChanged?: (settings: IContextSwitchingSettings) => void;
+  // Collapsed/expanded state for expandable cards (large cards shown as medium)
+  isCollapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }
 
 const useStyles = makeStyles({
@@ -145,6 +169,10 @@ export const CardSettingsDrawer: React.FC<ICardSettingsDrawerProps> = ({
   onWaitingOnYouSettingsChanged,
   waitingOnOthersSettings,
   onWaitingOnOthersSettingsChanged,
+  contextSwitchingSettings,
+  onContextSwitchingSettingsChanged,
+  isCollapsed,
+  onCollapsedChange,
 }) => {
   const styles = useStyles();
   const [localTitle, setLocalTitle] = React.useState(title);
@@ -224,6 +252,25 @@ export const CardSettingsDrawer: React.FC<ICardSettingsDrawerProps> = ({
             onChange={(_, data) => onVisibilityChange(data.checked)}
           />
         </div>
+
+        {/* Default View toggle for expandable cards (large/medium) */}
+        {EXPANDABLE_CARD_IDS.includes(cardId) && onCollapsedChange && (
+          <>
+            <Divider />
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Default View</Label>
+                <Text className={styles.hint}>
+                  {isCollapsed ? 'Card shows compact (medium) view' : 'Card shows detailed (large) view'}
+                </Text>
+              </div>
+              <Switch
+                checked={!isCollapsed}
+                onChange={(_, data) => onCollapsedChange(!data.checked)}
+              />
+            </div>
+          </>
+        )}
 
         {/* Waiting On You specific settings */}
         {cardId === 'waitingOnYou' && waitingOnYouSettings && onWaitingOnYouSettingsChanged && (
@@ -399,6 +446,146 @@ export const CardSettingsDrawer: React.FC<ICardSettingsDrawerProps> = ({
               <Switch
                 checked={waitingOnOthersSettings.showChart}
                 onChange={(_, data) => onWaitingOnOthersSettingsChanged({ ...waitingOnOthersSettings, showChart: data.checked })}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Context Switching specific settings */}
+        {cardId === 'contextSwitching' && contextSwitchingSettings && onContextSwitchingSettingsChanged && (
+          <>
+            <Divider />
+            <Text className={styles.label} style={{ marginBottom: '8px' }}>Card Settings</Text>
+
+            <div className={styles.field}>
+              <Label className={styles.label} htmlFor="focusGoal">
+                Focus goal (minutes)
+              </Label>
+              <Input
+                id="focusGoal"
+                className={styles.input}
+                type="number"
+                min={5}
+                max={120}
+                value={String(contextSwitchingSettings.focusGoal)}
+                onChange={(_, data) => {
+                  const value = parseInt(data.value, 10);
+                  if (!isNaN(value) && value >= 5 && value <= 120) {
+                    onContextSwitchingSettingsChanged({ ...contextSwitchingSettings, focusGoal: value });
+                  }
+                }}
+              />
+              <Text className={styles.hint}>
+                Target minutes of uninterrupted focus
+              </Text>
+            </div>
+
+            <Text className={styles.label} style={{ marginTop: '12px', marginBottom: '4px' }}>Track Activity From</Text>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Email</Label>
+                <Text className={styles.hint}>
+                  Track email context switches
+                </Text>
+              </div>
+              <Switch
+                checked={contextSwitchingSettings.trackEmail}
+                onChange={(_, data) => onContextSwitchingSettingsChanged({ ...contextSwitchingSettings, trackEmail: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Teams Chats</Label>
+                <Text className={styles.hint}>
+                  Track Teams chat switches
+                </Text>
+              </div>
+              <Switch
+                checked={contextSwitchingSettings.trackTeamsChat}
+                onChange={(_, data) => onContextSwitchingSettingsChanged({ ...contextSwitchingSettings, trackTeamsChat: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Teams Channels</Label>
+                <Text className={styles.hint}>
+                  Track channel message switches
+                </Text>
+              </div>
+              <Switch
+                checked={contextSwitchingSettings.trackTeamsChannel}
+                onChange={(_, data) => onContextSwitchingSettingsChanged({ ...contextSwitchingSettings, trackTeamsChannel: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Meetings</Label>
+                <Text className={styles.hint}>
+                  Track meeting context switches
+                </Text>
+              </div>
+              <Switch
+                checked={contextSwitchingSettings.trackMeetings}
+                onChange={(_, data) => onContextSwitchingSettingsChanged({ ...contextSwitchingSettings, trackMeetings: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Files</Label>
+                <Text className={styles.hint}>
+                  Track file access switches
+                </Text>
+              </div>
+              <Switch
+                checked={contextSwitchingSettings.trackFiles}
+                onChange={(_, data) => onContextSwitchingSettingsChanged({ ...contextSwitchingSettings, trackFiles: data.checked })}
+              />
+            </div>
+
+            <Divider style={{ marginTop: '8px' }} />
+            <Text className={styles.label} style={{ marginTop: '8px', marginBottom: '4px' }}>Display Options</Text>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Show Focus Score</Label>
+                <Text className={styles.hint}>
+                  Display the focus score circle
+                </Text>
+              </div>
+              <Switch
+                checked={contextSwitchingSettings.showFocusScore}
+                onChange={(_, data) => onContextSwitchingSettingsChanged({ ...contextSwitchingSettings, showFocusScore: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Show Hourly Chart</Label>
+                <Text className={styles.hint}>
+                  Display the hourly bar chart
+                </Text>
+              </div>
+              <Switch
+                checked={contextSwitchingSettings.showHourlyChart}
+                onChange={(_, data) => onContextSwitchingSettingsChanged({ ...contextSwitchingSettings, showHourlyChart: data.checked })}
+              />
+            </div>
+
+            <div className={styles.switchField}>
+              <div className={styles.field}>
+                <Label className={styles.label}>Show Distribution</Label>
+                <Text className={styles.hint}>
+                  Display context type breakdown
+                </Text>
+              </div>
+              <Switch
+                checked={contextSwitchingSettings.showDistribution}
+                onChange={(_, data) => onContextSwitchingSettingsChanged({ ...contextSwitchingSettings, showDistribution: data.checked })}
               />
             </div>
           </>

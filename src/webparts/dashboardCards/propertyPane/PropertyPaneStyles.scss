@@ -1,6 +1,7 @@
 // ============================================
 // PROPERTY PANE OVERRIDES
 // Match SPFx property pane to Fluent 2 design
+// Uses CSS custom properties for dark mode support
 // ============================================
 
 // Property pane page content - scrollbar
@@ -14,11 +15,11 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--colorNeutralStroke2);
     border-radius: 3px;
 
     &:hover {
-      background: rgba(0, 0, 0, 0.15);
+      background: var(--colorNeutralStroke1);
     }
   }
 }
@@ -28,8 +29,8 @@
   margin-bottom: 12px !important;
   border-radius: 10px !important;
   overflow: hidden !important;
-  background: #fff !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+  background: var(--colorNeutralBackground1) !important;
+  box-shadow: var(--shadow4) !important;
 }
 
 .ms-PropertyPaneGroup-group {
@@ -44,7 +45,7 @@
   letter-spacing: -0.01em !important;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.02) !important;
+    background: var(--colorNeutralBackground2) !important;
   }
 }
 
@@ -52,12 +53,12 @@
 .ms-Dropdown {
   .ms-Dropdown-title {
     border-radius: 8px !important;
-    border-color: rgba(0, 0, 0, 0.1) !important;
+    border-color: var(--colorNeutralStroke1) !important;
     transition: border-color 0.15s ease !important;
   }
 
   &:hover .ms-Dropdown-title {
-    border-color: rgba(0, 0, 0, 0.2) !important;
+    border-color: var(--colorNeutralStroke1Hover) !important;
   }
 
   .ms-Dropdown-caretDownWrapper {
@@ -67,7 +68,7 @@
 
 .ms-Dropdown-callout {
   border-radius: 8px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: var(--shadow16) !important;
   border: none !important;
   overflow: hidden !important;
 }
@@ -77,7 +78,7 @@
   margin: 2px 4px !important;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.04) !important;
+    background: var(--colorNeutralBackground3) !important;
   }
 }
 
@@ -85,16 +86,16 @@
 .ms-TextField {
   .ms-TextField-fieldGroup {
     border-radius: 8px !important;
-    border-color: rgba(0, 0, 0, 0.1) !important;
+    border-color: var(--colorNeutralStroke1) !important;
     transition: border-color 0.15s ease !important;
   }
 
   &:hover .ms-TextField-fieldGroup {
-    border-color: rgba(0, 0, 0, 0.2) !important;
+    border-color: var(--colorNeutralStroke1Hover) !important;
   }
 
   &.is-active .ms-TextField-fieldGroup {
-    border-color: #0066cc !important;
+    border-color: var(--colorBrandStroke1) !important;
   }
 }
 
@@ -102,7 +103,7 @@
 .ms-Label {
   font-weight: 500 !important;
   font-size: 13px !important;
-  color: #1a1a2e !important;
+  color: var(--colorNeutralForeground1) !important;
 }
 
 // Toggles
@@ -122,10 +123,10 @@
   transition: all 0.15s ease !important;
 
   &.ms-Button--primary {
-    background: #0066cc !important;
+    background: var(--colorBrandBackground) !important;
 
     &:hover {
-      background: #0052a3 !important;
+      background: var(--colorBrandBackgroundHover) !important;
     }
   }
 }
@@ -170,9 +171,9 @@
 
 // Link styling
 .ms-Link {
-  color: #0066cc !important;
+  color: var(--colorBrandForeground1) !important;
 
   &:hover {
-    color: #0052a3 !important;
+    color: var(--colorBrandForegroundLinkHover) !important;
   }
 }

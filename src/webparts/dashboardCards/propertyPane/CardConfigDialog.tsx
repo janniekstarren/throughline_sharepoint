@@ -46,6 +46,7 @@ import {
   History24Regular,
   Grid24Regular,
   PersonClock24Regular,
+  BrainCircuit24Regular,
   // Icons for icon picker
   Home24Regular,
   Star24Regular,
@@ -144,7 +145,7 @@ import {
   Fingerprint24Regular,
 } from '@fluentui/react-icons';
 import { MiniCard } from './MiniCard';
-import { CardSettingsDrawer, IWaitingOnYouSettings, IWaitingOnOthersSettings } from './CardSettingsDrawer';
+import { CardSettingsDrawer, IWaitingOnYouSettings, IWaitingOnOthersSettings, IContextSwitchingSettings } from './CardSettingsDrawer';
 
 export interface ICategoryConfig {
   id: string;
@@ -181,6 +182,12 @@ export interface ICardConfigDialogProps {
   // Waiting On Others settings
   waitingOnOthersSettings?: IWaitingOnOthersSettings;
   onWaitingOnOthersSettingsChanged?: (settings: IWaitingOnOthersSettings) => void;
+  // Context Switching settings
+  contextSwitchingSettings?: IContextSwitchingSettings;
+  onContextSwitchingSettingsChanged?: (settings: IContextSwitchingSettings) => void;
+  // Collapsed card IDs (large cards shown as medium) for persistence
+  collapsedCardIds?: string[];
+  onCollapsedCardIdsChange?: (cardIds: string[]) => void;
 }
 
 export type CategoryId = 'calendar' | 'email' | 'tasks' | 'files' | 'people' | 'navigation' | 'available' | string;
@@ -391,6 +398,7 @@ const CARD_DEFINITIONS: Record<string, { icon: React.ReactElement; defaultTitle:
   siteActivity: { icon: <History24Regular />, defaultTitle: 'Site Activity', defaultCategory: 'people', description: "See recent activity on your SharePoint sites" },
   waitingOnYou: { icon: <PersonClock24Regular />, defaultTitle: 'Waiting On You', defaultCategory: 'email', description: "Messages and conversations awaiting your response" },
   waitingOnOthers: { icon: <Clock24Regular />, defaultTitle: 'Waiting On Others', defaultCategory: 'email', description: "Track people who owe you a response" },
+  contextSwitching: { icon: <BrainCircuit24Regular />, defaultTitle: 'Context Switching', defaultCategory: 'tasks', description: "Track your focus patterns and context switches throughout the day" },
 };
 
 const ALL_CARD_IDS = Object.keys(CARD_DEFINITIONS);
@@ -888,6 +896,10 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
   onWaitingOnYouSettingsChanged,
   waitingOnOthersSettings,
   onWaitingOnOthersSettingsChanged,
+  contextSwitchingSettings,
+  onContextSwitchingSettingsChanged,
+  collapsedCardIds: initialCollapsedCardIds,
+  onCollapsedCardIdsChange,
 }) => {
   const styles = useStyles();
 
@@ -943,6 +955,11 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
   // Track custom category icons
   const [categoryIcons, setCategoryIcons] = React.useState<Record<string, string>>({ ...(initialCategoryIcons || {}) });
 
+  // Collapsed card IDs (large cards shown as medium)
+  const [collapsedCardIds, setCollapsedCardIds] = React.useState<Set<string>>(
+    () => new Set(initialCollapsedCardIds || [])
+  );
+
   // Icon picker dialog state
   const [iconPickerOpen, setIconPickerOpen] = React.useState(false);
   const [iconPickerCategory, setIconPickerCategory] = React.useState<string | null>(null);
@@ -985,11 +1002,12 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
       setDragState(INITIAL_DRAG_STATE);
       setAlteredCategories(new Set());
       setCategoryIcons({ ...(initialCategoryIcons || {}) });
+      setCollapsedCardIds(new Set(initialCollapsedCardIds || []));
       setIconPickerOpen(false);
       setIconPickerCategory(null);
       setIsFullscreen(false);
     }
-  }, [open, initialCardOrder, initialCardVisibility, initialCardTitles, initialCategoryNames, initialCategoryOrder, initialCategoryConfig, initialCardCategoryAssignment, initialCategoryIcons]);
+  }, [open, initialCardOrder, initialCardVisibility, initialCardTitles, initialCategoryNames, initialCategoryOrder, initialCategoryConfig, initialCardCategoryAssignment, initialCategoryIcons, initialCollapsedCardIds]);
 
   // Get cards in a category based on assignment
   const getCardsInCategory = React.useCallback((categoryId: string): string[] => {
@@ -1771,6 +1789,27 @@ export const CardConfigDialog: React.FC<ICardConfigDialogProps> = ({
                 onWaitingOnYouSettingsChanged={onWaitingOnYouSettingsChanged}
                 waitingOnOthersSettings={waitingOnOthersSettings}
                 onWaitingOnOthersSettingsChanged={onWaitingOnOthersSettingsChanged}
+                contextSwitchingSettings={contextSwitchingSettings}
+                onContextSwitchingSettingsChanged={onContextSwitchingSettingsChanged}
+                isCollapsed={collapsedCardIds.has(selectedCard)}
+                onCollapsedChange={(collapsed) => {
+                  setCollapsedCardIds(prev => {
+                    const newSet = new Set(prev);
+                    if (collapsed) {
+                      newSet.add(selectedCard);
+                    } else {
+                      newSet.delete(selectedCard);
+                    }
+                    return newSet;
+                  });
+                  // Notify parent of the change for persistence
+                  if (onCollapsedCardIdsChange) {
+                    const newIds = collapsed
+                      ? [...Array.from(collapsedCardIds), selectedCard]
+                      : Array.from(collapsedCardIds).filter(id => id !== selectedCard);
+                    onCollapsedCardIdsChange(newIds);
+                  }
+                }}
               />
             )}
           </div>

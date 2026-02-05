@@ -15,9 +15,11 @@ import { IDashboardCardsProps, ICardVisibility } from './components/DashboardCar
 import { SalutationType, SalutationSize } from './components/Salutation';
 import { PropertyPaneCardOrder } from './propertyPane/PropertyPaneCardOrder';
 import { PropertyPaneConfigureButton } from './propertyPane/PropertyPaneConfigureButton';
+import { PropertyPaneResetButtons } from './propertyPane/PropertyPaneResetButtons';
 import { CardConfigDialog, ICardConfig, ICategoryConfig, DEFAULT_CATEGORY_ORDER } from './propertyPane/CardConfigDialog';
 import { DEFAULT_CARD_ORDER } from './propertyPane/CardOrderEditor';
 import { getFluentTheme } from './utils/themeUtils';
+import { clearUserPreferences } from './services/UserPreferencesService';
 
 // Card definitions for default category assignment
 const CARD_DEFAULT_CATEGORIES: Record<string, string> = {
@@ -33,6 +35,7 @@ const CARD_DEFAULT_CATEGORIES: Record<string, string> = {
   siteActivity: 'people',
   waitingOnYou: 'email',
   waitingOnOthers: 'email',
+  contextSwitching: 'tasks', // productivity/focus fits with tasks
 };
 
 export type ThemeMode = 'auto' | 'light' | 'dark';
@@ -54,6 +57,19 @@ export interface IWaitingOnOthersSettings {
   includeTeamsChats: boolean;  // Include Teams chats (default: true)
   includeMentions: boolean;    // Prioritize messages where you @mentioned someone (default: true)
   showChart: boolean;          // Show the trend chart (default: true)
+}
+
+// Context Switching card settings
+export interface IContextSwitchingSettings {
+  trackEmail: boolean;         // Track email context switches (default: true)
+  trackTeamsChat: boolean;     // Track Teams chat switches (default: true)
+  trackTeamsChannel: boolean;  // Track Teams channel switches (default: true)
+  trackMeetings: boolean;      // Track meeting switches (default: true)
+  trackFiles: boolean;         // Track file access switches (default: true)
+  focusGoal: number;           // Focus goal in minutes (default: 25)
+  showFocusScore: boolean;     // Show focus score circle (default: true)
+  showHourlyChart: boolean;    // Show hourly bar chart (default: true)
+  showDistribution: boolean;   // Show context type distribution (default: true)
 }
 
 // Data mode type
@@ -79,6 +95,7 @@ export interface IDashboardCardsWebPartProps {
   showSiteActivity: boolean;
   showWaitingOnYou: boolean;
   showWaitingOnOthers: boolean;
+  showContextSwitching: boolean;
   // Card order
   cardOrder: string[];
   // Custom card titles
@@ -97,6 +114,10 @@ export interface IDashboardCardsWebPartProps {
   waitingOnYouSettings: IWaitingOnYouSettings;
   // Waiting On Others card settings
   waitingOnOthersSettings: IWaitingOnOthersSettings;
+  // Context Switching card settings
+  contextSwitchingSettings: IContextSwitchingSettings;
+  // Collapsed card IDs (large cards shown as medium)
+  collapsedCardIds: string[];
 }
 
 export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashboardCardsWebPartProps> {
@@ -196,6 +217,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       showSiteActivity: this.properties.showSiteActivity !== false,
       showWaitingOnYou: this.properties.showWaitingOnYou !== false,
       showWaitingOnOthers: this.properties.showWaitingOnOthers !== false,
+      showContextSwitching: this.properties.showContextSwitching !== false,
     };
 
     // Get card order (default if not set, and ensure new cards are included)
@@ -262,6 +284,31 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
           includeTeamsChats: true,
           includeMentions: true,
           showChart: true,
+        },
+        contextSwitchingSettings: this.properties.contextSwitchingSettings || {
+          trackEmail: true,
+          trackTeamsChat: true,
+          trackTeamsChannel: true,
+          trackMeetings: true,
+          trackFiles: true,
+          focusGoal: 25,
+          showFocusScore: true,
+          showHourlyChart: true,
+          showDistribution: true,
+        },
+        // Collapsed card IDs (large cards shown as medium)
+        collapsedCardIds: this.properties.collapsedCardIds || [],
+        onCollapsedCardsChange: (cardIds: string[]) => {
+          this.properties.collapsedCardIds = cardIds;
+        },
+        // Card order change callback for drag-and-drop in dashboard
+        onCardOrderChange: (newOrder: string[]) => {
+          this.properties.cardOrder = newOrder;
+          this.render();
+          // Refresh property pane if open to show updated order
+          if (this.context.propertyPane.isPropertyPaneOpen()) {
+            this.context.propertyPane.refresh();
+          }
         },
       }
     );
@@ -368,6 +415,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       siteActivity: 'showSiteActivity',
       waitingOnYou: 'showWaitingOnYou',
       waitingOnOthers: 'showWaitingOnOthers',
+      contextSwitching: 'showContextSwitching',
     };
 
     // Update card order
@@ -475,6 +523,19 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       showChart: true,
     };
 
+    // Get Context Switching settings with defaults
+    const contextSwitchingSettings: IContextSwitchingSettings = this.properties.contextSwitchingSettings || {
+      trackEmail: true,
+      trackTeamsChat: true,
+      trackTeamsChannel: true,
+      trackMeetings: true,
+      trackFiles: true,
+      focusGoal: 25,
+      showFocusScore: true,
+      showHourlyChart: true,
+      showDistribution: true,
+    };
+
     // Create the dialog with proper FluentProvider wrapping
     const cardConfigDialog = React.createElement(CardConfigDialog, {
       open: this._isDialogOpen,
@@ -496,6 +557,17 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       waitingOnOthersSettings,
       onWaitingOnOthersSettingsChanged: (settings: IWaitingOnOthersSettings) => {
         this.properties.waitingOnOthersSettings = settings;
+        this.render();
+      },
+      contextSwitchingSettings,
+      onContextSwitchingSettingsChanged: (settings: IContextSwitchingSettings) => {
+        this.properties.contextSwitchingSettings = settings;
+        this.render();
+      },
+      // Collapsed card IDs (large cards shown as medium) for persistence
+      collapsedCardIds: this.properties.collapsedCardIds || [],
+      onCollapsedCardIdsChange: (cardIds: string[]) => {
+        this.properties.collapsedCardIds = cardIds;
         this.render();
       },
     });
@@ -595,6 +667,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       siteActivity: 'showSiteActivity',
       waitingOnYou: 'showWaitingOnYou',
       waitingOnOthers: 'showWaitingOnOthers',
+      contextSwitching: 'showContextSwitching',
     };
 
     const categoryNames = this.properties.categoryNames || {};
@@ -743,6 +816,115 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     ];
   }
 
+  /**
+   * Clear user's local storage preferences
+   */
+  private _clearLocalStoragePreferences(): void {
+    const userId = this.context.pageContext?.user?.loginName || '';
+    if (userId) {
+      clearUserPreferences(userId);
+      // Re-render to show default settings
+      this.render();
+    }
+  }
+
+  /**
+   * Reset all webpart properties to default values
+   */
+  private _resetToDefaultSettings(): void {
+    // Reset card visibility - all cards visible
+    this.properties.showTodaysAgenda = true;
+    this.properties.showUnreadInbox = true;
+    this.properties.showMyTasks = true;
+    this.properties.showRecentFiles = true;
+    this.properties.showUpcomingWeek = true;
+    this.properties.showFlaggedEmails = true;
+    this.properties.showMyTeam = true;
+    this.properties.showSharedWithMe = true;
+    this.properties.showQuickLinks = true;
+    this.properties.showSiteActivity = true;
+    this.properties.showWaitingOnYou = true;
+    this.properties.showWaitingOnOthers = true;
+    this.properties.showContextSwitching = true;
+
+    // Reset card order to default
+    this.properties.cardOrder = [...DEFAULT_CARD_ORDER];
+
+    // Reset custom card titles
+    this.properties.cardTitles = {};
+
+    // Reset category configuration
+    this.properties.categoryOrder = [...DEFAULT_CATEGORY_ORDER];
+    this.properties.categoryNames = {};
+    this.properties.categoryConfig = this._getDefaultCategoryConfig();
+    this.properties.cardCategoryAssignment = this._getDefaultCardCategoryAssignment();
+    this.properties.categoryIcons = {};
+
+    // Reset collapsed cards
+    this.properties.collapsedCardIds = [];
+
+    // Reset greeting settings
+    this.properties.salutationType = 'timeBased' as SalutationType;
+    this.properties.salutationSize = 'h4' as SalutationSize;
+
+    // Reset appearance
+    this.properties.themeMode = 'light' as ThemeMode;
+    this.properties.dataMode = 'api' as DataMode;
+
+    // Reset Waiting On You settings
+    this.properties.waitingOnYouSettings = {
+      staleDays: 2,
+      includeEmail: true,
+      includeTeamsChats: true,
+      includeChannels: false,
+      includeMentions: true,
+      showChart: true,
+    };
+
+    // Reset Waiting On Others settings
+    this.properties.waitingOnOthersSettings = {
+      minWaitHours: 24,
+      includeEmail: true,
+      includeTeamsChats: true,
+      includeMentions: true,
+      showChart: true,
+    };
+
+    // Reset Context Switching settings
+    this.properties.contextSwitchingSettings = {
+      trackEmail: true,
+      trackTeamsChat: true,
+      trackTeamsChannel: true,
+      trackMeetings: true,
+      trackFiles: true,
+      focusGoal: 25,
+      showFocusScore: true,
+      showHourlyChart: true,
+      showDistribution: true,
+    };
+
+    // Re-render
+    this.render();
+
+    // Refresh property pane
+    this.context.propertyPane.refresh();
+  }
+
+  /**
+   * Build the reset/maintenance settings group fields
+   */
+  private getResetFields(): IPropertyPaneGroup['groupFields'] {
+    const userName = this.context.pageContext?.user?.displayName || '';
+
+    return [
+      PropertyPaneResetButtons('resetButtons', {
+        onClearLocalStorage: () => this._clearLocalStoragePreferences(),
+        onResetToDefault: () => this._resetToDefaultSettings(),
+        userName,
+      }),
+    ];
+  }
+
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
     return {
       pages: [
@@ -766,6 +948,11 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
               groupName: strings.CardsGroupName,
               isCollapsed: true,
               groupFields: this.getCardConfigFields(),
+            },
+            {
+              groupName: 'Reset & Maintenance',
+              isCollapsed: true,
+              groupFields: this.getResetFields(),
             },
           ]
         }

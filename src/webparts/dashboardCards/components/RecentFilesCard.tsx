@@ -9,6 +9,8 @@ import {
   Caption1,
   Body1,
   Theme,
+  Button,
+  Tooltip,
 } from '@fluentui/react-components';
 import {
   History24Regular,
@@ -17,6 +19,7 @@ import {
   DocumentPdf20Regular,
   Document20Regular,
   Image20Regular,
+  ArrowExpand20Regular,
 } from '@fluentui/react-icons';
 import { IFileItem } from '../services/GraphService';
 import { MotionWrapper } from './MotionWrapper';
@@ -31,6 +34,8 @@ export interface IRecentFilesCardProps {
   onAction?: (action: string, item: IHoverCardItem, itemType: HoverCardItemType) => void;
   theme?: Theme;
   title?: string;
+  /** Callback to toggle between large and medium card size */
+  onToggleSize?: () => void;
 }
 
 // File icon component using Fluent UI 9 icons
@@ -65,7 +70,8 @@ export const RecentFilesCard: React.FC<IRecentFilesCardProps> = ({
   error,
   onAction,
   theme,
-  title
+  title,
+  onToggleSize,
 }) => {
   const styles = useCardStyles();
 
@@ -87,6 +93,19 @@ export const RecentFilesCard: React.FC<IRecentFilesCardProps> = ({
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
+  // Expand button for switching to large card view
+  const expandButton = onToggleSize ? (
+    <Tooltip content="Expand to detailed view" relationship="label">
+      <Button
+        appearance="subtle"
+        size="small"
+        icon={<ArrowExpand20Regular />}
+        onClick={onToggleSize}
+        aria-label="Expand card"
+      />
+    </Tooltip>
+  ) : undefined;
+
   // Empty state content
   if (!loading && !error && files.length === 0) {
     return (
@@ -94,6 +113,8 @@ export const RecentFilesCard: React.FC<IRecentFilesCardProps> = ({
         <CardHeader
           icon={<History24Regular />}
           title={title || 'Recent Files'}
+          cardId="recentFiles"
+          actions={expandButton}
         />
         <EmptyState
           icon={<FolderOpen24Regular />}
@@ -114,7 +135,9 @@ export const RecentFilesCard: React.FC<IRecentFilesCardProps> = ({
       <CardHeader
         icon={<History24Regular />}
         title={title || 'Recent Files'}
+        cardId="recentFiles"
         badge={files.length > 0 ? files.length : undefined}
+        actions={expandButton}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

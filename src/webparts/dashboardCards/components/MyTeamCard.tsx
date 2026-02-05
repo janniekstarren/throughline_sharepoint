@@ -8,10 +8,13 @@ import {
   Persona,
   PresenceBadgeStatus,
   Theme,
+  Button,
+  Tooltip,
 } from '@fluentui/react-components';
 import {
   People24Regular,
   PeopleProhibited24Regular,
+  ArrowExpand20Regular,
 } from '@fluentui/react-icons';
 import { ITeamMember } from '../services/GraphService';
 import { MotionWrapper } from './MotionWrapper';
@@ -26,6 +29,8 @@ export interface IMyTeamCardProps {
   onAction?: (action: string, item: IHoverCardItem, itemType: HoverCardItemType) => void;
   theme?: Theme;
   title?: string;
+  /** Callback to toggle between large and medium card size */
+  onToggleSize?: () => void;
 }
 
 export const MyTeamCard: React.FC<IMyTeamCardProps> = ({
@@ -34,7 +39,8 @@ export const MyTeamCard: React.FC<IMyTeamCardProps> = ({
   error,
   onAction,
   theme,
-  title
+  title,
+  onToggleSize,
 }) => {
   const styles = useCardStyles();
 
@@ -50,6 +56,19 @@ export const MyTeamCard: React.FC<IMyTeamCardProps> = ({
     return presenceMap[presence || 'Unknown'];
   };
 
+  // Expand button for switching to large card view
+  const expandButton = onToggleSize ? (
+    <Tooltip content="Expand to detailed view" relationship="label">
+      <Button
+        appearance="subtle"
+        size="small"
+        icon={<ArrowExpand20Regular />}
+        onClick={onToggleSize}
+        aria-label="Expand card"
+      />
+    </Tooltip>
+  ) : undefined;
+
   // Empty state
   if (!loading && !error && members.length === 0) {
     return (
@@ -57,6 +76,8 @@ export const MyTeamCard: React.FC<IMyTeamCardProps> = ({
         <CardHeader
           icon={<People24Regular />}
           title={title || 'My Team'}
+          cardId="myTeam"
+          actions={expandButton}
         />
         <EmptyState
           icon={<PeopleProhibited24Regular />}
@@ -77,7 +98,9 @@ export const MyTeamCard: React.FC<IMyTeamCardProps> = ({
       <CardHeader
         icon={<People24Regular />}
         title={title || 'My Team'}
+        cardId="myTeam"
         badge={members.length > 0 ? members.length : undefined}
+        actions={expandButton}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

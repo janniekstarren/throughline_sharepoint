@@ -9,6 +9,8 @@ import {
   Caption1,
   Body1,
   Theme,
+  Button,
+  Tooltip,
 } from '@fluentui/react-components';
 import {
   Pulse24Regular,
@@ -21,6 +23,7 @@ import {
   Rename16Regular,
   ArrowCounterclockwise16Regular,
   Comment16Regular,
+  ArrowExpand20Regular,
 } from '@fluentui/react-icons';
 import { ISiteActivity } from '../services/GraphService';
 import { MotionWrapper } from './MotionWrapper';
@@ -35,6 +38,8 @@ export interface ISiteActivityCardProps {
   onAction?: (action: string, item: IHoverCardItem, itemType: HoverCardItemType) => void;
   theme?: Theme;
   title?: string;
+  /** Callback to toggle between large and medium card size */
+  onToggleSize?: () => void;
 }
 
 // Action icon component
@@ -70,9 +75,23 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
   error,
   onAction,
   theme,
-  title
+  title,
+  onToggleSize,
 }) => {
   const styles = useCardStyles();
+
+  // Expand button for switching to large card view
+  const expandButton = onToggleSize ? (
+    <Tooltip content="Expand to detailed view" relationship="label">
+      <Button
+        appearance="subtle"
+        size="small"
+        icon={<ArrowExpand20Regular />}
+        onClick={onToggleSize}
+        aria-label="Expand card"
+      />
+    </Tooltip>
+  ) : undefined;
 
   const getActionColor = (action: string): string => {
     const colorMap: Record<string, string> = {
@@ -110,6 +129,8 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
         <CardHeader
           icon={<Pulse24Regular />}
           title={title || 'Site Activity'}
+          cardId="siteActivity"
+          actions={expandButton}
         />
         <EmptyState
           icon={<History24Regular />}
@@ -130,7 +151,9 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
       <CardHeader
         icon={<Pulse24Regular />}
         title={title || 'Site Activity'}
+        cardId="siteActivity"
         badge={activities.length > 0 ? activities.length : undefined}
+        actions={expandButton}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>

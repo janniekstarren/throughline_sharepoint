@@ -1,12 +1,12 @@
 // ============================================
-// QuickLinksCard - Displays quick access links
-// Refactored to use shared components
+// QuickLinksCardLarge - Full-width quick links display
+// Horizontal layout spanning all columns
 // ============================================
 
 import * as React from 'react';
 import {
   tokens,
-  Caption1,
+  Text,
   makeStyles,
   Button,
   Tooltip,
@@ -19,32 +19,57 @@ import {
   ShareAndroid24Regular,
   CalendarLtr24Regular,
   Notebook24Regular,
-  ArrowExpand20Regular,
+  ContractDownLeft20Regular,
 } from '@fluentui/react-icons';
 import { IQuickLink } from '../services/GraphService';
 import { MotionWrapper } from './MotionWrapper';
 import { BaseCard, CardHeader } from './shared';
 import { useCardStyles } from './cardStyles';
 
-export interface IQuickLinksCardProps {
+export interface IQuickLinksCardLargeProps {
   links: IQuickLink[];
   title?: string;
   /** Callback to toggle between large and medium card size */
   onToggleSize?: () => void;
 }
 
-// QuickLinks-specific styles (grid layout is unique to this card)
-const useQuickLinksStyles = makeStyles({
-  linkGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-    gap: tokens.spacingHorizontalM,
+// QuickLinksLarge-specific styles - horizontal full-width layout
+const useQuickLinksLargeStyles = makeStyles({
+  // Full-width container
+  container: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
   },
+  // Horizontal scrollable link container
+  linkContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: tokens.spacingHorizontalL,
+    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalM}`,
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    scrollbarWidth: 'thin',
+    '::-webkit-scrollbar': {
+      height: '6px',
+    },
+    '::-webkit-scrollbar-track': {
+      backgroundColor: tokens.colorNeutralBackground2,
+      borderRadius: tokens.borderRadiusSmall,
+    },
+    '::-webkit-scrollbar-thumb': {
+      backgroundColor: tokens.colorNeutralStroke1,
+      borderRadius: tokens.borderRadiusSmall,
+    },
+  },
+  // Individual link item - larger for full-width card
   linkItem: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalS}`,
+    justifyContent: 'center',
+    minWidth: '100px',
+    padding: `${tokens.spacingVerticalL} ${tokens.spacingHorizontalM}`,
     borderRadius: tokens.borderRadiusMedium,
     backgroundColor: tokens.colorNeutralBackground2,
     textDecoration: 'none',
@@ -52,6 +77,7 @@ const useQuickLinksStyles = makeStyles({
     transitionProperty: 'background-color, transform, box-shadow',
     transitionDuration: tokens.durationNormal,
     transitionTimingFunction: tokens.curveEasyEase,
+    flexShrink: 0,
     ':hover': {
       backgroundColor: tokens.colorNeutralBackground3,
       transform: 'translateY(-2px)',
@@ -64,25 +90,40 @@ const useQuickLinksStyles = makeStyles({
       outlineOffset: '2px',
     },
   },
+  // Larger icon container
   linkIcon: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '48px',
-    height: '48px',
+    width: '56px',
+    height: '56px',
     borderRadius: tokens.borderRadiusLarge,
     backgroundColor: tokens.colorBrandBackground2,
-    marginBottom: tokens.spacingVerticalS,
+    marginBottom: tokens.spacingVerticalM,
     color: tokens.colorBrandForeground1,
-    fontSize: '24px',
+    fontSize: '28px',
   },
+  // Link title
   linkTitle: {
     textAlign: 'center' as const,
+    fontSize: tokens.fontSizeBase300,
+    fontWeight: tokens.fontWeightSemibold,
+    color: tokens.colorNeutralForeground1,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap' as const,
-    maxWidth: '100%',
-    color: tokens.colorNeutralForeground1,
+    maxWidth: '100px',
+  },
+  // Link description (optional)
+  linkDescription: {
+    textAlign: 'center' as const,
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground3,
+    marginTop: tokens.spacingVerticalXS,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const,
+    maxWidth: '100px',
   },
 });
 
@@ -117,35 +158,18 @@ const defaultLinks: IQuickLink[] = [
   { id: '6', title: 'OneNote', url: 'https://onenote.com', icon: 'OneNoteLogo' },
 ];
 
-export const QuickLinksCard: React.FC<IQuickLinksCardProps> = ({ links, title, onToggleSize }) => {
+export const QuickLinksCardLarge: React.FC<IQuickLinksCardLargeProps> = ({
+  links,
+  title,
+  onToggleSize,
+}) => {
   const styles = useCardStyles();
-  const quickLinksStyles = useQuickLinksStyles();
+  const quickLinksStyles = useQuickLinksLargeStyles();
   const displayLinks = links.length > 0 ? links : defaultLinks;
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
 
-  // Expand button for switching to large card view
-  const expandButton = onToggleSize ? (
-    <Tooltip content="Expand to full width view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
-  // Calculate grid columns for keyboard navigation
-  const getGridColumns = React.useCallback((): number => {
-    // Approximate based on minmax(80px, 1fr) - assume around 4-6 columns
-    // This is a simplification; actual columns depend on container width
-    return 4;
-  }, []);
-
-  // Keyboard navigation handler
+  // Keyboard navigation handler for horizontal layout
   const handleKeyDown = React.useCallback((event: React.KeyboardEvent, currentIndex: number): void => {
-    const cols = getGridColumns();
     const totalLinks = displayLinks.length;
     let nextIndex = currentIndex;
 
@@ -156,14 +180,6 @@ export const QuickLinksCard: React.FC<IQuickLinksCardProps> = ({ links, title, o
         break;
       case 'ArrowLeft':
         nextIndex = (currentIndex - 1 + totalLinks) % totalLinks;
-        event.preventDefault();
-        break;
-      case 'ArrowDown':
-        nextIndex = Math.min(currentIndex + cols, totalLinks - 1);
-        event.preventDefault();
-        break;
-      case 'ArrowUp':
-        nextIndex = Math.max(currentIndex - cols, 0);
         event.preventDefault();
         break;
       case 'Home':
@@ -179,21 +195,34 @@ export const QuickLinksCard: React.FC<IQuickLinksCardProps> = ({ links, title, o
     }
 
     linkRefs.current[nextIndex]?.focus();
-  }, [displayLinks.length, getGridColumns]);
+  }, [displayLinks.length]);
+
+  // Collapse button for switching to medium card view
+  const collapseButton = onToggleSize ? (
+    <Tooltip content="Collapse to compact view" relationship="label">
+      <Button
+        appearance="subtle"
+        size="small"
+        icon={<ContractDownLeft20Regular />}
+        onClick={onToggleSize}
+        aria-label="Collapse card"
+      />
+    </Tooltip>
+  ) : undefined;
 
   return (
-    <BaseCard testId="quick-links-card">
+    <BaseCard testId="quick-links-card-large">
       <CardHeader
         icon={<Link24Regular />}
         title={title || 'Quick Links'}
         cardId="quickLinks"
-        actions={expandButton}
+        actions={collapseButton}
       />
       <div className={styles.cardContent}>
         <MotionWrapper visible={true}>
           <div
-            className={quickLinksStyles.linkGrid}
-            role="grid"
+            className={quickLinksStyles.linkContainer}
+            role="toolbar"
             aria-label="Quick links"
           >
             {displayLinks.map((link, index) => (
@@ -205,13 +234,13 @@ export const QuickLinksCard: React.FC<IQuickLinksCardProps> = ({ links, title, o
                 rel="noopener noreferrer"
                 className={quickLinksStyles.linkItem}
                 onKeyDown={(e) => handleKeyDown(e, index)}
-                role="gridcell"
+                role="link"
                 aria-label={`${link.title} - opens in new tab`}
               >
                 <div className={quickLinksStyles.linkIcon}>
                   <QuickLinkIcon iconName={link.icon} />
                 </div>
-                <Caption1 className={quickLinksStyles.linkTitle}>{link.title}</Caption1>
+                <Text className={quickLinksStyles.linkTitle}>{link.title}</Text>
               </a>
             ))}
           </div>
@@ -221,4 +250,4 @@ export const QuickLinksCard: React.FC<IQuickLinksCardProps> = ({ links, title, o
   );
 };
 
-export default QuickLinksCard;
+export default QuickLinksCardLarge;

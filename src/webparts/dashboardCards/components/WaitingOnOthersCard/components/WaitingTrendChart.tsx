@@ -36,13 +36,13 @@ const useStyles = makeStyles({
   },
   bar: {
     flex: 1,
-    backgroundColor: '#8764B8', // Purple for WaitingOnOthers
+    backgroundColor: tokens.colorPalettePurpleBackground2,
     borderRadius: `${tokens.borderRadiusMedium} ${tokens.borderRadiusMedium} 0 0`,
     minHeight: '4px',
     transition: 'height 0.2s ease',
     cursor: 'pointer',
-    '&:hover': {
-      backgroundColor: '#6B4F99',
+    ':hover': {
+      backgroundColor: tokens.colorPalettePurpleForeground2,
     },
   },
   xAxisLabels: {

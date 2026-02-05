@@ -75,6 +75,8 @@ const cardDisplayNames: Record<string, string> = {
   quickLinks: 'Quick Links',
   siteActivity: 'Site Activity',
   waitingOnYou: 'Waiting On You',
+  waitingOnOthers: 'Waiting On Others',
+  contextSwitching: 'Context Switching',
 };
 
 // Category icons
@@ -102,6 +104,7 @@ export const DEFAULT_CARD_ORDER: string[] = [
   'siteActivity',
   'waitingOnYou',
   'waitingOnOthers',
+  'contextSwitching',
 ];
 
 const useStyles = makeStyles({
@@ -397,6 +400,8 @@ export const CardOrderEditor: React.FC<ICardOrderEditorProps> = ({
     quickLinks: 'navigation',
     siteActivity: 'people',
     waitingOnYou: 'email',
+    waitingOnOthers: 'email',
+    contextSwitching: 'tasks',
   };
 
   // Ensure all cards have category assignments

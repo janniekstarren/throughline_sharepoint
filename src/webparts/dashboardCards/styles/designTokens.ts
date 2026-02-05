@@ -56,10 +56,16 @@ export const cardTokens = {
   // Sizing
   size: {
     // Card dimensions
-    cardMinHeight: '320px',
-    cardMaxHeight: '440px',
+    cardMinWidth: '380px',        // Minimum card width for readability
+    cardMinHeight: '280px',       // Reduced for compact cards
+    cardStandardHeight: '400px',  // Standard card height
+    cardMaxHeight: '520px',       // Maximum card height
     cardLargeMinHeight: '320px',
     cardLargeMaxHeight: '520px',
+
+    // Height variants
+    cardCompactHeight: '280px',   // For summary/quick links cards
+    cardTallHeight: '520px',      // For content-heavy cards
 
     // Icon sizes
     iconSmall: '16px',

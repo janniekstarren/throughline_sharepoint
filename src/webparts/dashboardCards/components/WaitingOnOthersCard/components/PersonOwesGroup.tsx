@@ -28,11 +28,11 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacingHorizontalS,
-    padding: tokens.spacingVerticalS,
+    padding: tokens.spacingVerticalM,            // Increased from spacingVerticalS for more breathing room
     paddingLeft: tokens.spacingHorizontalM,
     paddingRight: tokens.spacingHorizontalM,
     cursor: 'pointer',
-    '&:hover': {
+    ':hover': {
       backgroundColor: tokens.colorNeutralBackground2Hover,
     },
   },
@@ -47,6 +47,9 @@ const useStyles = makeStyles({
   },
   stats: {
     color: tokens.colorNeutralForeground3,
+    overflow: 'hidden',         // Enable text truncation
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
   expandIcon: {
     color: tokens.colorNeutralForeground3,

@@ -10,7 +10,9 @@ import {
   Mail24Regular,
   Attach16Regular,
   Important16Regular,
+  ContractDownLeft20Regular,
 } from '@fluentui/react-icons';
+import { Button, Tooltip } from '@fluentui/react-components';
 import { IEmailMessage } from '../services/GraphService';
 import { MasterDetailCard } from './shared/MasterDetailCard';
 import { EmailDetailPanel, EmailDetailActions } from './shared/EmailDetailPanel';
@@ -23,6 +25,8 @@ export interface IUnreadInboxCardLargeProps {
   onAction?: (action: string, item: IHoverCardItem, itemType: HoverCardItemType) => void;
   theme?: Theme;
   title?: string;
+  /** Callback to toggle between large and medium card size */
+  onToggleSize?: () => void;
 }
 
 const useStyles = makeStyles({
@@ -137,6 +141,7 @@ export const UnreadInboxCardLarge: React.FC<IUnreadInboxCardLargeProps> = ({
   onAction,
   theme,
   title = 'Unread Inbox',
+  onToggleSize,
 }) => {
   const styles = useStyles();
   const [selectedEmail, setSelectedEmail] = React.useState<IEmailMessage | undefined>(undefined);
@@ -247,6 +252,19 @@ export const UnreadInboxCardLarge: React.FC<IUnreadInboxCardLargeProps> = ({
       error={error}
       emptyMessage="No unread emails"
       emptyIcon={<Mail24Regular />}
+      headerActions={
+        onToggleSize && (
+          <Tooltip content="Collapse to compact view" relationship="label">
+            <Button
+              appearance="subtle"
+              size="small"
+              icon={<ContractDownLeft20Regular />}
+              onClick={onToggleSize}
+              aria-label="Collapse card"
+            />
+          </Tooltip>
+        )
+      }
     />
   );
 };
