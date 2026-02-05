@@ -78,11 +78,25 @@ import { WaitingTrendChart } from './WaitingOnOthersCard/components/WaitingTrend
 import { SnoozeDialog } from './WaitingOnYouCard/components/SnoozeDialog';
 import { DataMode } from '../services/testData';
 import { getTestWaitingOnOthersData, getTestWaitingOnOthersTrend } from '../services/testData/waitingOnOthers';
+// AI Demo Mode imports
+import { AIInsightBanner, AIOnboardingDialog } from './shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../models/AITypes';
+import {
+  getAIEnhancedWaitingOnOthers,
+  getAIWaitingOnOthersCardSummary,
+  getAllWaitingOnOthersInsights,
+  IAIEnhancedPersonGroup,
+} from '../services/testData/aiDemoData';
+
+// Local storage key for AI onboarding state
+const AI_ONBOARDING_KEY = 'dashboardCards_aiOnboardingDismissed';
 
 export interface IWaitingOnOthersCardLargeProps {
   context: WebPartContext;
   settings?: IWaitingOnOthersSettings;
   dataMode?: DataMode;
+  /** Enable AI Demo Mode (only works with test data) */
+  aiDemoMode?: boolean;
   /** Callback to toggle between large and medium card size */
   onToggleSize?: () => void;
 }
@@ -572,6 +586,7 @@ export const WaitingOnOthersCardLarge: React.FC<IWaitingOnOthersCardLargeProps> 
   context,
   settings = DEFAULT_WAITING_ON_OTHERS_SETTINGS,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const styles = useStyles();
@@ -586,6 +601,25 @@ export const WaitingOnOthersCardLarge: React.FC<IWaitingOnOthersCardLargeProps> 
   const [expandedItemId, setExpandedItemId] = React.useState<string | null>(null);
   const [activeFilters, setActiveFilters] = React.useState<Set<FilterType>>(new Set());
   const [checkedFilterValues, setCheckedFilterValues] = React.useState<Record<string, string[]>>({ filter: [] });
+
+  // AI Demo Mode state
+  const [showOnboarding, setShowOnboarding] = React.useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_aiEnhancedGroups, setAiEnhancedGroups] = React.useState<IAIEnhancedPersonGroup[]>([]);
+  const [aiCardSummary, setAiCardSummary] = React.useState<IAICardSummary | undefined>(undefined);
+  const [aiInsights, setAiInsights] = React.useState<IAIInsight[]>([]);
+
+  // Handle AI onboarding close
+  const handleOnboardingClose = React.useCallback(() => {
+    setShowOnboarding(false);
+  }, []);
+
+  // Handle "Don't show again"
+  const handleDontShowAgain = React.useCallback((checked: boolean) => {
+    if (checked) {
+      localStorage.setItem(AI_ONBOARDING_KEY, 'true');
+    }
+  }, []);
 
   // Toast controller for notifications
   const toasterId = useId('toaster');
@@ -609,11 +643,17 @@ export const WaitingOnOthersCardLarge: React.FC<IWaitingOnOthersCardLargeProps> 
       const timer = setTimeout(() => {
         setTestData(getTestWaitingOnOthersData());
         setTestTrendData(getTestWaitingOnOthersTrend());
+        // Load AI demo data if enabled
+        if (aiDemoMode) {
+          setAiEnhancedGroups(getAIEnhancedWaitingOnOthers());
+          setAiCardSummary(getAIWaitingOnOthersCardSummary());
+          setAiInsights(getAllWaitingOnOthersInsights());
+        }
         setTestLoading(false);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [dataMode]);
+  }, [dataMode, aiDemoMode]);
 
   // API hook
   const apiHook = useWaitingOnOthers(context, settings);
@@ -1693,6 +1733,18 @@ export const WaitingOnOthersCardLarge: React.FC<IWaitingOnOthersCardLargeProps> 
         }
         headerContent={
           <>
+            {/* AI Insight Banner (AI Demo Mode only) */}
+            {aiDemoMode && aiCardSummary && aiInsights && aiInsights.length > 0 && (
+              <div style={{ padding: `0 ${tokens.spacingHorizontalM}`, marginBottom: tokens.spacingVerticalS }}>
+                <AIInsightBanner
+                  summary={aiCardSummary}
+                  insights={aiInsights}
+                  defaultExpanded={false}
+                  onLearnMore={() => setShowOnboarding(true)}
+                />
+              </div>
+            )}
+
             {/* Chart */}
             {settings.showChart && showChart && trendData && (data?.totalItems ?? 0) > 0 && (
               <div style={{ padding: `0 ${tokens.spacingHorizontalM}`, marginBottom: tokens.spacingVerticalS }}>
@@ -1881,6 +1933,13 @@ export const WaitingOnOthersCardLarge: React.FC<IWaitingOnOthersCardLargeProps> 
           </DialogBody>
         </DialogSurface>
       </Dialog>
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showOnboarding}
+        onClose={handleOnboardingClose}
+        onDontShowAgain={handleDontShowAgain}
+      />
 
       {/* Toast notifications */}
       <Toaster toasterId={toasterId} position="bottom-end" />

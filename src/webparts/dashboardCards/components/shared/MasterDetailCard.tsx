@@ -49,7 +49,7 @@ const useStyles = makeStyles({
   container: {
     display: 'flex',
     flexDirection: 'column',
-    height: '100%',
+    // Height determined by content - detail panel sets the height
     backgroundColor: tokens.colorNeutralBackground1,
     borderRadius: tokens.borderRadiusLarge,
     boxShadow: tokens.shadow8,
@@ -92,14 +92,15 @@ const useStyles = makeStyles({
   },
   body: {
     display: 'flex',
-    flex: 1,
-    minHeight: 0,
+    // Height determined by detail panel content
     overflow: 'hidden',
   },
   // Master panel (left side - list)
+  // Scrolls independently if items exceed detail panel height
   masterPanel: {
     width: '40%',
     minWidth: '200px',
+    maxHeight: '500px', // Limit master panel height - scrolls if needed
     borderRight: `1px solid ${tokens.colorNeutralStroke2}`,
     overflowY: 'auto',
     backgroundColor: tokens.colorNeutralBackground1,
@@ -119,31 +120,16 @@ const useStyles = makeStyles({
     },
   },
   // Detail panel (right side - details)
+  // This panel determines the card height - no scrolling, content fits
   detailPanel: {
     width: '60%',
     display: 'flex',
     flexDirection: 'column',
     backgroundColor: tokens.colorNeutralBackground1,
-    overflow: 'hidden',
   },
   detailContent: {
-    flex: 1,
+    // Content determines height - no scrolling needed
     padding: tokens.spacingVerticalL,
-    overflowY: 'auto',
-    // Custom scrollbar
-    '::-webkit-scrollbar': {
-      width: '6px',
-    },
-    '::-webkit-scrollbar-track': {
-      background: 'transparent',
-    },
-    '::-webkit-scrollbar-thumb': {
-      background: tokens.colorNeutralStroke2,
-      borderRadius: '3px',
-    },
-    '::-webkit-scrollbar-thumb:hover': {
-      background: tokens.colorNeutralStroke1,
-    },
   },
   detailActions: {
     display: 'flex',

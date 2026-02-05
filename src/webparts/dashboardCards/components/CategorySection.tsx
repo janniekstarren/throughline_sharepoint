@@ -9,6 +9,8 @@ import styles from './CategorySection.module.scss';
 export interface IOrderedCard {
   id: string;
   isLarge: boolean;
+  /** Whether the card needs extra height (e.g., AI mode) */
+  isTall?: boolean;
   element: React.ReactNode;
 }
 
@@ -51,7 +53,10 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
   // Render large cards as full-width rows (not draggable - they're already full width)
   const renderLargeCards = (): React.ReactNode[] => {
     return largeCards.map(card => (
-      <div key={card.id} className={styles.largeCardsRow}>
+      <div key={card.id} className={mergeClasses(
+        styles.largeCardsRow,
+        card.isTall && styles.largeCardsRowTall
+      )}>
         <div>{card.element}</div>
       </div>
     ));

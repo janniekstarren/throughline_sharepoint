@@ -4,7 +4,7 @@
 // ============================================
 
 import * as React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Text,
   Button,
@@ -30,10 +30,13 @@ import {
 } from '../../hooks/useUpcomingWeek';
 import { UpcomingWeekData, WeekTrendData } from '../../models/UpcomingWeek';
 import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList } from '../shared';
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { StatItem, TopItem } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestUpcomingWeekData, getTestWeekTrendData } from '../../services/testData/upcomingWeek';
+import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
 
 // ============================================
 // Styles
@@ -73,6 +76,7 @@ interface UpcomingWeekCardProps {
   context: WebPartContext;
   settings?: IUpcomingWeekSettings;
   dataMode?: DataMode;
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -83,6 +87,7 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
   context,
   settings = DEFAULT_UPCOMING_WEEK_SETTINGS,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const cardStyles = useCardStyles();
@@ -92,6 +97,26 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
   const [testData, setTestData] = useState<UpcomingWeekData | null>(null);
   const [testTrendData, setTestTrendData] = useState<WeekTrendData | null>(null);
   const [testLoading, setTestLoading] = useState(dataMode === 'test');
+
+  // AI demo mode state
+  const [aiCardSummary, setAiCardSummary] = useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = useState<IAIInsight[]>([]);
+  const [showAiOnboarding, setShowAiOnboarding] = useState(false);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getGenericAICardSummary('upcomingWeek'));
+      setAiInsights(getGenericAIInsights('upcomingWeek'));
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
+
+  const handleAiLearnMore = useCallback(() => {
+    setShowAiOnboarding(true);
+  }, []);
 
   // Load test data when in test mode
   React.useEffect(() => {
@@ -240,6 +265,21 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
         title="Upcoming Week"
         badge={data?.totalCount}
         actions={headerActions}
+      />
+
+      {/* AI Insight Banner */}
+      {aiDemoMode && aiCardSummary && (
+        <AIInsightBanner
+          summary={aiCardSummary}
+          insights={aiInsights}
+          onLearnMore={handleAiLearnMore}
+        />
+      )}
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showAiOnboarding}
+        onClose={() => setShowAiOnboarding(false)}
       />
 
       {/* Trend Chart */}

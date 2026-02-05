@@ -33,8 +33,11 @@ import {
 import { UpcomingWeekData, WeekEvent } from '../../models/UpcomingWeek';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
 import { EventDetailPanel, EventDetailActions } from '../shared/EventDetailPanel';
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { DataMode } from '../../services/testData';
 import { getTestUpcomingWeekData } from '../../services/testData/upcomingWeek';
+import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
 
 // ============================================
 // Styles
@@ -125,6 +128,7 @@ interface UpcomingWeekCardLargeProps {
   context: WebPartContext;
   settings?: IUpcomingWeekSettings;
   dataMode?: DataMode;
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -150,11 +154,32 @@ export const UpcomingWeekCardLarge: React.FC<UpcomingWeekCardLargeProps> = ({
   context,
   settings = DEFAULT_UPCOMING_WEEK_SETTINGS,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const styles = useStyles();
   const [selectedEvent, setSelectedEvent] = useState<WeekEvent | undefined>(undefined);
   const [selectedDay, setSelectedDay] = useState<string>('');
+
+  // AI demo mode state
+  const [aiCardSummary, setAiCardSummary] = useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = useState<IAIInsight[]>([]);
+  const [showAiOnboarding, setShowAiOnboarding] = useState(false);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getGenericAICardSummary('upcomingWeek'));
+      setAiInsights(getGenericAIInsights('upcomingWeek'));
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
+
+  const handleAiLearnMore = useCallback(() => {
+    setShowAiOnboarding(true);
+  }, []);
 
   // Test data state
   const [testData, setTestData] = useState<UpcomingWeekData | null>(null);
@@ -315,27 +340,39 @@ export const UpcomingWeekCardLarge: React.FC<UpcomingWeekCardLargeProps> = ({
   );
 
   // Header content with day tabs
-  const headerContent = availableDays.length > 0 ? (
-    <div className={styles.tabContainer}>
-      <TabList
-        selectedValue={selectedDay}
-        onTabSelect={handleTabSelect}
-        size="small"
-      >
-        {availableDays.map((day) => {
-          const eventCount = data?.byDay.get(day)?.length || 0;
-          return (
-            <Tab key={day} value={day}>
-              {day} ({eventCount})
-            </Tab>
-          );
-        })}
-      </TabList>
-    </div>
-  ) : undefined;
+  const headerContent = (
+    <>
+      {aiDemoMode && aiCardSummary && (
+        <AIInsightBanner
+          summary={aiCardSummary}
+          insights={aiInsights}
+          onLearnMore={handleAiLearnMore}
+        />
+      )}
+      {availableDays.length > 0 && (
+        <div className={styles.tabContainer}>
+          <TabList
+            selectedValue={selectedDay}
+            onTabSelect={handleTabSelect}
+            size="small"
+          >
+            {availableDays.map((day) => {
+              const eventCount = data?.byDay.get(day)?.length || 0;
+              return (
+                <Tab key={day} value={day}>
+                  {day} ({eventCount})
+                </Tab>
+              );
+            })}
+          </TabList>
+        </div>
+      )}
+    </>
+  );
 
   return (
-    <MasterDetailCard
+    <>
+      <MasterDetailCard
       items={eventsForSelectedDay}
       selectedItem={selectedEvent}
       onItemSelect={handleSelectEvent}
@@ -355,6 +392,13 @@ export const UpcomingWeekCardLarge: React.FC<UpcomingWeekCardLargeProps> = ({
       headerActions={headerActions}
       headerContent={headerContent}
     />
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showAiOnboarding}
+        onClose={() => setShowAiOnboarding(false)}
+      />
+    </>
   );
 };
 

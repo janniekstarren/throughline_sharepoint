@@ -37,6 +37,9 @@ declare interface IDashboardCardsWebPartStrings {
   DataModeLabel: string;
   DataModeApi: string;
   DataModeTest: string;
+  AiDemoModeLabel: string;
+  AiDemoModeOn: string;
+  AiDemoModeOff: string;
   AppLocalEnvironmentSharePoint: string;
   AppLocalEnvironmentTeams: string;
   AppLocalEnvironmentOffice: string;

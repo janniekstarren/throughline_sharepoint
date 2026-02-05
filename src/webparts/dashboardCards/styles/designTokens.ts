@@ -243,6 +243,41 @@ export const semanticTokens = {
     accent: tokens.colorPalettePurpleForeground2,
     accentBackground: tokens.colorPalettePurpleBackground2,
   },
+
+  // AI Demo Mode (Berry/Magenta theme for better legibility)
+  ai: {
+    // Primary AI accent color - using Berry for high contrast
+    accent: tokens.colorPaletteBerryForeground1,
+    accentLight: tokens.colorPaletteBerryForeground2,
+    accentDark: tokens.colorPaletteBerryForeground1,
+    // Backgrounds - using subtle berry tones
+    accentBackground: tokens.colorPaletteBerryBackground2,
+    accentBackgroundSubtle: tokens.colorNeutralBackground3,
+    accentBackgroundHover: tokens.colorPaletteBerryBackground2,
+    // Sparkle icon color - bright for visibility
+    sparkle: tokens.colorPaletteBerryForeground1,
+    // Border for AI elements
+    border: tokens.colorPaletteBerryBorderActive,
+    borderSubtle: tokens.colorPaletteBerryBorder2,
+    // Severity backgrounds - using stronger contrast
+    criticalBackground: tokens.colorPaletteRedBackground2,
+    criticalForeground: tokens.colorPaletteRedForeground1,
+    criticalBorder: tokens.colorPaletteRedBorder2,
+    warningBackground: tokens.colorPaletteMarigoldBackground2,
+    warningForeground: tokens.colorPaletteMarigoldForeground1,
+    warningBorder: tokens.colorPaletteMarigoldBorder2,
+    infoBackground: tokens.colorPaletteBlueBackground2,
+    infoForeground: tokens.colorPaletteBlueForeground2,
+    infoBorder: tokens.colorNeutralStroke2,
+    // Score colors - using high contrast palette
+    scoreCritical: tokens.colorPaletteRedForeground1,
+    scoreHigh: tokens.colorPaletteMarigoldForeground1,
+    scoreMedium: tokens.colorPaletteBerryForeground1,
+    scoreLow: tokens.colorNeutralForeground3,
+    // Text colors on AI backgrounds
+    textOnAccent: tokens.colorNeutralForeground1,
+    textOnAccentSubtle: tokens.colorNeutralForeground2,
+  },
 };
 
 // ============================================

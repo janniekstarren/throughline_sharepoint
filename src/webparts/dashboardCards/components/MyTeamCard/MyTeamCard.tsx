@@ -4,7 +4,7 @@
 // ============================================
 
 import * as React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Text,
   Button,
@@ -34,6 +34,9 @@ import { StatItem, TopItem, DonutSegment } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestMyTeamData, getTestTeamPresenceData } from '../../services/testData/myTeam';
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
+import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
 
 // ============================================
 // Styles
@@ -73,6 +76,7 @@ interface MyTeamCardProps {
   context: WebPartContext;
   settings?: IMyTeamSettings;
   dataMode?: DataMode;
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -93,6 +97,7 @@ export const MyTeamCard: React.FC<MyTeamCardProps> = ({
   context,
   settings = DEFAULT_MY_TEAM_SETTINGS,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const cardStyles = useCardStyles();
@@ -115,6 +120,26 @@ export const MyTeamCard: React.FC<MyTeamCardProps> = ({
       return () => clearTimeout(timer);
     }
   }, [dataMode]);
+
+  // AI demo mode state
+  const [aiCardSummary, setAiCardSummary] = useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = useState<IAIInsight[]>([]);
+  const [showAiOnboarding, setShowAiOnboarding] = useState(false);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getGenericAICardSummary('myTeam'));
+      setAiInsights(getGenericAIInsights('myTeam'));
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
+
+  const handleAiLearnMore = useCallback(() => {
+    setShowAiOnboarding(true);
+  }, []);
 
   // API hook (only used when dataMode === 'api')
   const apiHook = useMyTeam(context, settings);
@@ -256,6 +281,21 @@ export const MyTeamCard: React.FC<MyTeamCardProps> = ({
         title="My Team"
         badge={data?.totalCount}
         actions={headerActions}
+      />
+
+      {/* AI Insight Banner */}
+      {aiDemoMode && aiCardSummary && (
+        <AIInsightBanner
+          summary={aiCardSummary}
+          insights={aiInsights}
+          onLearnMore={handleAiLearnMore}
+        />
+      )}
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showAiOnboarding}
+        onClose={() => setShowAiOnboarding(false)}
       />
 
       {/* Presence Donut Chart */}

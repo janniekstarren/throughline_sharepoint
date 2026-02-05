@@ -56,6 +56,11 @@ import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsLis
 import { StatItem, TopItem, TrendDataPoint } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
+// AI Demo Mode components
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+
+// Local storage key for onboarding state
+const AI_ONBOARDING_KEY = 'dashboardCards_aiOnboardingDismissed';
 
 // ============================================
 // Styles
@@ -149,6 +154,8 @@ interface EmailCardProps {
   context: WebPartContext;
   settings?: IEmailCardSettings;
   dataMode?: DataMode;
+  /** AI Demo Mode - show AI insights when true */
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -183,6 +190,7 @@ export const EmailCard: React.FC<EmailCardProps> = ({
   context,
   settings = DEFAULT_EMAIL_CARD_SETTINGS,
   dataMode = 'test',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const cardStyles = useCardStyles();
@@ -191,6 +199,21 @@ export const EmailCard: React.FC<EmailCardProps> = ({
   // Ref for scrolling tabs into view
   const tabScrollerRef = useRef<HTMLDivElement>(null);
   const [hasOverflow, setHasOverflow] = useState(false);
+
+  // AI Onboarding dialog state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Handle onboarding close
+  const handleOnboardingClose = useCallback(() => {
+    setShowOnboarding(false);
+  }, []);
+
+  // Handle "Don't show again"
+  const handleDontShowAgain = useCallback((checked: boolean) => {
+    if (checked) {
+      localStorage.setItem(AI_ONBOARDING_KEY, 'true');
+    }
+  }, []);
 
   // Use the consolidated email hook
   const {
@@ -206,7 +229,10 @@ export const EmailCard: React.FC<EmailCardProps> = ({
     error,
     lastRefreshed,
     refresh,
-  } = useEmailCard(context, settings, dataMode);
+    // AI Demo Mode data
+    aiCardSummary,
+    aiInsights,
+  } = useEmailCard(context, settings, dataMode, aiDemoMode);
 
   // Check for overflow and scroll selected tab into view
   useEffect(() => {
@@ -580,6 +606,25 @@ export const EmailCard: React.FC<EmailCardProps> = ({
           </Menu>
         </div>
       </div>
+
+      {/* AI Insight Banner (AI Demo Mode only) */}
+      {aiDemoMode && aiCardSummary && aiInsights && aiInsights.length > 0 && (
+        <div style={{ padding: `0 ${tokens.spacingHorizontalL}`, marginBottom: tokens.spacingVerticalS }}>
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            defaultExpanded={false}
+            onLearnMore={() => setShowOnboarding(true)}
+          />
+        </div>
+      )}
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showOnboarding}
+        onClose={handleOnboardingClose}
+        onDontShowAgain={handleDontShowAgain}
+      />
 
       {/* Trend Chart */}
       {chartData.length > 0 && (

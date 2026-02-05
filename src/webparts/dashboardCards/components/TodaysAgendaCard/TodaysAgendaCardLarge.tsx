@@ -29,8 +29,14 @@ import {
 import { TodaysAgendaData, CalendarEvent } from '../../models/TodaysAgenda';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
 import { EventDetailPanel, EventDetailActions } from '../shared/EventDetailPanel';
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { DataMode } from '../../services/testData';
 import { getTestTodaysAgendaData } from '../../services/testData/todaysAgenda';
+import {
+  getAIAgendaCardSummary,
+  getAllAgendaInsights,
+} from '../../services/testData/aiDemoData';
 
 // ============================================
 // Styles
@@ -117,6 +123,7 @@ interface TodaysAgendaCardLargeProps {
   context: WebPartContext;
   settings?: ITodaysAgendaSettings;
   dataMode?: DataMode;
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -159,6 +166,7 @@ export const TodaysAgendaCardLarge: React.FC<TodaysAgendaCardLargeProps> = ({
   context,
   settings = DEFAULT_TODAYS_AGENDA_SETTINGS,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const styles = useStyles();
@@ -167,6 +175,26 @@ export const TodaysAgendaCardLarge: React.FC<TodaysAgendaCardLargeProps> = ({
   // Test data state
   const [testData, setTestData] = useState<TodaysAgendaData | null>(null);
   const [testLoading, setTestLoading] = useState(dataMode === 'test');
+
+  // AI demo mode state
+  const [aiCardSummary, setAiCardSummary] = useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = useState<IAIInsight[]>([]);
+  const [showAiOnboarding, setShowAiOnboarding] = useState(false);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getAIAgendaCardSummary());
+      setAiInsights(getAllAgendaInsights());
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
+
+  const handleAiLearnMore = useCallback(() => {
+    setShowAiOnboarding(true);
+  }, []);
 
   // Load test data
   React.useEffect(() => {
@@ -306,26 +334,44 @@ export const TodaysAgendaCardLarge: React.FC<TodaysAgendaCardLargeProps> = ({
     </div>
   );
 
-  return (
-    <MasterDetailCard
-      items={sortedEvents}
-      selectedItem={selectedEvent}
-      onItemSelect={handleSelectEvent}
-      getItemKey={(event: CalendarEvent) => event.id}
-      renderMasterItem={renderMasterItem}
-      renderDetailContent={renderDetailContent}
-      renderDetailActions={renderDetailActions}
-      renderEmptyDetail={renderEmptyDetail}
-      renderEmptyState={renderEmptyState}
-      icon={<CalendarLtr24Regular />}
-      title="Today's Agenda"
-      itemCount={sortedEvents.length}
-      loading={isLoading && !data}
-      error={error?.message}
-      emptyMessage="No events scheduled for today"
-      emptyIcon={<CalendarLtr24Regular />}
-      headerActions={headerActions}
+  // AI Insight Banner for header content
+  const headerContent = aiDemoMode && aiCardSummary ? (
+    <AIInsightBanner
+      summary={aiCardSummary}
+      insights={aiInsights}
+      onLearnMore={handleAiLearnMore}
     />
+  ) : undefined;
+
+  return (
+    <>
+      <MasterDetailCard
+        items={sortedEvents}
+        selectedItem={selectedEvent}
+        onItemSelect={handleSelectEvent}
+        getItemKey={(event: CalendarEvent) => event.id}
+        renderMasterItem={renderMasterItem}
+        renderDetailContent={renderDetailContent}
+        renderDetailActions={renderDetailActions}
+        renderEmptyDetail={renderEmptyDetail}
+        renderEmptyState={renderEmptyState}
+        icon={<CalendarLtr24Regular />}
+        title="Today's Agenda"
+        itemCount={sortedEvents.length}
+        loading={isLoading && !data}
+        error={error?.message}
+        emptyMessage="No events scheduled for today"
+        emptyIcon={<CalendarLtr24Regular />}
+        headerActions={headerActions}
+        headerContent={headerContent}
+      />
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showAiOnboarding}
+        onClose={() => setShowAiOnboarding(false)}
+      />
+    </>
   );
 };
 

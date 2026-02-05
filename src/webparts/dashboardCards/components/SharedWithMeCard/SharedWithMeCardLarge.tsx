@@ -4,7 +4,7 @@
 // ============================================
 
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   makeStyles,
   tokens,
@@ -38,6 +38,9 @@ import {
 import { DataMode } from '../../services/testData';
 import { getTestSharedWithMeData } from '../../services/testData/sharedWithMe';
 import { useSharedWithMe } from '../../hooks/useSharedWithMe';
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
+import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
 
 // ============================================
 // Props Interface
@@ -46,6 +49,7 @@ export interface ISharedWithMeCardLargeProps {
   context: WebPartContext;
   settings?: ISharedWithMeSettings;
   dataMode?: DataMode;
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -304,6 +308,7 @@ export const SharedWithMeCardLarge: React.FC<ISharedWithMeCardLargeProps> = ({
   context,
   settings = DEFAULT_SHARED_WITH_ME_SETTINGS,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const styles = useStyles();
@@ -324,6 +329,26 @@ export const SharedWithMeCardLarge: React.FC<ISharedWithMeCardLargeProps> = ({
       return () => clearTimeout(timer);
     }
   }, [dataMode]);
+
+  // AI demo mode state
+  const [aiCardSummary, setAiCardSummary] = useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = useState<IAIInsight[]>([]);
+  const [showAiOnboarding, setShowAiOnboarding] = useState(false);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getGenericAICardSummary('sharedWithMe'));
+      setAiInsights(getGenericAIInsights('sharedWithMe'));
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
+
+  const handleAiLearnMore = useCallback(() => {
+    setShowAiOnboarding(true);
+  }, []);
 
   // API hook (only used when dataMode === 'api')
   const apiHook = useSharedWithMe(context, settings);
@@ -491,38 +516,56 @@ export const SharedWithMeCardLarge: React.FC<ISharedWithMeCardLargeProps> = ({
     );
   };
 
-  return (
-    <MasterDetailCard
-      items={sortedFiles}
-      selectedItem={selectedFile}
-      onItemSelect={handleSelectFile}
-      getItemKey={(file: SharedFile) => file.id}
-      renderMasterItem={renderMasterItem}
-      renderDetailContent={renderDetailContent}
-      renderDetailActions={renderDetailActions}
-      renderEmptyDetail={renderEmptyDetail}
-      renderEmptyState={renderEmptyState}
-      icon={<ShareMultiple24Regular />}
-      title="Shared With Me"
-      itemCount={sortedFiles.length}
-      loading={isLoading}
-      error={error?.message}
-      emptyMessage="No shared files"
-      emptyIcon={<ShareMultiple24Regular />}
-      headerActions={
-        onToggleSize && (
-          <Tooltip content="Collapse to compact view" relationship="label">
-            <Button
-              appearance="subtle"
-              size="small"
-              icon={<ContractDownLeft20Regular />}
-              onClick={onToggleSize}
-              aria-label="Collapse card"
-            />
-          </Tooltip>
-        )
-      }
+  // AI Insight Banner for header content
+  const aiHeaderContent = aiDemoMode && aiCardSummary ? (
+    <AIInsightBanner
+      summary={aiCardSummary}
+      insights={aiInsights}
+      onLearnMore={handleAiLearnMore}
     />
+  ) : undefined;
+
+  return (
+    <>
+      <MasterDetailCard
+        items={sortedFiles}
+        selectedItem={selectedFile}
+        onItemSelect={handleSelectFile}
+        getItemKey={(file: SharedFile) => file.id}
+        renderMasterItem={renderMasterItem}
+        renderDetailContent={renderDetailContent}
+        renderDetailActions={renderDetailActions}
+        renderEmptyDetail={renderEmptyDetail}
+        renderEmptyState={renderEmptyState}
+        icon={<ShareMultiple24Regular />}
+        title="Shared With Me"
+        itemCount={sortedFiles.length}
+        loading={isLoading}
+        error={error?.message}
+        emptyMessage="No shared files"
+        emptyIcon={<ShareMultiple24Regular />}
+        headerActions={
+          onToggleSize && (
+            <Tooltip content="Collapse to compact view" relationship="label">
+              <Button
+                appearance="subtle"
+                size="small"
+                icon={<ContractDownLeft20Regular />}
+                onClick={onToggleSize}
+                aria-label="Collapse card"
+              />
+            </Tooltip>
+          )
+        }
+        headerContent={aiHeaderContent}
+      />
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showAiOnboarding}
+        onClose={() => setShowAiOnboarding(false)}
+      />
+    </>
   );
 };
 

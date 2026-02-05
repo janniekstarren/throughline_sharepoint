@@ -35,8 +35,14 @@ import {
 } from '../../hooks/useMyTasks';
 import { MyTasksData, TaskItem, TaskStatus } from '../../models/MyTasks';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { DataMode } from '../../services/testData';
 import { getTestMyTasksData } from '../../services/testData/myTasks';
+import {
+  getAITasksCardSummary,
+  getAllTasksInsights,
+} from '../../services/testData/aiDemoData';
 
 // ============================================
 // Styles
@@ -179,6 +185,7 @@ interface MyTasksCardLargeProps {
   context: WebPartContext;
   settings?: IMyTasksSettings;
   dataMode?: DataMode;
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -290,6 +297,7 @@ export const MyTasksCardLarge: React.FC<MyTasksCardLargeProps> = ({
   context,
   settings = DEFAULT_MY_TASKS_SETTINGS,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const styles = useStyles();
@@ -298,6 +306,26 @@ export const MyTasksCardLarge: React.FC<MyTasksCardLargeProps> = ({
   // Test data state
   const [testData, setTestData] = useState<MyTasksData | null>(null);
   const [testLoading, setTestLoading] = useState(dataMode === 'test');
+
+  // AI demo mode state
+  const [aiCardSummary, setAiCardSummary] = useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = useState<IAIInsight[]>([]);
+  const [showAiOnboarding, setShowAiOnboarding] = useState(false);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getAITasksCardSummary());
+      setAiInsights(getAllTasksInsights());
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
+
+  const handleAiLearnMore = useCallback(() => {
+    setShowAiOnboarding(true);
+  }, []);
 
   // Load test data
   React.useEffect(() => {
@@ -538,25 +566,40 @@ export const MyTasksCardLarge: React.FC<MyTasksCardLargeProps> = ({
   );
 
   return (
-    <MasterDetailCard
-      items={tasks}
-      selectedItem={selectedTask}
-      onItemSelect={handleSelectTask}
-      getItemKey={(task: TaskItem) => task.id}
-      renderMasterItem={renderMasterItem}
-      renderDetailContent={renderDetailContent}
-      renderDetailActions={renderDetailActions}
-      renderEmptyDetail={renderEmptyDetail}
-      renderEmptyState={renderEmptyState}
-      icon={<TaskListSquareLtr24Regular />}
-      title="My Tasks"
-      itemCount={data?.totalCount}
-      loading={isLoading && !data}
-      error={error?.message}
-      emptyMessage="No tasks to display"
-      emptyIcon={<TaskListSquareLtr24Regular />}
-      headerActions={headerActions}
-    />
+    <>
+      <MasterDetailCard
+        items={tasks}
+        selectedItem={selectedTask}
+        onItemSelect={handleSelectTask}
+        getItemKey={(task: TaskItem) => task.id}
+        renderMasterItem={renderMasterItem}
+        renderDetailContent={renderDetailContent}
+        renderDetailActions={renderDetailActions}
+        renderEmptyDetail={renderEmptyDetail}
+        renderEmptyState={renderEmptyState}
+        icon={<TaskListSquareLtr24Regular />}
+        title="My Tasks"
+        itemCount={data?.totalCount}
+        loading={isLoading && !data}
+        error={error?.message}
+        emptyMessage="No tasks to display"
+        emptyIcon={<TaskListSquareLtr24Regular />}
+        headerActions={headerActions}
+        headerContent={aiDemoMode && aiCardSummary ? (
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            onLearnMore={handleAiLearnMore}
+          />
+        ) : undefined}
+      />
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showAiOnboarding}
+        onClose={() => setShowAiOnboarding(false)}
+      />
+    </>
   );
 };
 

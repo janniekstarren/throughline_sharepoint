@@ -116,6 +116,8 @@ export interface IDashboardCardsProps {
   cardTitles: Record<string, string>;
   // Data mode: 'api' for live Graph data, 'test' for mock data
   dataMode: DataMode;
+  // AI Demo Mode: show AI-enhanced content (only applicable when dataMode === 'test')
+  aiDemoMode?: boolean;
   // Category configuration
   categoryOrder?: string[];
   categoryNames?: Record<string, string>;
@@ -196,6 +198,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   cardOrder: defaultCardOrder,
   cardTitles,
   dataMode,
+  aiDemoMode = false,
   categoryOrder = [],
   categoryNames = {},
   categoryConfig = {},
@@ -392,54 +395,54 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       case 'todaysAgenda':
         return wrapWithErrorBoundary(
           isLarge
-            ? <TodaysAgendaCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <TodaysAgendaCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <TodaysAgendaCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <TodaysAgendaCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
         );
       case 'email':
         return wrapWithErrorBoundary(
           isLarge
-            ? <EmailCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <EmailCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <EmailCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <EmailCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
         );
       case 'upcomingWeek':
         return wrapWithErrorBoundary(
           isLarge
-            ? <UpcomingWeekCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <UpcomingWeekCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <UpcomingWeekCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <UpcomingWeekCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
         );
       case 'myTasks':
         return wrapWithErrorBoundary(
           isLarge
-            ? <MyTasksCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <MyTasksCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <MyTasksCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <MyTasksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
         );
       case 'recentFiles':
         return wrapWithErrorBoundary(
           isLarge
-            ? <RecentFilesCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <RecentFilesCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <RecentFilesCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <RecentFilesCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
         );
       case 'myTeam':
         return wrapWithErrorBoundary(
           isLarge
-            ? <MyTeamCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <MyTeamCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <MyTeamCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <MyTeamCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
         );
       case 'sharedWithMe':
         return wrapWithErrorBoundary(
           isLarge
-            ? <SharedWithMeCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <SharedWithMeCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <SharedWithMeCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <SharedWithMeCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
         );
       case 'siteActivity':
         // SiteActivityCardLarge not yet updated to new pattern - always use medium
         return wrapWithErrorBoundary(
-          <SiteActivityCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+          <SiteActivityCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
         );
       case 'quickLinks':
         // QuickLinksCardLarge has different props - use medium for now
         return wrapWithErrorBoundary(
-          <QuickLinksCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+          <QuickLinksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
         );
       // Analytics cards (medium-only)
       case 'waitingOnYou':
@@ -468,6 +471,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
                   showChart: waitingOnOthersSettings.showChart,
                 }}
                 dataMode={dataMode}
+                aiDemoMode={dataMode === 'test' && aiDemoMode}
                 onToggleSize={() => toggleCardSize(cardId)}
               />
             : <WaitingOnOthersCard
@@ -480,6 +484,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
                   showChart: waitingOnOthersSettings.showChart,
                 }}
                 dataMode={dataMode}
+                aiDemoMode={dataMode === 'test' && aiDemoMode}
                 onToggleSize={() => toggleCardSize(cardId)}
               />
         );
@@ -534,6 +539,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
         .map(id => ({
           id,
           isLarge: isCardLarge(id),
+          // Make EmailCard taller when in AI mode (more space for insights)
+          isTall: dataMode === 'test' && aiDemoMode && isCardLarge(id) && id === 'email',
           element: renderCardElement(id)
         }));
 
@@ -573,6 +580,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       const orderedCards: IOrderedCard[] = cardsInCategory.map(id => ({
         id,
         isLarge: isCardLarge(id),
+        // Make card taller when in AI mode (more space for insights)
+        isTall: dataMode === 'test' && aiDemoMode && isCardLarge(id),
         element: renderCardElement(id)
       }));
 
@@ -605,6 +614,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       const orderedUnassigned: IOrderedCard[] = unassignedCards.map(id => ({
         id,
         isLarge: isCardLarge(id),
+        // Make card taller when in AI mode (more space for insights)
+        isTall: dataMode === 'test' && aiDemoMode && isCardLarge(id),
         element: renderCardElement(id)
       }));
 

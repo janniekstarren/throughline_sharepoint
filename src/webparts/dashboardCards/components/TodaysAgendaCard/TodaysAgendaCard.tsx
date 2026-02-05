@@ -4,7 +4,7 @@
 // ============================================
 
 import * as React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Text,
   Button,
@@ -30,10 +30,16 @@ import {
 } from '../../hooks/useTodaysAgenda';
 import { TodaysAgendaData, AgendaTrendData } from '../../models/TodaysAgenda';
 import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList } from '../shared';
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { StatItem, TopItem } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestTodaysAgendaData, getTestAgendaTrendData } from '../../services/testData/todaysAgenda';
+import {
+  getAIAgendaCardSummary,
+  getAllAgendaInsights,
+} from '../../services/testData/aiDemoData';
 
 // ============================================
 // Styles
@@ -73,6 +79,7 @@ interface TodaysAgendaCardProps {
   context: WebPartContext;
   settings?: ITodaysAgendaSettings;
   dataMode?: DataMode;
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -83,6 +90,7 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
   context,
   settings = DEFAULT_TODAYS_AGENDA_SETTINGS,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const cardStyles = useCardStyles();
@@ -92,6 +100,26 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
   const [testData, setTestData] = useState<TodaysAgendaData | null>(null);
   const [testTrendData, setTestTrendData] = useState<AgendaTrendData | null>(null);
   const [testLoading, setTestLoading] = useState(dataMode === 'test');
+
+  // AI demo mode state
+  const [aiCardSummary, setAiCardSummary] = useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = useState<IAIInsight[]>([]);
+  const [showAiOnboarding, setShowAiOnboarding] = useState(false);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getAIAgendaCardSummary());
+      setAiInsights(getAllAgendaInsights());
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
+
+  const handleAiLearnMore = useCallback(() => {
+    setShowAiOnboarding(true);
+  }, []);
 
   // Load test data when in test mode
   React.useEffect(() => {
@@ -254,6 +282,21 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
         title="Today's Agenda"
         badge={data?.totalCount}
         actions={headerActions}
+      />
+
+      {/* AI Insight Banner */}
+      {aiDemoMode && aiCardSummary && (
+        <AIInsightBanner
+          summary={aiCardSummary}
+          insights={aiInsights}
+          onLearnMore={handleAiLearnMore}
+        />
+      )}
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showAiOnboarding}
+        onClose={() => setShowAiOnboarding(false)}
       />
 
       {/* Trend Chart */}

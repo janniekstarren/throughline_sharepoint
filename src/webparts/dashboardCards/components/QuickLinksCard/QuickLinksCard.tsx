@@ -35,6 +35,9 @@ import {
 } from '../../models/QuickLinks';
 import { DataMode } from '../../services/testData';
 import { getTestQuickLinksData, getTestLinksCategoryData } from '../../services/testData/quickLinks';
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
+import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
 import { QuickLinksService } from '../../services/QuickLinksService';
 import { BaseCard, CardHeader, EmptyState, DonutChart, StatsGrid, TopItemsList } from '../shared';
 import { StatItem, TopItem, DonutSegment } from '../shared/charts';
@@ -51,6 +54,8 @@ export interface QuickLinksCardProps {
   graphClient?: MSGraphClientV3;
   /** Data mode - 'api' for real data, 'test' for mock data */
   dataMode?: DataMode;
+  /** AI demo mode - show AI-enhanced content */
+  aiDemoMode?: boolean;
   /** Card settings */
   settings?: IQuickLinksSettings;
   /** Card title */
@@ -108,6 +113,7 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
   context,
   graphClient,
   dataMode = 'api',
+  aiDemoMode = false,
   settings = DEFAULT_QUICK_LINKS_SETTINGS,
   title = 'Quick Links',
   onToggleSize,
@@ -192,6 +198,26 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
   React.useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  // AI demo mode state
+  const [aiCardSummary, setAiCardSummary] = React.useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = React.useState<IAIInsight[]>([]);
+  const [showAiOnboarding, setShowAiOnboarding] = React.useState(false);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getGenericAICardSummary('quickLinks'));
+      setAiInsights(getGenericAIInsights('quickLinks'));
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
+
+  const handleAiLearnMore = useCallback(() => {
+    setShowAiOnboarding(true);
+  }, []);
 
   // Refresh handler
   const handleRefresh = useCallback(() => {
@@ -324,6 +350,21 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
         title={title}
         badge={data?.totalCount}
         actions={headerActions}
+      />
+
+      {/* AI Insight Banner */}
+      {aiDemoMode && aiCardSummary && (
+        <AIInsightBanner
+          summary={aiCardSummary}
+          insights={aiInsights}
+          onLearnMore={handleAiLearnMore}
+        />
+      )}
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showAiOnboarding}
+        onClose={() => setShowAiOnboarding(false)}
       />
 
       {/* Donut Chart - Category Distribution */}

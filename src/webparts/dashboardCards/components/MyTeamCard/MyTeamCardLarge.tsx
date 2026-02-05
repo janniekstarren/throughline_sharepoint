@@ -34,6 +34,9 @@ import { MyTeamData, TeamMember, PresenceStatus } from '../../models/MyTeam';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
 import { DataMode } from '../../services/testData';
 import { getTestMyTeamData } from '../../services/testData/myTeam';
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
+import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
 
 // ============================================
 // Styles
@@ -147,6 +150,7 @@ interface MyTeamCardLargeProps {
   context: WebPartContext;
   settings?: IMyTeamSettings;
   dataMode?: DataMode;
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -202,6 +206,7 @@ export const MyTeamCardLarge: React.FC<MyTeamCardLargeProps> = ({
   context,
   settings = DEFAULT_MY_TEAM_SETTINGS,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const styles = useStyles();
@@ -222,6 +227,26 @@ export const MyTeamCardLarge: React.FC<MyTeamCardLargeProps> = ({
       return () => clearTimeout(timer);
     }
   }, [dataMode]);
+
+  // AI demo mode state
+  const [aiCardSummary, setAiCardSummary] = React.useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = React.useState<IAIInsight[]>([]);
+  const [showAiOnboarding, setShowAiOnboarding] = React.useState(false);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getGenericAICardSummary('myTeam'));
+      setAiInsights(getGenericAIInsights('myTeam'));
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
+
+  const handleAiLearnMore = useCallback(() => {
+    setShowAiOnboarding(true);
+  }, []);
 
   // API hook
   const apiHook = useMyTeam(context, settings);
@@ -417,26 +442,44 @@ export const MyTeamCardLarge: React.FC<MyTeamCardLargeProps> = ({
     </div>
   );
 
-  return (
-    <MasterDetailCard
-      items={members}
-      selectedItem={selectedMember}
-      onItemSelect={handleSelectMember}
-      getItemKey={(member: TeamMember) => member.id}
-      renderMasterItem={renderMasterItem}
-      renderDetailContent={renderDetailContent}
-      renderDetailActions={renderDetailActions}
-      renderEmptyDetail={renderEmptyDetail}
-      renderEmptyState={renderEmptyState}
-      icon={<People24Regular />}
-      title="My Team"
-      itemCount={members.length}
-      loading={isLoading && !data}
-      error={error?.message}
-      emptyMessage="No team members found"
-      emptyIcon={<People24Regular />}
-      headerActions={headerActions}
+  // AI Insight Banner for header content
+  const aiHeaderContent = aiDemoMode && aiCardSummary ? (
+    <AIInsightBanner
+      summary={aiCardSummary}
+      insights={aiInsights}
+      onLearnMore={handleAiLearnMore}
     />
+  ) : undefined;
+
+  return (
+    <>
+      <MasterDetailCard
+        items={members}
+        selectedItem={selectedMember}
+        onItemSelect={handleSelectMember}
+        getItemKey={(member: TeamMember) => member.id}
+        renderMasterItem={renderMasterItem}
+        renderDetailContent={renderDetailContent}
+        renderDetailActions={renderDetailActions}
+        renderEmptyDetail={renderEmptyDetail}
+        renderEmptyState={renderEmptyState}
+        icon={<People24Regular />}
+        title="My Team"
+        itemCount={members.length}
+        loading={isLoading && !data}
+        error={error?.message}
+        emptyMessage="No team members found"
+        emptyIcon={<People24Regular />}
+        headerActions={headerActions}
+        headerContent={aiHeaderContent}
+      />
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showAiOnboarding}
+        onClose={() => setShowAiOnboarding(false)}
+      />
+    </>
   );
 };
 

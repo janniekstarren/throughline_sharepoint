@@ -5,7 +5,7 @@
 // ============================================
 
 import * as React from 'react';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Text,
   Button,
@@ -42,7 +42,6 @@ import {
   AlertUrgent20Regular,
   AlertUrgent20Filled,
   AlertUrgent24Regular,
-  Clock20Regular,
   Clock24Regular,
   Open20Regular,
   ArrowReply20Regular,
@@ -65,6 +64,17 @@ import {
 } from '../../hooks/useEmailCard';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
 import { DataMode } from '../../services/testData';
+// AI Demo Mode components
+import {
+  AIBadge,
+  AIScore,
+  AIInsightBanner,
+  AIInsightsPanel,
+  AIOnboardingDialog,
+} from '../shared/AIComponents';
+
+// Local storage key for onboarding state
+const AI_ONBOARDING_KEY = 'dashboardCards_aiOnboardingDismissed';
 
 // ============================================
 // Styles
@@ -89,68 +99,112 @@ const useStyles = makeStyles({
   filterActive: {
     color: tokens.colorBrandForeground1,
   },
-  // VIP icon styles
+  // VIP icon style
   vipIcon: {
     color: tokens.colorPaletteYellowForeground1,
     fontSize: '14px',
   },
-  vipIconMaster: {
-    color: tokens.colorPaletteYellowForeground1,
-    fontSize: '11px',
-    flexShrink: 0,
-  },
-  // Master item styles
+  // Master item styles - Clean, minimal design
   masterItem: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: tokens.spacingHorizontalS,
+    position: 'relative',
+  },
+  // Unread indicator dot (replaces bold text + icon)
+  unreadDot: {
+    position: 'absolute',
+    left: '-8px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    backgroundColor: tokens.colorBrandForeground1,
   },
   emailInfo: {
     flex: 1,
     minWidth: 0,
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacingVerticalXXS,
+    gap: '2px',
   },
-  emailSubjectRow: {
+  // Sender row with name and time
+  senderRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
+    justifyContent: 'space-between',
+    gap: tokens.spacingHorizontalS,
   },
+  senderName: {
+    fontSize: '12px',
+    fontWeight: 500,
+    color: tokens.colorNeutralForeground2,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    flex: 1,
+    minWidth: 0,
+  },
+  senderNameUnread: {
+    fontWeight: 600,
+    color: tokens.colorNeutralForeground1,
+  },
+  timeText: {
+    fontSize: '11px',
+    color: tokens.colorNeutralForeground3,
+    flexShrink: 0,
+  },
+  // Subject line
   emailSubject: {
     fontSize: '13px',
-    fontWeight: 500,
+    fontWeight: 400,
     color: tokens.colorNeutralForeground1,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+    lineHeight: 1.3,
   },
-  emailUnread: {
+  emailSubjectUnread: {
     fontWeight: 600,
   },
-  emailMeta: {
+  // Minimal status indicators row (for master list)
+  masterStatusRow: {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacingHorizontalS,
-    fontSize: '11px',
-    color: tokens.colorNeutralForeground3,
+    marginTop: '2px',
   },
-  senderText: {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  masterItemRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
-    marginLeft: 'auto',
-    flexShrink: 0,
-  },
-  timeText: {
+  // Subtle status indicator (combines priority/VIP/flag into one line)
+  masterStatusIndicator: {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacingHorizontalXXS,
+    fontSize: '11px',
+    color: tokens.colorNeutralForeground3,
+  },
+  masterStatusUrgent: {
+    color: tokens.colorPaletteRedForeground1,
+  },
+  masterStatusVip: {
+    color: tokens.colorPaletteYellowForeground1,
+  },
+  masterStatusFlagged: {
+    color: tokens.colorBrandForeground1,
+  },
+  masterStatusIcon: {
+    fontSize: '12px',
+  },
+  // Attachment count badge
+  attachmentBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '2px',
+    fontSize: '10px',
+    color: tokens.colorNeutralForeground3,
+    backgroundColor: tokens.colorNeutralBackground3,
+    padding: '1px 4px',
+    borderRadius: tokens.borderRadiusSmall,
   },
   // Detail panel styles
   detailContainer: {
@@ -336,6 +390,8 @@ interface EmailCardLargeProps {
   context: WebPartContext;
   settings?: IEmailCardSettings;
   dataMode?: DataMode;
+  /** AI Demo Mode - show AI insights when true */
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -386,6 +442,7 @@ export const EmailCardLarge: React.FC<EmailCardLargeProps> = ({
   context,
   settings = DEFAULT_EMAIL_CARD_SETTINGS,
   dataMode = 'test',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const styles = useStyles();
@@ -403,10 +460,47 @@ export const EmailCardLarge: React.FC<EmailCardLargeProps> = ({
     isLoading,
     error,
     refresh,
-  } = useEmailCard(context, settings, dataMode);
+    // AI Demo Mode data
+    aiEnhancedEmails,
+    aiCardSummary,
+    aiInsights,
+  } = useEmailCard(context, settings, dataMode, aiDemoMode);
 
   // Selected item state
   const [selectedItem, setSelectedItem] = useState<IEmailCardItem | undefined>(undefined);
+
+  // AI Onboarding dialog state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Check if we should show onboarding when AI mode is enabled
+  // Small delay ensures the component is fully mounted before showing dialog
+  useEffect(() => {
+    if (aiDemoMode) {
+      const dismissed = localStorage.getItem(AI_ONBOARDING_KEY);
+      if (!dismissed) {
+        // Small delay to ensure smooth rendering
+        const timer = setTimeout(() => {
+          setShowOnboarding(true);
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      setShowOnboarding(false);
+    }
+    return undefined;
+  }, [aiDemoMode]);
+
+  // Handle onboarding close
+  const handleOnboardingClose = useCallback(() => {
+    setShowOnboarding(false);
+  }, []);
+
+  // Handle "Don't show again"
+  const handleDontShowAgain = useCallback((checked: boolean) => {
+    if (checked) {
+      localStorage.setItem(AI_ONBOARDING_KEY, 'true');
+    }
+  }, []);
 
   // Menu state for sort/filter
   const [checkedSortValues, setCheckedSortValues] = useState<Record<string, string[]>>({
@@ -474,44 +568,111 @@ export const EmailCardLarge: React.FC<EmailCardLargeProps> = ({
   // Get item key
   const getItemKey = (item: IEmailCardItem): string => item.id;
 
-  // Render master item
+  // Get AI data for a specific email item
+  const getAIDataForItem = useCallback((itemId: string) => {
+    if (!aiDemoMode || !aiEnhancedEmails) return undefined;
+    return aiEnhancedEmails.find(e => e.item.id === itemId);
+  }, [aiDemoMode, aiEnhancedEmails]);
+
+  // Render master item - Clean, minimal design
   const renderMasterItem = (item: IEmailCardItem, _isSelected: boolean): React.ReactNode => {
     const now = new Date();
     const diffMs = now.getTime() - item.receivedDateTime.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const aiData = getAIDataForItem(item.id);
+
+    // Determine the primary status to show (only one, prioritized)
+    const getPrimaryStatus = (): { icon: React.ReactNode; className: string; label: string } | null => {
+      // AI insight takes priority if in AI mode
+      if (aiDemoMode && aiData && aiData.aiInsights && aiData.aiInsights.length > 0) {
+        const isUrgent = aiData.aiPriority === 'critical' || aiData.aiPriority === 'high';
+        return {
+          icon: <AIBadge label={isUrgent ? '!' : 'AI'} tooltip={aiData.aiInsights[0]?.title} size="small" />,
+          className: '',
+          label: '',
+        };
+      }
+      // High importance
+      if (item.importance === 'high') {
+        return {
+          icon: <AlertUrgent20Regular className={styles.masterStatusIcon} />,
+          className: styles.masterStatusUrgent,
+          label: 'Urgent',
+        };
+      }
+      // VIP sender
+      if (item.isVip) {
+        return {
+          icon: <Crown20Filled className={styles.masterStatusIcon} />,
+          className: styles.masterStatusVip,
+          label: 'VIP',
+        };
+      }
+      // Flagged
+      if (item.isFlagged) {
+        return {
+          icon: <Flag20Filled className={styles.masterStatusIcon} />,
+          className: styles.masterStatusFlagged,
+          label: 'Flagged',
+        };
+      }
+      return null;
+    };
+
+    const primaryStatus = getPrimaryStatus();
+    const hasAttachments = item.hasAttachments && item.attachments && item.attachments.length > 0;
+    const attachmentCount = hasAttachments ? item.attachments!.length : 0;
 
     return (
       <div className={styles.masterItem}>
+        {/* Unread indicator dot */}
+        {!item.isRead && <div className={styles.unreadDot} />}
+
         <Avatar
           name={item.from.name}
-          size={32}
+          size={28}
         />
         <div className={styles.emailInfo}>
-          <div className={styles.emailSubjectRow}>
-            <Text className={mergeClasses(styles.emailSubject, !item.isRead && styles.emailUnread)}>
-              {item.subject}
-            </Text>
-          </div>
-          <div className={styles.emailMeta}>
-            <span className={styles.senderText}>{item.from.name}</span>
+          {/* Sender name + time row */}
+          <div className={styles.senderRow}>
+            <span className={mergeClasses(
+              styles.senderName,
+              !item.isRead && styles.senderNameUnread
+            )}>
+              {item.from.name}
+            </span>
             <span className={styles.timeText}>
-              <Clock20Regular style={{ fontSize: '12px' }} />
               {formatAge(diffHours)}
             </span>
           </div>
-        </div>
-        <div className={styles.masterItemRight}>
-          {item.isVip && (
-            <Crown20Filled className={styles.vipIconMaster} />
-          )}
-          {item.importance === 'high' && (
-            <AlertUrgent20Regular style={{ color: tokens.colorPaletteRedForeground1, fontSize: '12px' }} />
-          )}
-          {item.hasAttachments && (
-            <Attach20Regular style={{ fontSize: '12px' }} />
-          )}
-          {item.isFlagged && (
-            <Flag20Regular style={{ color: tokens.colorBrandForeground1, fontSize: '12px' }} />
+
+          {/* Subject line */}
+          <Text className={mergeClasses(
+            styles.emailSubject,
+            !item.isRead && styles.emailSubjectUnread
+          )}>
+            {item.subject}
+          </Text>
+
+          {/* Status row - only shown if there's something to display */}
+          {(primaryStatus || hasAttachments) && (
+            <div className={styles.masterStatusRow}>
+              {/* Primary status indicator */}
+              {primaryStatus && (
+                <span className={mergeClasses(styles.masterStatusIndicator, primaryStatus.className)}>
+                  {primaryStatus.icon}
+                  {primaryStatus.label && <span>{primaryStatus.label}</span>}
+                </span>
+              )}
+
+              {/* Attachment count (if any) */}
+              {hasAttachments && (
+                <span className={styles.attachmentBadge}>
+                  <Attach20Regular style={{ fontSize: '10px' }} />
+                  {attachmentCount > 1 && attachmentCount}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -520,12 +681,28 @@ export const EmailCardLarge: React.FC<EmailCardLargeProps> = ({
 
   // Render detail content
   const renderDetailContent = (item: IEmailCardItem): React.ReactNode => {
+    // Get AI data for this item
+    const aiData = getAIDataForItem(item.id);
+
     return (
       <div className={styles.detailContainer}>
+        {/* AI Insights Panel (detailed view for selected item) */}
+        {aiDemoMode && aiData && ((aiData.aiInsights && aiData.aiInsights.length > 0) || aiData.aiSuggestion) && (
+          <AIInsightsPanel
+            insights={aiData.aiInsights || []}
+            suggestion={aiData.aiSuggestion}
+            maxItems={4}
+          />
+        )}
+
         {/* Subject and Status Icons */}
         <div className={styles.detailHeader}>
           <Text className={styles.detailTitle}>{item.subject}</Text>
           <div className={styles.statusIconRow}>
+            {/* AI Score (if available) */}
+            {aiDemoMode && aiData && aiData.aiScore && (
+              <AIScore score={aiData.aiScore} priority={aiData.aiPriority} />
+            )}
             {!item.isRead && (
               <Tooltip content="Unread" relationship="label" showDelay={500}>
                 <span className={mergeClasses(styles.statusIcon, styles.statusIconUnread)}>
@@ -786,24 +963,32 @@ export const EmailCardLarge: React.FC<EmailCardLargeProps> = ({
   }, [activeTab]);
 
   return (
-    <MasterDetailCard
-      items={displayEmails}
-      selectedItem={selectedItem}
-      onItemSelect={setSelectedItem}
-      getItemKey={getItemKey}
-      renderMasterItem={renderMasterItem}
-      renderDetailContent={renderDetailContent}
-      renderDetailActions={renderDetailActions}
-      renderEmptyDetail={renderEmptyDetail}
-      renderEmptyState={renderEmptyState}
-      icon={headerIcon}
-      title="Email"
-      itemCount={totalCount}
-      loading={isLoading && !data}
-      error={error?.message}
-      emptyMessage={emptyMessage}
-      emptyIcon={emptyIcon}
-      headerActions={
+    <>
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showOnboarding}
+        onClose={handleOnboardingClose}
+        onDontShowAgain={handleDontShowAgain}
+      />
+
+      <MasterDetailCard
+        items={displayEmails}
+        selectedItem={selectedItem}
+        onItemSelect={setSelectedItem}
+        getItemKey={getItemKey}
+        renderMasterItem={renderMasterItem}
+        renderDetailContent={renderDetailContent}
+        renderDetailActions={renderDetailActions}
+        renderEmptyDetail={renderEmptyDetail}
+        renderEmptyState={renderEmptyState}
+        icon={headerIcon}
+        title="Email"
+        itemCount={totalCount}
+        loading={isLoading && !data}
+        error={error?.message}
+        emptyMessage={emptyMessage}
+        emptyIcon={emptyIcon}
+        headerActions={
         <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
           {/* Refresh button */}
           <Tooltip content="Refresh" relationship="label">
@@ -830,6 +1015,18 @@ export const EmailCardLarge: React.FC<EmailCardLargeProps> = ({
       }
       headerContent={
         <>
+          {/* AI Insight Banner (same as medium card) - with info icon for onboarding */}
+          {aiDemoMode && aiCardSummary && aiInsights && aiInsights.length > 0 && (
+            <div style={{ padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalL}` }}>
+              <AIInsightBanner
+                summary={aiCardSummary}
+                insights={aiInsights}
+                defaultExpanded={false}
+                onLearnMore={() => setShowOnboarding(true)}
+              />
+            </div>
+          )}
+
           {/* View Mode Tabs + Sort/Filter */}
           <div className={styles.tabSection}>
             <TabList
@@ -945,7 +1142,8 @@ export const EmailCardLarge: React.FC<EmailCardLargeProps> = ({
           </div>
         </>
       }
-    />
+      />
+    </>
   );
 };
 

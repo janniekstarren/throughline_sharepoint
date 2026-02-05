@@ -4,6 +4,7 @@ import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,
   PropertyPaneDropdown,
+  PropertyPaneToggle,
   IPropertyPaneGroup,
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
@@ -81,6 +82,8 @@ export interface IDashboardCardsWebPartProps {
   themeMode: ThemeMode;
   // Data mode: 'api' for live Graph data, 'test' for mock data
   dataMode: DataMode;
+  // AI Demo Mode: show AI-enhanced content (only applicable when dataMode === 'test')
+  aiDemoMode: boolean;
   // Card visibility toggles
   showTodaysAgenda: boolean;
   showEmail: boolean;
@@ -259,6 +262,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
         salutationSize: this.properties.salutationSize || 'h4',
         themeMode: this.properties.themeMode || 'light',
         dataMode: this.properties.dataMode || 'api',
+        aiDemoMode: this.properties.aiDemoMode || false,
         cardVisibility,
         cardOrder,
         cardTitles,
@@ -806,6 +810,15 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
         ],
         selectedKey: this.properties.dataMode || 'api',
       }),
+      // AI Demo Mode toggle - only shown when in test mode
+      ...(this.properties.dataMode === 'test' ? [
+        PropertyPaneToggle('aiDemoMode', {
+          label: strings.AiDemoModeLabel,
+          onText: strings.AiDemoModeOn,
+          offText: strings.AiDemoModeOff,
+          checked: this.properties.aiDemoMode || false,
+        }),
+      ] : []),
     ];
   }
 

@@ -4,7 +4,7 @@
 // ============================================
 
 import * as React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Text,
   Button,
@@ -40,6 +40,9 @@ import { StatItem, TopItem } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestRecentFilesData, getTestFilesTrendData } from '../../services/testData/recentFiles';
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
+import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
 
 // ============================================
 // Styles
@@ -79,6 +82,7 @@ interface RecentFilesCardProps {
   context: WebPartContext;
   settings?: IRecentFilesSettings;
   dataMode?: DataMode;
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -136,6 +140,7 @@ export const RecentFilesCard: React.FC<RecentFilesCardProps> = ({
   context,
   settings = DEFAULT_RECENT_FILES_SETTINGS,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const cardStyles = useCardStyles();
@@ -158,6 +163,26 @@ export const RecentFilesCard: React.FC<RecentFilesCardProps> = ({
       return () => clearTimeout(timer);
     }
   }, [dataMode]);
+
+  // AI demo mode state
+  const [aiCardSummary, setAiCardSummary] = useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = useState<IAIInsight[]>([]);
+  const [showAiOnboarding, setShowAiOnboarding] = useState(false);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getGenericAICardSummary('recentFiles'));
+      setAiInsights(getGenericAIInsights('recentFiles'));
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
+
+  const handleAiLearnMore = useCallback(() => {
+    setShowAiOnboarding(true);
+  }, []);
 
   // API hook (only used when dataMode === 'api')
   const apiHook = useRecentFiles(context, settings);
@@ -293,6 +318,21 @@ export const RecentFilesCard: React.FC<RecentFilesCardProps> = ({
         title="Recent Files"
         badge={data?.totalCount}
         actions={headerActions}
+      />
+
+      {/* AI Insight Banner */}
+      {aiDemoMode && aiCardSummary && (
+        <AIInsightBanner
+          summary={aiCardSummary}
+          insights={aiInsights}
+          onLearnMore={handleAiLearnMore}
+        />
+      )}
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showAiOnboarding}
+        onClose={() => setShowAiOnboarding(false)}
       />
 
       {/* Trend Chart */}

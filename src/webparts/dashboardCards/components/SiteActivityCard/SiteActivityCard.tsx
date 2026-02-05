@@ -4,7 +4,7 @@
 // ============================================
 
 import * as React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Text,
   Button,
@@ -34,6 +34,9 @@ import { StatItem, TopItem } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestSiteActivityData, getTestActivityTrendData } from '../../services/testData/siteActivity';
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
+import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
 
 // ============================================
 // Styles
@@ -72,6 +75,7 @@ const useStyles = makeStyles({
 export interface ISiteActivityCardProps {
   context: WebPartContext;
   dataMode?: DataMode;
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -121,6 +125,7 @@ const formatRelativeTime = (date: Date): string => {
 export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
   context,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const cardStyles = useCardStyles();
@@ -143,6 +148,26 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
       return () => clearTimeout(timer);
     }
   }, [dataMode]);
+
+  // AI demo mode state
+  const [aiCardSummary, setAiCardSummary] = useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = useState<IAIInsight[]>([]);
+  const [showAiOnboarding, setShowAiOnboarding] = useState(false);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getGenericAICardSummary('siteActivity'));
+      setAiInsights(getGenericAIInsights('siteActivity'));
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
+
+  const handleAiLearnMore = useCallback(() => {
+    setShowAiOnboarding(true);
+  }, []);
 
   // TODO: Add API hook when available (similar to useTodaysAgenda)
   // For now, we only support test mode
@@ -277,6 +302,21 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
         cardId="siteActivity"
         badge={data?.totalCount}
         actions={headerActions}
+      />
+
+      {/* AI Insight Banner */}
+      {aiDemoMode && aiCardSummary && (
+        <AIInsightBanner
+          summary={aiCardSummary}
+          insights={aiInsights}
+          onLearnMore={handleAiLearnMore}
+        />
+      )}
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showAiOnboarding}
+        onClose={() => setShowAiOnboarding(false)}
       />
 
       {/* Trend Chart */}

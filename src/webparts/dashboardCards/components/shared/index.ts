@@ -34,3 +34,25 @@ export type {
   BadgeColor,
   ChartCarouselProps,
 } from './charts';
+
+// AI Demo Mode components
+export {
+  AIInsightBanner,
+  AIBadge,
+  AIScore,
+  AIInsightChip,
+  AIInsightItem,
+  AIInsightsPanel,
+  AIOnboardingDialog,
+  AIModeHeader,
+} from './AIComponents';
+export type {
+  IAIInsightBannerProps,
+  IAIBadgeProps,
+  IAIScoreProps,
+  IAIInsightChipProps,
+  IAIInsightItemProps,
+  IAIInsightsPanelProps,
+  IAIOnboardingDialogProps,
+  IAIModeHeaderProps,
+} from './AIComponents';

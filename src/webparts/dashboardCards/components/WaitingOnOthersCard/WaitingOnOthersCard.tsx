@@ -5,7 +5,7 @@
 // ============================================
 
 import * as React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Text,
   Button,
@@ -30,10 +30,21 @@ import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { useWaitingOnOthers, IWaitingOnOthersSettings, DEFAULT_WAITING_ON_OTHERS_SETTINGS } from '../../hooks/useWaitingOnOthers';
 import { WaitingTrendChart } from './components/WaitingTrendChart';
 import { GroupedPendingData, PendingTrendData } from '../../models/WaitingOnOthers';
-import { BaseCard, CardHeader, EmptyState } from '../shared';
+import { BaseCard, CardHeader, EmptyState, AIInsightBanner, AIOnboardingDialog } from '../shared';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestWaitingOnOthersData, getTestWaitingOnOthersTrend } from '../../services/testData/waitingOnOthers';
+// AI Demo Mode imports
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
+import {
+  getAIEnhancedWaitingOnOthers,
+  getAIWaitingOnOthersCardSummary,
+  getAllWaitingOnOthersInsights,
+  IAIEnhancedPersonGroup,
+} from '../../services/testData/aiDemoData';
+
+// Local storage key for AI onboarding state
+const AI_ONBOARDING_KEY = 'dashboardCards_aiOnboardingDismissed';
 
 // Styles for the summary card
 const useSummaryStyles = makeStyles({
@@ -170,6 +181,8 @@ interface WaitingOnOthersCardProps {
   context: WebPartContext;
   settings?: IWaitingOnOthersSettings;
   dataMode?: DataMode;
+  /** Enable AI Demo Mode (only works with test data) */
+  aiDemoMode?: boolean;
   /** Callback to toggle between large and medium card size */
   onToggleSize?: () => void;
 }
@@ -178,6 +191,7 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
   context,
   settings = DEFAULT_WAITING_ON_OTHERS_SETTINGS,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize
 }) => {
   const styles = useCardStyles();
@@ -188,6 +202,25 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
   const [testTrendData, setTestTrendData] = useState<PendingTrendData | null>(null);
   const [testLoading, setTestLoading] = useState(dataMode === 'test');
 
+  // AI Demo Mode state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_aiEnhancedGroups, setAiEnhancedGroups] = useState<IAIEnhancedPersonGroup[]>([]);
+  const [aiCardSummary, setAiCardSummary] = useState<IAICardSummary | undefined>(undefined);
+  const [aiInsights, setAiInsights] = useState<IAIInsight[]>([]);
+
+  // Handle AI onboarding close
+  const handleOnboardingClose = useCallback(() => {
+    setShowOnboarding(false);
+  }, []);
+
+  // Handle "Don't show again"
+  const handleDontShowAgain = useCallback((checked: boolean) => {
+    if (checked) {
+      localStorage.setItem(AI_ONBOARDING_KEY, 'true');
+    }
+  }, []);
+
   // Load test data when in test mode
   React.useEffect(() => {
     if (dataMode === 'test') {
@@ -195,11 +228,17 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
       const timer = setTimeout(() => {
         setTestData(getTestWaitingOnOthersData());
         setTestTrendData(getTestWaitingOnOthersTrend());
+        // Load AI demo data if enabled
+        if (aiDemoMode) {
+          setAiEnhancedGroups(getAIEnhancedWaitingOnOthers());
+          setAiCardSummary(getAIWaitingOnOthersCardSummary());
+          setAiInsights(getAllWaitingOnOthersInsights());
+        }
         setTestLoading(false);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [dataMode]);
+  }, [dataMode, aiDemoMode]);
 
   // API hook (only used when dataMode === 'api')
   const apiHook = useWaitingOnOthers(context, settings);
@@ -303,6 +342,25 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
         badge={data?.totalItems}
         badgeVariant={data && data.oldestWaitDays >= 7 ? 'warning' : 'brand'}
         actions={headerActions}
+      />
+
+      {/* AI Insight Banner (AI Demo Mode only) */}
+      {aiDemoMode && aiCardSummary && aiInsights && aiInsights.length > 0 && (
+        <div style={{ padding: `0 ${tokens.spacingHorizontalL}`, marginBottom: tokens.spacingVerticalS }}>
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            defaultExpanded={false}
+            onLearnMore={() => setShowOnboarding(true)}
+          />
+        </div>
+      )}
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showOnboarding}
+        onClose={handleOnboardingClose}
+        onDontShowAgain={handleDontShowAgain}
       />
 
       {/* Trend Chart */}

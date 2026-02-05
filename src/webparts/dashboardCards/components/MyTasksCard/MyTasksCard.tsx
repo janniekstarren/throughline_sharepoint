@@ -4,7 +4,7 @@
 // ============================================
 
 import * as React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Text,
   Button,
@@ -30,10 +30,16 @@ import {
 } from '../../hooks/useMyTasks';
 import { MyTasksData, TasksTrendData } from '../../models/MyTasks';
 import { BaseCard, CardHeader, EmptyState, TrendBarChart, DonutChart, StatsGrid, TopItemsList } from '../shared';
+import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { StatItem, TopItem, DonutSegment, ChartCarousel } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestMyTasksData, getTestTasksTrendData } from '../../services/testData/myTasks';
+import {
+  getAITasksCardSummary,
+  getAllTasksInsights,
+} from '../../services/testData/aiDemoData';
 
 // ============================================
 // Styles
@@ -73,6 +79,7 @@ interface MyTasksCardProps {
   context: WebPartContext;
   settings?: IMyTasksSettings;
   dataMode?: DataMode;
+  aiDemoMode?: boolean;
   onToggleSize?: () => void;
 }
 
@@ -120,6 +127,7 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
   context,
   settings = DEFAULT_MY_TASKS_SETTINGS,
   dataMode = 'api',
+  aiDemoMode = false,
   onToggleSize,
 }) => {
   const cardStyles = useCardStyles();
@@ -129,6 +137,26 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
   const [testData, setTestData] = useState<MyTasksData | null>(null);
   const [testTrendData, setTestTrendData] = useState<TasksTrendData | null>(null);
   const [testLoading, setTestLoading] = useState(dataMode === 'test');
+
+  // AI demo mode state
+  const [aiCardSummary, setAiCardSummary] = useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = useState<IAIInsight[]>([]);
+  const [showAiOnboarding, setShowAiOnboarding] = useState(false);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getAITasksCardSummary());
+      setAiInsights(getAllTasksInsights());
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
+
+  const handleAiLearnMore = useCallback(() => {
+    setShowAiOnboarding(true);
+  }, []);
 
   // Load test data when in test mode
   React.useEffect(() => {
@@ -303,6 +331,21 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
         badge={data?.totalCount}
         badgeVariant={badgeVariant}
         actions={headerActions}
+      />
+
+      {/* AI Insight Banner */}
+      {aiDemoMode && aiCardSummary && (
+        <AIInsightBanner
+          summary={aiCardSummary}
+          insights={aiInsights}
+          onLearnMore={handleAiLearnMore}
+        />
+      )}
+
+      {/* AI Onboarding Dialog */}
+      <AIOnboardingDialog
+        open={showAiOnboarding}
+        onClose={() => setShowAiOnboarding(false)}
       />
 
       {/* Charts Carousel */}

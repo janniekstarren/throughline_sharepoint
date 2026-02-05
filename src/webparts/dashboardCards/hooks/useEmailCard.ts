@@ -26,6 +26,9 @@ import { TrendDataPoint } from '../components/shared/charts';
 import { DataMode } from '../services/testData';
 import { getTestUnreadInboxData, getTestInboxTrendData } from '../services/testData/unreadInbox';
 import { getTestFlaggedEmailsData, getTestFlagsTrendData } from '../services/testData/flaggedEmailsNew';
+// AI Demo Mode imports
+import { IAIEnhancedItem, IAICardSummary, IAIInsight } from '../models/AITypes';
+import { getAIEnhancedEmails, getAIEmailCardSummary, getAllEmailInsights } from '../services/testData/aiDemoData';
 
 // Re-export types for convenience
 export {
@@ -66,6 +69,13 @@ export interface UseEmailCardResult {
   lastRefreshed: Date | null;
   /** Refresh all data */
   refresh: () => Promise<void>;
+  // AI Demo Mode data
+  /** AI-enhanced email items (when aiDemoMode is true) */
+  aiEnhancedEmails?: IAIEnhancedItem<IEmailCardItem>[];
+  /** AI card summary (when aiDemoMode is true) */
+  aiCardSummary?: IAICardSummary;
+  /** All AI insights (when aiDemoMode is true) */
+  aiInsights?: IAIInsight[];
 }
 
 /**
@@ -169,7 +179,8 @@ const convertFlaggedEmail = (
 export const useEmailCard = (
   context: WebPartContext,
   settings: IEmailCardSettings = DEFAULT_EMAIL_CARD_SETTINGS,
-  dataMode: DataMode = 'test'
+  dataMode: DataMode = 'test',
+  aiDemoMode: boolean = false
 ): UseEmailCardResult => {
   // Data state
   const [data, setData] = useState<IEmailCardData | null>(null);
@@ -536,6 +547,22 @@ export const useEmailCard = (
     return emails;
   }, [data, activeTab, filters, sortMode]);
 
+  // AI Demo Mode data (memoized)
+  const aiEnhancedEmails = useMemo(() => {
+    if (!aiDemoMode) return undefined;
+    return getAIEnhancedEmails();
+  }, [aiDemoMode]);
+
+  const aiCardSummary = useMemo(() => {
+    if (!aiDemoMode) return undefined;
+    return getAIEmailCardSummary();
+  }, [aiDemoMode]);
+
+  const aiInsights = useMemo(() => {
+    if (!aiDemoMode) return undefined;
+    return getAllEmailInsights();
+  }, [aiDemoMode]);
+
   return {
     data,
     activeTab,
@@ -549,6 +576,10 @@ export const useEmailCard = (
     error,
     lastRefreshed,
     refresh: fetchData,
+    // AI Demo Mode data
+    aiEnhancedEmails,
+    aiCardSummary,
+    aiInsights,
   };
 };
 
