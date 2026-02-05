@@ -47,6 +47,7 @@ import {
 } from '../../models/ContextSwitching';
 import { DataMode } from '../../services/testData';
 import { getTestContextSwitchingData } from '../../services/testData/contextSwitching';
+import { getAIContextSwitchingCardSummary, getAllContextSwitchingInsights } from '../../services/testData/aiDemoData';
 import { ContextSwitchingService } from '../../services/ContextSwitchingService';
 import { useContextSwitchingStyles } from './ContextSwitchingCard.styles';
 import {
@@ -56,6 +57,7 @@ import {
   TrendChart,
   TimelineView
 } from './components';
+import { AIInsightBanner } from '../shared/AIComponents';
 
 interface ContextSwitchingCardProps {
   graphClient?: MSGraphClientV3;
@@ -294,6 +296,14 @@ export const ContextSwitchingCard: React.FC<ContextSwitchingCardProps> = ({
           )}
         </div>
       </div>
+
+      {/* AI Insight Banner (only in AI Demo Mode) */}
+      {aiDemoMode && (
+        <AIInsightBanner
+          summary={getAIContextSwitchingCardSummary()}
+          insights={getAllContextSwitchingInsights()}
+        />
+      )}
 
       {/* Current context indicator */}
       <div className={styles.currentContext}>

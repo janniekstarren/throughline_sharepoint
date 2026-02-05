@@ -43,9 +43,11 @@ import {
 } from '../../models/ContextSwitching';
 import { DataMode } from '../../services/testData';
 import { getTestContextSwitchingData } from '../../services/testData/contextSwitching';
+import { getAllContextSwitchingInsights } from '../../services/testData/aiDemoData';
 import { ContextSwitchingService } from '../../services/ContextSwitchingService';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
 import { FocusScoreCircle, HourlyChart } from './components';
+import { AIInsightsPanel } from '../shared/AIComponents';
 
 // ============================================
 // Types
@@ -601,6 +603,12 @@ export const ContextSwitchingCardLarge: React.FC<ContextSwitchingCardLargeProps>
             <Text className={styles.statLabel}>Longest Focus</Text>
           </div>
         </div>
+        {aiDemoMode && (
+          <AIInsightsPanel
+            insights={getAllContextSwitchingInsights()}
+            maxItems={3}
+          />
+        )}
         {settings.showHourlyChart && data.hourlyData && (
           <div className={styles.chartContainer}>
             <HourlyChart data={data.hourlyData} />
@@ -608,7 +616,7 @@ export const ContextSwitchingCardLarge: React.FC<ContextSwitchingCardLargeProps>
         )}
       </div>
     );
-  }, [data, settings.showHourlyChart, styles]);
+  }, [data, settings.showHourlyChart, styles, aiDemoMode]);
 
   // Render detail actions
   const renderDetailActions = useCallback((item: ContextSwitch | FocusSession) => {

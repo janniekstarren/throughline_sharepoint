@@ -1120,6 +1120,127 @@ export const getAIDataForTask = (taskId: string): IAIEnhancedTaskItem | undefine
 };
 
 // ============================================
+// AI Enhanced Context Switching Data
+// ============================================
+
+export interface IAIContextSwitchingInsights {
+  focusInsights: IAIInsight[];
+  interruptionPatterns: IAIInsight[];
+  suggestions: IAIInsight[];
+}
+
+export const getAIContextSwitchingInsights = (): IAIContextSwitchingInsights => ({
+  focusInsights: [
+    {
+      id: 'ctx-focus-1',
+      type: 'pattern',
+      severity: 'warning',
+      title: 'High fragmentation today',
+      description: '23 context switches today, 50% above your daily average of 15.',
+      confidence: 94,
+      reasoning: 'Compared to your 2-week rolling average of context switches per day.',
+    },
+    {
+      id: 'ctx-focus-2',
+      type: 'pattern',
+      severity: 'info',
+      title: 'Best focus window',
+      description: 'Your longest uninterrupted focus was 45 minutes this morning (9-9:45am).',
+      confidence: 100,
+      reasoning: 'Based on today\'s activity patterns.',
+    },
+  ],
+  interruptionPatterns: [
+    {
+      id: 'ctx-interrupt-1',
+      type: 'anomaly',
+      severity: 'warning',
+      title: 'Peak switching hour',
+      description: '10-11am had 8 context switches - your most fragmented hour.',
+      confidence: 98,
+      reasoning: 'This is typically caused by morning meetings overlapping with email catch-up.',
+    },
+    {
+      id: 'ctx-interrupt-2',
+      type: 'pattern',
+      severity: 'info',
+      title: 'Teams chat is main interrupter',
+      description: '60% of your context switches today came from Teams chat notifications.',
+      confidence: 92,
+      reasoning: 'Chat-initiated switches had the shortest duration before switching again.',
+    },
+    {
+      id: 'ctx-interrupt-3',
+      type: 'urgency',
+      severity: 'critical',
+      title: 'Meeting interrupted focus',
+      description: 'Your 2pm meeting interrupted a 45-minute deep work session on the Q4 report.',
+      confidence: 95,
+      reasoning: 'File activity showed sustained work on document before meeting started.',
+    },
+  ],
+  suggestions: [
+    {
+      id: 'ctx-suggest-1',
+      type: 'suggestion',
+      severity: 'info',
+      title: 'Block 2-4pm for focus',
+      description: 'Historically, your best deep work window is 2-4pm. Consider blocking this time.',
+      confidence: 87,
+      reasoning: 'Based on 3 weeks of data, you average 2.5 context switches in this window vs 5.2 at other times.',
+      actionLabel: 'Block time',
+      actionType: 'createEvent',
+    },
+    {
+      id: 'ctx-suggest-2',
+      type: 'suggestion',
+      severity: 'warning',
+      title: 'Consider Teams DND',
+      description: 'Enabling Do Not Disturb during focus time could reduce interruptions by 40%.',
+      confidence: 82,
+      reasoning: '60% of interruptions are chat-based. DND would prevent most of these.',
+      actionLabel: 'Enable DND',
+      actionType: 'settings',
+    },
+    {
+      id: 'ctx-suggest-3',
+      type: 'prediction',
+      severity: 'info',
+      title: 'Tomorrow looks better',
+      description: 'You have 2 fewer meetings tomorrow, predicting 30% less context switching.',
+      confidence: 78,
+      reasoning: 'Based on correlation between meeting count and context switches.',
+    },
+  ],
+});
+
+export const getAIContextSwitchingCardSummary = (): IAICardSummary => {
+  const insights = getAIContextSwitchingInsights();
+  const allInsights = [
+    ...insights.focusInsights,
+    ...insights.interruptionPatterns,
+    ...insights.suggestions,
+  ];
+
+  return {
+    insightCount: allInsights.length,
+    criticalCount: allInsights.filter(i => i.severity === 'critical').length,
+    warningCount: allInsights.filter(i => i.severity === 'warning').length,
+    topInsight: allInsights.find(i => i.severity === 'critical') || allInsights.find(i => i.severity === 'warning') || allInsights[0],
+    summary: '23 switches today - 50% above average',
+  };
+};
+
+export const getAllContextSwitchingInsights = (): IAIInsight[] => {
+  const insights = getAIContextSwitchingInsights();
+  return [
+    ...insights.focusInsights,
+    ...insights.interruptionPatterns,
+    ...insights.suggestions,
+  ];
+};
+
+// ============================================
 // Generic AI Card Summaries
 // For cards that don't have detailed AI data yet
 // ============================================

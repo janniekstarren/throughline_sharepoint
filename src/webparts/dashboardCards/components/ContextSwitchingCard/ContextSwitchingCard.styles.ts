@@ -135,10 +135,17 @@ export const useContextSwitchingStyles = makeStyles({
     color: tokens.colorNeutralForeground3,
   },
 
-  // Tab container
+  // Tab container - scrollable for overflow
   tabContainer: {
     padding: `0 ${cardTokens.spacing.cardPaddingLarge}`,
     marginBottom: tokens.spacingVerticalS,
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    // Hide scrollbar but allow scrolling
+    scrollbarWidth: 'none', // Firefox
+    '::-webkit-scrollbar': {
+      display: 'none', // Chrome/Safari
+    },
   },
 
   // Content area
