@@ -9,44 +9,28 @@ import {
 } from '@fluentui/react-components';
 import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import { MSGraphClientV3 } from '@microsoft/sp-http';
-import {
-  IEmailMessage,
-  IFileItem,
-  ITeamMember,
-  ISharedFile,
-} from '../services/GraphService';
-import { useDashboardData, DataMode } from '../hooks/useDashboardData';
+import { DataMode } from '../hooks/useDashboardData';
 import { useUserPreferences } from '../hooks/useUserPreferences';
-// Medium card components (standard list)
-import { MyTasksCard } from './MyTasksCard';
-import { RecentFilesCard } from './RecentFilesCard';
-import { MyTeamCard } from './MyTeamCard';
-import { SharedWithMeCard } from './SharedWithMeCard';
-import { QuickLinksCard } from './QuickLinksCard';
-import { QuickLinksCardLarge } from './QuickLinksCardLarge';
+// Shared components
+import { ErrorBoundary } from './shared';
+// Enhanced card components (with charts, stats, top items)
+// Import from subfolder index.ts files which export both medium and large variants
+import { TodaysAgendaCard, TodaysAgendaCardLarge } from './TodaysAgendaCard';
+import { UpcomingWeekCard, UpcomingWeekCardLarge } from './UpcomingWeekCard';
+import { MyTasksCard, MyTasksCardLarge } from './MyTasksCard';
+// Consolidated Email card (replaces UnreadInboxCard and FlaggedEmailsCard)
+import { EmailCard, EmailCardLarge } from './EmailCard';
+import { RecentFilesCard, RecentFilesCardLarge } from './RecentFilesCard';
+import { MyTeamCard, MyTeamCardLarge } from './MyTeamCard';
+import { SharedWithMeCard, SharedWithMeCardLarge } from './SharedWithMeCard';
 import { SiteActivityCard } from './SiteActivityCard';
-// Large card variants for the above (master-detail layout)
-import { MyTasksCardLarge } from './MyTasksCardLarge';
-import { RecentFilesCardLarge } from './RecentFilesCardLarge';
-import { SharedWithMeCardLarge } from './SharedWithMeCardLarge';
-import { MyTeamCardLarge } from './MyTeamCardLarge';
-import { SiteActivityCardLarge } from './SiteActivityCardLarge';
-// Large card variants (master-detail layout)
-import { TodaysAgendaCardLarge } from './TodaysAgendaCardLarge';
-import { UnreadInboxCardLarge } from './UnreadInboxCardLarge';
-import { UpcomingWeekCardLarge } from './UpcomingWeekCardLarge';
-import { FlaggedEmailsCardLarge } from './FlaggedEmailsCardLarge';
-// Medium card variants (compact list)
-import { TodaysAgendaCard } from './TodaysAgendaCard';
-import { UnreadInboxCard } from './UnreadInboxCard';
-import { UpcomingWeekCard } from './UpcomingWeekCard';
-import { FlaggedEmailsCard } from './FlaggedEmailsCard';
-// Waiting On You card
+import { QuickLinksCard } from './QuickLinksCard';
+// Waiting On cards
 import { WaitingOnYouCard } from './WaitingOnYouCard';
 import { WaitingOnOthersCard } from './WaitingOnOthersCard';
+import { WaitingOnOthersCardLarge } from './WaitingOnOthersCardLarge';
 // Context Switching card
 import { ContextSwitchingCard } from './ContextSwitchingCard';
-import { HoverCardItemType, IHoverCardItem } from './ItemHoverCard';
 import { Salutation, SalutationType, SalutationSize } from './Salutation';
 import { CategorySection, IOrderedCard } from './CategorySection';
 import { getFluentTheme, ThemeMode } from '../utils/themeUtils';
@@ -54,11 +38,10 @@ import styles from './DashboardCards.module.scss';
 
 export interface ICardVisibility {
   showTodaysAgenda: boolean;
-  showUnreadInbox: boolean;
+  showEmail: boolean;
   showMyTasks: boolean;
   showRecentFiles: boolean;
   showUpcomingWeek: boolean;
-  showFlaggedEmails: boolean;
   showMyTeam: boolean;
   showSharedWithMe: boolean;
   showQuickLinks: boolean;
@@ -76,8 +59,9 @@ export type { ICategoryConfig };
 
 // Large cards - these get full-width layout (master-detail)
 const LARGE_CARDS = [
-  'todaysAgenda', 'unreadInbox', 'upcomingWeek', 'flaggedEmails',
-  'myTasks', 'recentFiles', 'sharedWithMe', 'myTeam', 'siteActivity', 'quickLinks'
+  'todaysAgenda', 'upcomingWeek', 'email',
+  'myTasks', 'recentFiles', 'sharedWithMe', 'myTeam', 'siteActivity', 'quickLinks',
+  'waitingOnOthers'
 ];
 
 // Default icon IDs for system categories (matches AVAILABLE_ICONS in CardConfigDialog)
@@ -155,11 +139,10 @@ export interface IDashboardCardsProps {
 // Default card titles
 const DEFAULT_CARD_TITLES: Record<string, string> = {
   todaysAgenda: "Today's Agenda",
-  unreadInbox: 'Unread Inbox',
+  email: 'Email',
   myTasks: 'My Tasks',
   recentFiles: 'Recent Files',
   upcomingWeek: 'Upcoming Week',
-  flaggedEmails: 'Flagged Emails',
   myTeam: 'My Team',
   sharedWithMe: 'Shared With Me',
   quickLinks: 'Quick Links',
@@ -358,76 +341,6 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       });
   }, [context]);
 
-  // Consolidated dashboard data hook - replaces 27 individual useState calls
-  // Supports both API mode (live Graph data) and Test mode (mock data)
-  const { state: dashboardData } = useDashboardData(context, dataMode);
-
-  // Action handler for hover card actions
-  // This will be extended in Phase 2/3 to call Graph API for real actions
-  const handleItemAction = React.useCallback((action: string, item: IHoverCardItem, itemType: HoverCardItemType): void => {
-    console.log('Action triggered:', action, itemType, item);
-
-    // For now, just log actions. In Phase 2/3, this will call GraphService methods
-    switch (action) {
-      case 'reply':
-      case 'forward':
-        // Open compose in Outlook (future: in-app compose)
-        if (itemType === 'email') {
-          const email = item as IEmailMessage;
-          window.open(email.webLink, '_blank', 'noopener,noreferrer');
-        }
-        break;
-      case 'flag':
-        // Future: graphService.flagEmail(email.id, !email.isFlagged)
-        console.log('Flag action - will be implemented with Graph API');
-        break;
-      case 'markRead':
-        // Future: graphService.markEmailAsRead(email.id, !email.isRead)
-        console.log('Mark read action - will be implemented with Graph API');
-        break;
-      case 'delete':
-        // Future: graphService.deleteEmail(email.id) with confirmation
-        console.log('Delete action - will be implemented with Graph API');
-        break;
-      case 'accept':
-      case 'decline':
-      case 'tentative':
-        // Future: graphService.respondToEvent(event.id, action)
-        console.log(`${action} action - will be implemented with Graph API`);
-        break;
-      case 'complete':
-        // Future: graphService.markTaskComplete(task.id, task.listId)
-        console.log('Complete task action - will be implemented with Graph API');
-        break;
-      case 'download':
-        if (itemType === 'file') {
-          const file = item as IFileItem;
-          // Use webUrl for now, downloadUrl will need to be added via Graph API
-          window.open(file.webUrl, '_blank', 'noopener,noreferrer');
-        } else if (itemType === 'sharedFile') {
-          const sharedFile = item as ISharedFile;
-          window.open(sharedFile.webUrl, '_blank', 'noopener,noreferrer');
-        }
-        break;
-      case 'copyLink':
-        // Future: graphService.createShareLink(file.id)
-        if (itemType === 'file' || itemType === 'sharedFile') {
-          const file = item as IFileItem | ISharedFile;
-          navigator.clipboard.writeText(file.webUrl).catch(console.error);
-        }
-        break;
-      case 'scheduleMeeting':
-        // Future: Open Teams meeting creation
-        if (itemType === 'teamMember') {
-          const member = item as ITeamMember;
-          window.open(`https://teams.microsoft.com/l/meeting/new?attendees=${member.email}`, '_blank', 'noopener,noreferrer');
-        }
-        break;
-      default:
-        console.log('Unknown action:', action);
-    }
-  }, []);
-
   // Wait for theme to be ready
   if (!currentTheme) {
     return (
@@ -444,11 +357,10 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   const isCardVisible = (cardId: string): boolean => {
     const visibilityMap: Record<string, boolean> = {
       todaysAgenda: cardVisibility.showTodaysAgenda,
-      unreadInbox: cardVisibility.showUnreadInbox,
+      email: cardVisibility.showEmail,
       myTasks: cardVisibility.showMyTasks,
       recentFiles: cardVisibility.showRecentFiles,
       upcomingWeek: cardVisibility.showUpcomingWeek,
-      flaggedEmails: cardVisibility.showFlaggedEmails,
       myTeam: cardVisibility.showMyTeam,
       sharedWithMe: cardVisibility.showSharedWithMe,
       quickLinks: cardVisibility.showQuickLinks,
@@ -462,56 +374,76 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
 
   // Render a card by its ID (returns the card element without visibility check)
   // Uses Large card variants for cards with master-detail layout unless collapsed
+  // Wraps each card with ErrorBoundary to prevent cascading failures
   const renderCardElement = (cardId: string): React.ReactNode => {
     const cardTitle = getCardTitle(cardId);
     const isLarge = isCardLarge(cardId);
 
+    // Helper to wrap card with error boundary
+    const wrapWithErrorBoundary = (card: React.ReactNode): React.ReactNode => (
+      <ErrorBoundary componentName={cardTitle} key={cardId}>
+        {card}
+      </ErrorBoundary>
+    );
+
     switch (cardId) {
-      // Cards with both large and medium variants
+      // Enhanced cards with charts, stats, and top items
+      // Pass context, dataMode, and onToggleSize - cards handle their own data fetching
       case 'todaysAgenda':
-        return isLarge
-          ? <TodaysAgendaCardLarge events={dashboardData.events.data} loading={dashboardData.events.loading} error={dashboardData.events.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
-          : <TodaysAgendaCard events={dashboardData.events.data} loading={dashboardData.events.loading} error={dashboardData.events.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
-      case 'unreadInbox':
-        return isLarge
-          ? <UnreadInboxCardLarge emails={dashboardData.emails.data} loading={dashboardData.emails.loading} error={dashboardData.emails.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
-          : <UnreadInboxCard emails={dashboardData.emails.data} loading={dashboardData.emails.loading} error={dashboardData.emails.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
+        return wrapWithErrorBoundary(
+          isLarge
+            ? <TodaysAgendaCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <TodaysAgendaCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+        );
+      case 'email':
+        return wrapWithErrorBoundary(
+          isLarge
+            ? <EmailCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <EmailCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+        );
       case 'upcomingWeek':
-        return isLarge
-          ? <UpcomingWeekCardLarge events={dashboardData.weekEvents.data} loading={dashboardData.weekEvents.loading} error={dashboardData.weekEvents.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
-          : <UpcomingWeekCard events={dashboardData.weekEvents.data} loading={dashboardData.weekEvents.loading} error={dashboardData.weekEvents.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
-      case 'flaggedEmails':
-        return isLarge
-          ? <FlaggedEmailsCardLarge emails={dashboardData.flaggedEmails.data} loading={dashboardData.flaggedEmails.loading} error={dashboardData.flaggedEmails.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
-          : <FlaggedEmailsCard emails={dashboardData.flaggedEmails.data} loading={dashboardData.flaggedEmails.loading} error={dashboardData.flaggedEmails.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
-      // Cards with both large and medium variants (new)
+        return wrapWithErrorBoundary(
+          isLarge
+            ? <UpcomingWeekCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <UpcomingWeekCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+        );
       case 'myTasks':
-        return isLarge
-          ? <MyTasksCardLarge tasks={dashboardData.tasks.data} loading={dashboardData.tasks.loading} error={dashboardData.tasks.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
-          : <MyTasksCard tasks={dashboardData.tasks.data} loading={dashboardData.tasks.loading} error={dashboardData.tasks.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
+        return wrapWithErrorBoundary(
+          isLarge
+            ? <MyTasksCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <MyTasksCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+        );
       case 'recentFiles':
-        return isLarge
-          ? <RecentFilesCardLarge files={dashboardData.files.data} loading={dashboardData.files.loading} error={dashboardData.files.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
-          : <RecentFilesCard files={dashboardData.files.data} loading={dashboardData.files.loading} error={dashboardData.files.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
+        return wrapWithErrorBoundary(
+          isLarge
+            ? <RecentFilesCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <RecentFilesCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+        );
       case 'myTeam':
-        return isLarge
-          ? <MyTeamCardLarge members={dashboardData.teamMembers.data} loading={dashboardData.teamMembers.loading} error={dashboardData.teamMembers.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
-          : <MyTeamCard members={dashboardData.teamMembers.data} loading={dashboardData.teamMembers.loading} error={dashboardData.teamMembers.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
+        return wrapWithErrorBoundary(
+          isLarge
+            ? <MyTeamCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <MyTeamCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+        );
       case 'sharedWithMe':
-        return isLarge
-          ? <SharedWithMeCardLarge files={dashboardData.sharedFiles.data} loading={dashboardData.sharedFiles.loading} error={dashboardData.sharedFiles.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
-          : <SharedWithMeCard files={dashboardData.sharedFiles.data} loading={dashboardData.sharedFiles.loading} error={dashboardData.sharedFiles.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
+        return wrapWithErrorBoundary(
+          isLarge
+            ? <SharedWithMeCardLarge context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+            : <SharedWithMeCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+        );
       case 'siteActivity':
-        return isLarge
-          ? <SiteActivityCardLarge activities={dashboardData.siteActivity.data} loading={dashboardData.siteActivity.loading} error={dashboardData.siteActivity.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
-          : <SiteActivityCard activities={dashboardData.siteActivity.data} loading={dashboardData.siteActivity.loading} error={dashboardData.siteActivity.error} onAction={handleItemAction} theme={currentTheme} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
+        // SiteActivityCardLarge not yet updated to new pattern - always use medium
+        return wrapWithErrorBoundary(
+          <SiteActivityCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+        );
       case 'quickLinks':
-        return isLarge
-          ? <QuickLinksCardLarge links={dashboardData.quickLinks.data} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />
-          : <QuickLinksCard links={dashboardData.quickLinks.data} title={cardTitle} onToggleSize={() => toggleCardSize(cardId)} />;
+        // QuickLinksCardLarge has different props - use medium for now
+        return wrapWithErrorBoundary(
+          <QuickLinksCard context={context} dataMode={dataMode} onToggleSize={() => toggleCardSize(cardId)} />
+        );
       // Analytics cards (medium-only)
       case 'waitingOnYou':
-        return (
+        return wrapWithErrorBoundary(
           <WaitingOnYouCard
             graphClient={graphClient || null}
             showChart={waitingOnYouSettings.showChart}
@@ -524,21 +456,35 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
           />
         );
       case 'waitingOnOthers':
-        return (
-          <WaitingOnOthersCard
-            context={context}
-            settings={{
-              minWaitHours: waitingOnOthersSettings.minWaitHours,
-              includeEmail: waitingOnOthersSettings.includeEmail,
-              includeTeamsChats: waitingOnOthersSettings.includeTeamsChats,
-              includeMentions: waitingOnOthersSettings.includeMentions,
-              showChart: waitingOnOthersSettings.showChart,
-            }}
-            dataMode={dataMode}
-          />
+        return wrapWithErrorBoundary(
+          isLarge
+            ? <WaitingOnOthersCardLarge
+                context={context}
+                settings={{
+                  minWaitHours: waitingOnOthersSettings.minWaitHours,
+                  includeEmail: waitingOnOthersSettings.includeEmail,
+                  includeTeamsChats: waitingOnOthersSettings.includeTeamsChats,
+                  includeMentions: waitingOnOthersSettings.includeMentions,
+                  showChart: waitingOnOthersSettings.showChart,
+                }}
+                dataMode={dataMode}
+                onToggleSize={() => toggleCardSize(cardId)}
+              />
+            : <WaitingOnOthersCard
+                context={context}
+                settings={{
+                  minWaitHours: waitingOnOthersSettings.minWaitHours,
+                  includeEmail: waitingOnOthersSettings.includeEmail,
+                  includeTeamsChats: waitingOnOthersSettings.includeTeamsChats,
+                  includeMentions: waitingOnOthersSettings.includeMentions,
+                  showChart: waitingOnOthersSettings.showChart,
+                }}
+                dataMode={dataMode}
+                onToggleSize={() => toggleCardSize(cardId)}
+              />
         );
       case 'contextSwitching':
-        return (
+        return wrapWithErrorBoundary(
           <ContextSwitchingCard
             graphClient={graphClient}
             dataMode={dataMode}

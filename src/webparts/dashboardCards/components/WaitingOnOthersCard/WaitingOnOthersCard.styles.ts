@@ -6,7 +6,7 @@ export const useStyles = makeStyles({
     flexDirection: 'column',
     width: '100%',
     height: '100%',
-    ...shorthands.borderRadius(tokens.borderRadiusLarge),
+    ...shorthands.borderRadius(tokens.borderRadiusXLarge), // 12px - consistent with other cards
     boxShadow: tokens.shadow4,
     backgroundColor: tokens.colorNeutralBackground1,
     overflow: 'hidden',
@@ -73,8 +73,9 @@ export const useStyles = makeStyles({
     flex: 1,
   },
   emptyIcon: {
-    fontSize: '48px',
+    fontSize: '32px', // Consistent with cardTokens.size.iconXLarge
     color: tokens.colorNeutralForeground4,
+    opacity: 0.5, // Match shared EmptyState styling
   },
   emptySubtext: {
     color: tokens.colorNeutralForeground3,

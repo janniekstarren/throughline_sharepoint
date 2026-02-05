@@ -22,6 +22,8 @@ export interface IBaseCardProps {
   className?: string;
   /** Use large card variant (taller min/max height) */
   large?: boolean;
+  /** Use empty card variant (compact height for empty states) */
+  empty?: boolean;
   /** Custom styles to apply to the card */
   style?: React.CSSProperties;
   /** Test ID for testing */
@@ -35,16 +37,20 @@ export const BaseCard: React.FC<IBaseCardProps> = ({
   loadingMessage = 'Loading...',
   className,
   large = false,
+  empty = false,
   style,
   testId,
 }) => {
   const styles = useCardStyles();
 
+  // Determine the size variant class
+  const sizeClass = large ? styles.cardLarge : empty ? styles.cardEmpty : undefined;
+
   // Loading state
   if (loading) {
     return (
       <div
-        className={mergeClasses(styles.card, large && styles.cardLarge, className)}
+        className={mergeClasses(styles.card, sizeClass, className)}
         style={style}
         data-testid={testId}
       >
@@ -62,7 +68,7 @@ export const BaseCard: React.FC<IBaseCardProps> = ({
   if (error) {
     return (
       <div
-        className={mergeClasses(styles.card, large && styles.cardLarge, className)}
+        className={mergeClasses(styles.card, sizeClass, className)}
         style={style}
         data-testid={testId}
       >
@@ -78,7 +84,7 @@ export const BaseCard: React.FC<IBaseCardProps> = ({
   return (
     <CardEnter visible>
       <div
-        className={mergeClasses(styles.card, large && styles.cardLarge, className)}
+        className={mergeClasses(styles.card, sizeClass, className)}
         style={style}
         data-testid={testId}
       >

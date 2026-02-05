@@ -449,7 +449,7 @@ export const useContextSwitchingStyles = makeStyles({
   },
 
   emptyIcon: {
-    fontSize: '48px',
+    fontSize: '32px', // Consistent with cardTokens.size.iconXLarge
     opacity: 0.5,
   },
 

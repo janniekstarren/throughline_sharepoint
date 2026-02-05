@@ -24,11 +24,10 @@ import { clearUserPreferences } from './services/UserPreferencesService';
 // Card definitions for default category assignment
 const CARD_DEFAULT_CATEGORIES: Record<string, string> = {
   todaysAgenda: 'calendar',
-  unreadInbox: 'email',
+  email: 'email',
   myTasks: 'tasks',
   recentFiles: 'files',
   upcomingWeek: 'calendar',
-  flaggedEmails: 'email',
   myTeam: 'people',
   sharedWithMe: 'files',
   quickLinks: 'navigation',
@@ -84,11 +83,10 @@ export interface IDashboardCardsWebPartProps {
   dataMode: DataMode;
   // Card visibility toggles
   showTodaysAgenda: boolean;
-  showUnreadInbox: boolean;
+  showEmail: boolean;
   showMyTasks: boolean;
   showRecentFiles: boolean;
   showUpcomingWeek: boolean;
-  showFlaggedEmails: boolean;
   showMyTeam: boolean;
   showSharedWithMe: boolean;
   showQuickLinks: boolean;
@@ -206,11 +204,10 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     // Build card visibility object (default all to true if not set)
     const cardVisibility: ICardVisibility = {
       showTodaysAgenda: this.properties.showTodaysAgenda !== false,
-      showUnreadInbox: this.properties.showUnreadInbox !== false,
+      showEmail: this.properties.showEmail !== false,
       showMyTasks: this.properties.showMyTasks !== false,
       showRecentFiles: this.properties.showRecentFiles !== false,
       showUpcomingWeek: this.properties.showUpcomingWeek !== false,
-      showFlaggedEmails: this.properties.showFlaggedEmails !== false,
       showMyTeam: this.properties.showMyTeam !== false,
       showSharedWithMe: this.properties.showSharedWithMe !== false,
       showQuickLinks: this.properties.showQuickLinks !== false,
@@ -404,11 +401,10 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     // Map cardId to property name for visibility
     const propMap: Record<string, keyof IDashboardCardsWebPartProps> = {
       todaysAgenda: 'showTodaysAgenda',
-      unreadInbox: 'showUnreadInbox',
+      email: 'showEmail',
       myTasks: 'showMyTasks',
       recentFiles: 'showRecentFiles',
       upcomingWeek: 'showUpcomingWeek',
-      flaggedEmails: 'showFlaggedEmails',
       myTeam: 'showMyTeam',
       sharedWithMe: 'showSharedWithMe',
       quickLinks: 'showQuickLinks',
@@ -462,11 +458,10 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     // Build current visibility map
     const cardVisibility: Record<string, boolean> = {
       todaysAgenda: this.properties.showTodaysAgenda !== false,
-      unreadInbox: this.properties.showUnreadInbox !== false,
+      email: this.properties.showEmail !== false,
       myTasks: this.properties.showMyTasks !== false,
       recentFiles: this.properties.showRecentFiles !== false,
       upcomingWeek: this.properties.showUpcomingWeek !== false,
-      flaggedEmails: this.properties.showFlaggedEmails !== false,
       myTeam: this.properties.showMyTeam !== false,
       sharedWithMe: this.properties.showSharedWithMe !== false,
       quickLinks: this.properties.showQuickLinks !== false,
@@ -640,11 +635,10 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     // Build visibility map
     const cardVisibility: Record<string, boolean> = {
       todaysAgenda: this.properties.showTodaysAgenda !== false,
-      unreadInbox: this.properties.showUnreadInbox !== false,
+      email: this.properties.showEmail !== false,
       myTasks: this.properties.showMyTasks !== false,
       recentFiles: this.properties.showRecentFiles !== false,
       upcomingWeek: this.properties.showUpcomingWeek !== false,
-      flaggedEmails: this.properties.showFlaggedEmails !== false,
       myTeam: this.properties.showMyTeam !== false,
       sharedWithMe: this.properties.showSharedWithMe !== false,
       quickLinks: this.properties.showQuickLinks !== false,
@@ -656,11 +650,10 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     // Map cardId to property name
     const propMap: Record<string, keyof IDashboardCardsWebPartProps> = {
       todaysAgenda: 'showTodaysAgenda',
-      unreadInbox: 'showUnreadInbox',
+      email: 'showEmail',
       myTasks: 'showMyTasks',
       recentFiles: 'showRecentFiles',
       upcomingWeek: 'showUpcomingWeek',
-      flaggedEmails: 'showFlaggedEmails',
       myTeam: 'showMyTeam',
       sharedWithMe: 'showSharedWithMe',
       quickLinks: 'showQuickLinks',
@@ -834,11 +827,10 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
   private _resetToDefaultSettings(): void {
     // Reset card visibility - all cards visible
     this.properties.showTodaysAgenda = true;
-    this.properties.showUnreadInbox = true;
+    this.properties.showEmail = true;
     this.properties.showMyTasks = true;
     this.properties.showRecentFiles = true;
     this.properties.showUpcomingWeek = true;
-    this.properties.showFlaggedEmails = true;
     this.properties.showMyTeam = true;
     this.properties.showSharedWithMe = true;
     this.properties.showQuickLinks = true;

@@ -23,11 +23,10 @@ export interface ICategorySectionProps {
 }
 
 // Responsive breakpoints for masonry columns
-// Wider cards = fewer columns for better readability
+// 2 columns by default for wider cards that fit more content
 const masonryBreakpoints = {
-  default: 3,  // 3 columns on extra-large screens (1600px+)
-  1600: 2,     // 2 columns on large screens (1024-1599px)
-  1024: 2,     // 2 columns on medium screens (768-1023px)
+  default: 2,  // 2 columns on large screens (wider cards)
+  1024: 2,     // 2 columns on medium screens
   768: 1       // 1 column on mobile (<768px)
 };
 

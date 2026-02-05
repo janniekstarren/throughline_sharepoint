@@ -65,11 +65,10 @@ export interface ICardOrderEditorProps {
 // Card display names mapping
 const cardDisplayNames: Record<string, string> = {
   todaysAgenda: "Today's Agenda",
-  unreadInbox: 'Unread Inbox',
+  email: 'Email',
   myTasks: 'My Tasks',
   recentFiles: 'Recent Files',
   upcomingWeek: 'Upcoming Week',
-  flaggedEmails: 'Flagged Emails',
   myTeam: 'My Team',
   sharedWithMe: 'Shared With Me',
   quickLinks: 'Quick Links',
@@ -93,11 +92,10 @@ const categoryIcons: Record<string, React.ReactElement> = {
 // Default card order
 export const DEFAULT_CARD_ORDER: string[] = [
   'todaysAgenda',
-  'unreadInbox',
+  'email',
   'myTasks',
   'recentFiles',
   'upcomingWeek',
-  'flaggedEmails',
   'myTeam',
   'sharedWithMe',
   'quickLinks',
@@ -390,11 +388,10 @@ export const CardOrderEditor: React.FC<ICardOrderEditorProps> = ({
   // Default category assignments for cards
   const defaultCategoryMap: Record<string, string> = {
     todaysAgenda: 'calendar',
-    unreadInbox: 'email',
+    email: 'email',
     myTasks: 'tasks',
     recentFiles: 'files',
     upcomingWeek: 'calendar',
-    flaggedEmails: 'email',
     myTeam: 'people',
     sharedWithMe: 'files',
     quickLinks: 'navigation',

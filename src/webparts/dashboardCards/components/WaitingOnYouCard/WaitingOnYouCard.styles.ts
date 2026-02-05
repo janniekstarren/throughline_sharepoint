@@ -8,7 +8,7 @@ export const useWaitingOnYouStyles = makeStyles({
     flexDirection: 'column',
     height: '100%',
     backgroundColor: tokens.colorNeutralBackground1,
-    borderRadius: tokens.borderRadiusLarge,
+    borderRadius: tokens.borderRadiusXLarge, // 12px - consistent with other cards
     boxShadow: tokens.shadow4,
     overflow: 'hidden',
   },

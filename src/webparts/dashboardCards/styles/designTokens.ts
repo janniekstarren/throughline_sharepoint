@@ -57,15 +57,16 @@ export const cardTokens = {
   size: {
     // Card dimensions
     cardMinWidth: '380px',        // Minimum card width for readability
-    cardMinHeight: '280px',       // Reduced for compact cards
-    cardStandardHeight: '400px',  // Standard card height
-    cardMaxHeight: '520px',       // Maximum card height
-    cardLargeMinHeight: '320px',
-    cardLargeMaxHeight: '520px',
+    cardMinHeight: '320px',       // Increased for proper content display
+    cardStandardHeight: '480px',  // Standard card height (increased from 400px)
+    cardMaxHeight: '600px',       // Maximum card height (increased from 520px)
+    cardLargeMinHeight: '400px',
+    cardLargeMaxHeight: '600px',
 
     // Height variants
-    cardCompactHeight: '280px',   // For summary/quick links cards
-    cardTallHeight: '520px',      // For content-heavy cards
+    cardCompactHeight: '320px',   // For summary/quick links cards (increased)
+    cardTallHeight: '600px',      // For content-heavy cards (increased from 520px)
+    cardEmptyHeight: '200px',     // For empty state cards (more square)
 
     // Icon sizes
     iconSmall: '16px',

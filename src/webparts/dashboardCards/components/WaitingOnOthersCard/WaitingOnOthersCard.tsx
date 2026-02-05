@@ -23,6 +23,7 @@ import {
   DocumentMultiple20Regular,
   Timer20Regular,
   AlertUrgent20Regular,
+  Crown20Filled,
 } from '@fluentui/react-icons';
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 
@@ -30,17 +31,17 @@ import { useWaitingOnOthers, IWaitingOnOthersSettings, DEFAULT_WAITING_ON_OTHERS
 import { WaitingTrendChart } from './components/WaitingTrendChart';
 import { GroupedPendingData, PendingTrendData } from '../../models/WaitingOnOthers';
 import { BaseCard, CardHeader, EmptyState } from '../shared';
-import { useCardStyles, cardTokens } from '../cardStyles';
+import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestWaitingOnOthersData, getTestWaitingOnOthersTrend } from '../../services/testData/waitingOnOthers';
 
 // Styles for the summary card
 const useSummaryStyles = makeStyles({
-  // Taller card height for better content display
+  // Dynamic height based on content
   card: {
-    height: cardTokens.size.cardTallHeight,
-    minHeight: cardTokens.size.cardStandardHeight,
-    maxHeight: cardTokens.size.cardTallHeight,
+    height: 'auto',
+    minHeight: '280px',
+    maxHeight: '600px',
   },
   // Stats grid
   statsGrid: {
@@ -116,11 +117,21 @@ const useSummaryStyles = makeStyles({
   personInfo: {
     flex: 1,
     minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXS,
+  },
+  personName: {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     fontSize: '13px',
     color: tokens.colorNeutralForeground1,
+  },
+  vipIcon: {
+    color: tokens.colorPaletteYellowForeground1,
+    fontSize: '14px',
+    flexShrink: 0,
   },
   personWait: {
     fontSize: '12px',
@@ -346,12 +357,17 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
           <div className={summaryStyles.topPeopleList}>
             {topPeople.map((group) => (
               <div key={group.person.id || group.person.email} className={summaryStyles.personRow}>
+                {group.person.isVip && (
+                  <Crown20Filled className={summaryStyles.vipIcon} />
+                )}
                 <Avatar
                   name={group.person.displayName}
                   image={group.person.photoUrl ? { src: group.person.photoUrl } : undefined}
                   size={24}
                 />
-                <span className={summaryStyles.personInfo}>{group.person.displayName}</span>
+                <span className={summaryStyles.personInfo}>
+                  <span className={summaryStyles.personName}>{group.person.displayName}</span>
+                </span>
                 <Badge
                   appearance="tint"
                   color={group.longestWaitHours >= 168 ? 'danger' : group.longestWaitHours >= 72 ? 'warning' : 'informative'}

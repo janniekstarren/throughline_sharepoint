@@ -238,12 +238,9 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
       );
     }
 
-    if (!data) {
-      return (
-        <div className={styles.loadingContainer}>
-          <Text>No data available</Text>
-        </div>
-      );
+    // Empty state - when there's no data or no items
+    if (!data || data.totalItems === 0) {
+      return null; // Return null to trigger the empty state at card level
     }
 
     switch (viewMode) {
@@ -287,6 +284,46 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
         return null;
     }
   };
+
+  // Empty state - styled consistently with other cards
+  if (!isLoading && !error && (!data || data.totalItems === 0)) {
+    return (
+      <div className={styles.card} style={{ height: '200px', minHeight: '200px', maxHeight: '200px' }}>
+        <div className={styles.header}>
+          <div className={styles.headerLeft}>
+            <PersonClockRegular className={styles.headerIcon} />
+            <div className={styles.headerTitle}>
+              <Text weight="semibold" size={400}>Waiting On You</Text>
+            </div>
+          </div>
+          <div className={styles.headerActions}>
+            <Tooltip content="Refresh" relationship="label">
+              <Button
+                appearance="subtle"
+                icon={<ArrowSyncRegular />}
+                onClick={refresh}
+              />
+            </Tooltip>
+          </div>
+        </div>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: 1,
+          gap: tokens.spacingVerticalS,
+          padding: tokens.spacingVerticalM
+        }}>
+          <PersonClockRegular style={{ fontSize: '32px', color: tokens.colorNeutralForeground4, opacity: 0.5 }} />
+          <Text size={300} weight="semibold" style={{ textAlign: 'center' }}>You're all caught up!</Text>
+          <Text size={200} style={{ textAlign: 'center', color: tokens.colorNeutralForeground3 }}>
+            No one is waiting on you
+          </Text>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.card}>

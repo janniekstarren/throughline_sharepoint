@@ -54,14 +54,14 @@ export const ListItemEnter = createPresenceComponent({
 // ============================================
 
 export const useCardStyles = makeStyles({
-  // Base card container
+  // Base card container - Dynamic height based on content
   card: {
     display: 'flex',
     flexDirection: 'column',
     width: '100%', // Fill the masonry column width
-    minHeight: cardTokens.size.cardMinHeight,
-    height: cardTokens.size.cardStandardHeight,
-    maxHeight: cardTokens.size.cardMaxHeight,
+    minHeight: '280px', // Minimum height for visual consistency
+    height: 'auto', // Dynamic height based on content
+    maxHeight: '600px', // Prevent cards from becoming too tall
     backgroundColor: cardTokens.colors.cardBackground,
     borderRadius: cardTokens.borderRadius.card,
     boxShadow: cardTokens.shadow.rest,
@@ -76,27 +76,27 @@ export const useCardStyles = makeStyles({
 
   // Large card variant (full width, taller)
   cardLarge: {
-    minHeight: cardTokens.size.cardLargeMinHeight,
-    maxHeight: cardTokens.size.cardLargeMaxHeight,
+    minHeight: '400px',
+    maxHeight: '600px',
   },
 
-  // Height variants for masonry layout
+  // Height variants for masonry layout - now using auto with constraints
   cardCompact: {
-    height: cardTokens.size.cardCompactHeight,
-    minHeight: cardTokens.size.cardCompactHeight,
-    maxHeight: cardTokens.size.cardCompactHeight,
+    height: 'auto',
+    minHeight: '200px',
+    maxHeight: '320px',
   },
 
   cardStandard: {
-    height: cardTokens.size.cardStandardHeight,
-    minHeight: cardTokens.size.cardMinHeight,
-    maxHeight: cardTokens.size.cardMaxHeight,
+    height: 'auto',
+    minHeight: '280px',
+    maxHeight: '480px',
   },
 
   cardTall: {
-    height: cardTokens.size.cardTallHeight,
-    minHeight: cardTokens.size.cardStandardHeight,
-    maxHeight: cardTokens.size.cardTallHeight,
+    height: 'auto',
+    minHeight: '320px',
+    maxHeight: '600px',
   },
 
   // Auto height for dynamic content
@@ -104,6 +104,13 @@ export const useCardStyles = makeStyles({
     height: 'auto',
     minHeight: cardTokens.size.cardMinHeight,
     maxHeight: cardTokens.size.cardMaxHeight,
+  },
+
+  // Empty state card (more square/compact for visual balance)
+  cardEmpty: {
+    height: cardTokens.size.cardEmptyHeight,
+    minHeight: cardTokens.size.cardEmptyHeight,
+    maxHeight: cardTokens.size.cardEmptyHeight,
   },
 
   // Clean header - NO gray background, NO border

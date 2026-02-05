@@ -1,0 +1,314 @@
+// ============================================
+// MyTeamCard - Medium Card (Summary View)
+// Shows team presence with donut chart, stats, and top items
+// ============================================
+
+import * as React from 'react';
+import { useState, useMemo } from 'react';
+import {
+  Text,
+  Button,
+  Tooltip,
+  tokens,
+  makeStyles,
+} from '@fluentui/react-components';
+import {
+  People24Regular,
+  ArrowClockwiseRegular,
+  ArrowExpand20Regular,
+  People20Regular,
+  PresenceAvailable20Regular,
+  PresenceAway20Regular,
+  PresenceOffline20Regular,
+} from '@fluentui/react-icons';
+import { WebPartContext } from '@microsoft/sp-webpart-base';
+
+import {
+  useMyTeam,
+  IMyTeamSettings,
+  DEFAULT_MY_TEAM_SETTINGS,
+} from '../../hooks/useMyTeam';
+import { MyTeamData, TeamPresenceData } from '../../models/MyTeam';
+import { BaseCard, CardHeader, EmptyState, DonutChart, StatsGrid, TopItemsList } from '../shared';
+import { StatItem, TopItem, DonutSegment } from '../shared/charts';
+import { useCardStyles } from '../cardStyles';
+import { DataMode } from '../../services/testData';
+import { getTestMyTeamData, getTestTeamPresenceData } from '../../services/testData/myTeam';
+
+// ============================================
+// Styles
+// ============================================
+const useStyles = makeStyles({
+  card: {
+    // Dynamic height based on content
+    height: 'auto',
+    minHeight: '280px',
+    maxHeight: '600px',
+  },
+  chartContainer: {
+    padding: `0 ${tokens.spacingHorizontalL}`,
+    marginBottom: tokens.spacingVerticalS,
+  },
+  expandPrompt: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacingHorizontalS,
+    padding: tokens.spacingVerticalM,
+    marginTop: 'auto',
+    cursor: 'pointer',
+    color: tokens.colorBrandForeground1,
+    fontSize: '13px',
+    fontWeight: 500,
+    ':hover': {
+      textDecoration: 'underline',
+    },
+  },
+});
+
+// ============================================
+// Props Interface
+// ============================================
+interface MyTeamCardProps {
+  context: WebPartContext;
+  settings?: IMyTeamSettings;
+  dataMode?: DataMode;
+  onToggleSize?: () => void;
+}
+
+// ============================================
+// Presence Colors
+// ============================================
+const PRESENCE_COLORS = {
+  available: tokens.colorPaletteGreenForeground1,
+  busy: tokens.colorPaletteRedForeground1,
+  away: tokens.colorPaletteYellowForeground1,
+  offline: tokens.colorNeutralForeground4,
+};
+
+// ============================================
+// Component
+// ============================================
+export const MyTeamCard: React.FC<MyTeamCardProps> = ({
+  context,
+  settings = DEFAULT_MY_TEAM_SETTINGS,
+  dataMode = 'api',
+  onToggleSize,
+}) => {
+  const cardStyles = useCardStyles();
+  const styles = useStyles();
+
+  // Test data state (used when dataMode === 'test')
+  const [testData, setTestData] = useState<MyTeamData | null>(null);
+  const [testPresenceData, setTestPresenceData] = useState<TeamPresenceData | null>(null);
+  const [testLoading, setTestLoading] = useState(dataMode === 'test');
+
+  // Load test data when in test mode
+  React.useEffect(() => {
+    if (dataMode === 'test') {
+      setTestLoading(true);
+      const timer = setTimeout(() => {
+        setTestData(getTestMyTeamData());
+        setTestPresenceData(getTestTeamPresenceData());
+        setTestLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [dataMode]);
+
+  // API hook (only used when dataMode === 'api')
+  const apiHook = useMyTeam(context, settings);
+
+  // Select between API and test data based on mode
+  const data = dataMode === 'test' ? testData : apiHook.data;
+  const presenceData = dataMode === 'test' ? testPresenceData : (data ? {
+    available: data.availableCount,
+    busy: data.busyCount,
+    away: data.awayCount,
+    offline: data.offlineCount,
+  } : null);
+  const isLoading = dataMode === 'test' ? testLoading : apiHook.isLoading;
+  const error = dataMode === 'test' ? null : apiHook.error;
+  const lastRefreshed = dataMode === 'test' ? new Date() : apiHook.lastRefreshed;
+  const refresh = dataMode === 'test'
+    ? async () => {
+        setTestLoading(true);
+        setTimeout(() => {
+          setTestData(getTestMyTeamData());
+          setTestPresenceData(getTestTeamPresenceData());
+          setTestLoading(false);
+        }, 500);
+      }
+    : apiHook.refresh;
+
+  // Donut chart data for presence distribution
+  const chartData = useMemo((): DonutSegment[] => {
+    if (!presenceData) return [];
+    return [
+      { label: 'Available', value: presenceData.available, color: PRESENCE_COLORS.available },
+      { label: 'Busy', value: presenceData.busy, color: PRESENCE_COLORS.busy },
+      { label: 'Away', value: presenceData.away, color: PRESENCE_COLORS.away },
+      { label: 'Offline', value: presenceData.offline, color: PRESENCE_COLORS.offline },
+    ].filter(segment => segment.value > 0);
+  }, [presenceData]);
+
+  // Stats grid data
+  const statsData = useMemo((): [StatItem, StatItem, StatItem, StatItem] => {
+    return [
+      {
+        label: 'Total',
+        value: data?.totalCount || 0,
+        icon: <People20Regular />,
+      },
+      {
+        label: 'Available',
+        value: data?.availableCount || 0,
+        icon: <PresenceAvailable20Regular />,
+      },
+      {
+        label: 'Busy',
+        value: data?.busyCount || 0,
+        icon: <PresenceOffline20Regular />,
+      },
+      {
+        label: 'Away',
+        value: data?.awayCount || 0,
+        icon: <PresenceAway20Regular />,
+      },
+    ];
+  }, [data]);
+
+  // Top items (3 available team members)
+  const topItems = useMemo((): TopItem[] => {
+    if (!data) return [];
+
+    const availableMembers = data.members
+      .filter(m => m.presence === 'Available')
+      .slice(0, 3);
+
+    return availableMembers.map((member): TopItem => ({
+      id: member.id,
+      title: member.displayName,
+      subtitle: member.jobTitle || member.email,
+      icon: <PresenceAvailable20Regular style={{ color: PRESENCE_COLORS.available }} />,
+      badge: 'Available',
+      badgeColor: 'success',
+      onClick: () => window.open(`https://teams.microsoft.com/l/chat/0/0?users=${member.email}`, '_blank', 'noopener,noreferrer'),
+    }));
+  }, [data]);
+
+  // Expand button
+  const expandButton = onToggleSize ? (
+    <Tooltip content="Expand to detailed view" relationship="label">
+      <Button
+        appearance="subtle"
+        size="small"
+        icon={<ArrowExpand20Regular />}
+        onClick={onToggleSize}
+        aria-label="Expand card"
+      />
+    </Tooltip>
+  ) : undefined;
+
+  // Header actions
+  const headerActions = (
+    <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
+      <Tooltip content="Refresh" relationship="label">
+        <Button
+          appearance="subtle"
+          icon={<ArrowClockwiseRegular />}
+          size="small"
+          onClick={refresh}
+        />
+      </Tooltip>
+      {expandButton}
+    </div>
+  );
+
+  // Empty state
+  if (!isLoading && !error && (!data || data.totalCount === 0)) {
+    return (
+      <BaseCard testId="my-team-card" empty>
+        <CardHeader
+          icon={<People24Regular />}
+          title="My Team"
+          actions={expandButton}
+        />
+        <EmptyState
+          icon={<People24Regular />}
+          title="No team members"
+          description="Connect with colleagues to see them here"
+        />
+      </BaseCard>
+    );
+  }
+
+  return (
+    <BaseCard
+      loading={isLoading && !data}
+      error={error?.message}
+      loadingMessage="Loading team..."
+      testId="my-team-card"
+      className={styles.card}
+    >
+      <CardHeader
+        icon={<People24Regular />}
+        title="My Team"
+        badge={data?.totalCount}
+        actions={headerActions}
+      />
+
+      {/* Presence Donut Chart */}
+      {presenceData && data && data.totalCount > 0 && (
+        <div className={styles.chartContainer}>
+          <DonutChart
+            data={chartData}
+            title="Team Presence"
+            size={120}
+            thickness={20}
+            centerValue={data.availableCount}
+            centerText="Available"
+            showLegend={true}
+            colors={[
+              PRESENCE_COLORS.available,
+              PRESENCE_COLORS.busy,
+              PRESENCE_COLORS.away,
+              PRESENCE_COLORS.offline,
+            ]}
+          />
+        </div>
+      )}
+
+      {/* Statistics Grid */}
+      {data && (
+        <StatsGrid stats={statsData} />
+      )}
+
+      {/* Top Available Members - Limited to 1 item to fit in medium card */}
+      {topItems.length > 0 && (
+        <TopItemsList
+          header="Available Now"
+          items={topItems}
+          maxItems={1}
+        />
+      )}
+
+      {/* Expand Prompt */}
+      {onToggleSize && (
+        <div className={styles.expandPrompt} onClick={onToggleSize}>
+          <ArrowExpand20Regular />
+          <span>View all {data?.totalCount} team members</span>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className={cardStyles.cardFooter}>
+        <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
+          {lastRefreshed && `Updated ${lastRefreshed.toLocaleTimeString()}`}
+        </Text>
+      </div>
+    </BaseCard>
+  );
+};
+
+export default MyTeamCard;
