@@ -40,6 +40,9 @@ export interface IMasterDetailCardProps<T> {
 
   // Optional header actions (e.g., collapse button)
   headerActions?: React.ReactNode;
+
+  // Optional content below header (e.g., chart, summary)
+  headerContent?: React.ReactNode;
 }
 
 const useStyles = makeStyles({
@@ -144,6 +147,7 @@ const useStyles = makeStyles({
   },
   detailActions: {
     display: 'flex',
+    justifyContent: 'flex-end',
     gap: tokens.spacingHorizontalS,
     padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`,
     borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
@@ -246,6 +250,7 @@ export function MasterDetailCard<T>({
   emptyMessage = 'No items to display',
   emptyIcon,
   headerActions,
+  headerContent,
 }: IMasterDetailCardProps<T>): React.ReactElement {
   const styles = useStyles();
 
@@ -334,6 +339,9 @@ export function MasterDetailCard<T>({
         )}
         {headerActions && <div className={styles.headerActions}>{headerActions}</div>}
       </div>
+
+      {/* Optional header content (e.g., chart, summary) */}
+      {headerContent}
 
       {/* Body - Master/Detail split */}
       <div className={styles.body}>

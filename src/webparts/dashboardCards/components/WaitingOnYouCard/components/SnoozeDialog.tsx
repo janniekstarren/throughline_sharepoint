@@ -1,7 +1,7 @@
 // src/webparts/dashboardCards/components/WaitingOnYouCard/components/SnoozeDialog.tsx
 
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogSurface,
@@ -18,6 +18,7 @@ import {
   tokens,
   makeStyles
 } from '@fluentui/react-components';
+import { DatePicker } from '@fluentui/react-datepicker-compat';
 import { ClockRegular } from '@fluentui/react-icons';
 import { SnoozeOption, useSnooze } from '../../../hooks/useSnooze';
 
@@ -44,6 +45,9 @@ const useStyles = makeStyles({
   reasonField: {
     marginTop: tokens.spacingVerticalM,
   },
+  datePicker: {
+    width: '200px',
+  },
 });
 
 interface SnoozeDialogProps {
@@ -51,45 +55,77 @@ interface SnoozeDialogProps {
   onOpenChange: (open: boolean) => void;
   onSnooze: (until: Date, reason?: string) => void;
   conversationSubject: string;
+  /** Current snooze date if editing an existing snooze */
+  currentSnoozeDate?: Date;
+  /** Mode for the dialog */
+  mode?: 'snooze' | 'edit';
 }
 
 export const SnoozeDialog: React.FC<SnoozeDialogProps> = ({
   open,
   onOpenChange,
   onSnooze,
-  conversationSubject
+  conversationSubject,
+  currentSnoozeDate,
+  mode = 'snooze'
 }) => {
   const styles = useStyles();
   const { getSnoozeDate, getSnoozeOptionLabel } = useSnooze();
 
-  const [option, setOption] = useState<SnoozeOption>('tomorrow');
-  const [customDate, setCustomDate] = useState('');
+  const [option, setOption] = useState<SnoozeOption>(currentSnoozeDate ? 'custom' : 'tomorrow');
+  const [customDate, setCustomDate] = useState<Date | null | undefined>(currentSnoozeDate || null);
   const [reason, setReason] = useState('');
 
-  const handleSnooze = () => {
-    const until = getSnoozeDate(option, customDate);
+  // Reset state when dialog opens with new currentSnoozeDate
+  React.useEffect(() => {
+    if (open) {
+      if (currentSnoozeDate) {
+        setOption('custom');
+        setCustomDate(currentSnoozeDate);
+      } else {
+        setOption('tomorrow');
+        setCustomDate(null);
+      }
+      setReason('');
+    }
+  }, [open, currentSnoozeDate]);
+
+  const handleSnooze = useCallback(() => {
+    let until: Date;
+    if (option === 'custom' && customDate) {
+      until = customDate;
+    } else {
+      until = getSnoozeDate(option, customDate?.toISOString().split('T')[0] || '');
+    }
     onSnooze(until, reason || undefined);
     onOpenChange(false);
     // Reset state
     setOption('tomorrow');
-    setCustomDate('');
+    setCustomDate(null);
     setReason('');
-  };
+  }, [option, customDate, reason, getSnoozeDate, onSnooze, onOpenChange]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onOpenChange(false);
     // Reset state
     setOption('tomorrow');
-    setCustomDate('');
+    setCustomDate(null);
     setReason('');
-  };
+  }, [onOpenChange]);
 
   // Get minimum date for custom picker (tomorrow)
-  const getMinDate = (): string => {
+  const getMinDate = (): Date => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow;
   };
+
+  const handleDateSelect = useCallback((date: Date | null | undefined) => {
+    setCustomDate(date);
+  }, []);
+
+  const isSnoozeDisabled = option === 'custom' && !customDate;
 
   return (
     <Dialog open={open} onOpenChange={(_, data) => data.open ? undefined : handleClose()}>
@@ -98,7 +134,7 @@ export const SnoozeDialog: React.FC<SnoozeDialogProps> = ({
           <DialogTitle>
             <div className={styles.titleContainer}>
               <ClockRegular />
-              Snooze until...
+              {mode === 'edit' ? 'Change snooze time' : 'Snooze until...'}
             </div>
           </DialogTitle>
           <DialogContent>
@@ -119,11 +155,13 @@ export const SnoozeDialog: React.FC<SnoozeDialogProps> = ({
 
               {option === 'custom' && (
                 <div className={styles.customDate}>
-                  <Input
-                    type="date"
+                  <DatePicker
+                    className={styles.datePicker}
+                    placeholder="Select a date"
                     value={customDate}
-                    onChange={(_, data) => setCustomDate(data.value)}
-                    min={getMinDate()}
+                    onSelectDate={handleDateSelect}
+                    minDate={getMinDate()}
+                    formatDate={(date) => date ? date.toLocaleDateString() : ''}
                   />
                 </div>
               )}
@@ -144,9 +182,9 @@ export const SnoozeDialog: React.FC<SnoozeDialogProps> = ({
             <Button
               appearance="primary"
               onClick={handleSnooze}
-              disabled={option === 'custom' && !customDate}
+              disabled={isSnoozeDisabled}
             >
-              Snooze
+              {mode === 'edit' ? 'Update Snooze' : 'Snooze'}
             </Button>
           </DialogActions>
         </DialogBody>

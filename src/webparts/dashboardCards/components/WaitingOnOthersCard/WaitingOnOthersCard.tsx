@@ -1,55 +1,176 @@
+// ============================================
+// WaitingOnOthersCard - Medium card (Summary View)
+// Shows statistics and trend chart only
+// User can expand to large card for full content
+// ============================================
+
 import * as React from 'react';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
-  Card,
-  CardHeader,
   Text,
-  Badge,
   Button,
-  Spinner,
-  Menu,
-  MenuItem,
-  MenuTrigger,
-  MenuPopover,
-  MenuList,
-  TabList,
-  Tab,
   Tooltip,
-  Divider
+  tokens,
+  makeStyles,
+  Avatar,
+  Badge,
 } from '@fluentui/react-components';
 import {
-  PeopleRegular,
-  ListRegular,
   ArrowClockwiseRegular,
-  FilterRegular,
-  ClockRegular
+  ClockRegular,
+  ArrowExpand20Regular,
+  Person20Regular,
+  DocumentMultiple20Regular,
+  Timer20Regular,
+  AlertUrgent20Regular,
 } from '@fluentui/react-icons';
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 
 import { useWaitingOnOthers, IWaitingOnOthersSettings, DEFAULT_WAITING_ON_OTHERS_SETTINGS } from '../../hooks/useWaitingOnOthers';
-import { PeopleView } from './views/PeopleView';
-import { ListView } from './views/ListView';
 import { WaitingTrendChart } from './components/WaitingTrendChart';
-import { ReminderComposer } from './components/ReminderComposer';
-import { SnoozeDialog } from '../WaitingOnYouCard/components/SnoozeDialog'; // Reuse from WaitingOnYou
-import { PendingResponse, ViewMode, GroupedPendingData, PendingTrendData } from '../../models/WaitingOnOthers';
-import { WaitingOnOthersService } from '../../services/WaitingOnOthersService';
-import { useStyles } from './WaitingOnOthersCard.styles';
+import { GroupedPendingData, PendingTrendData } from '../../models/WaitingOnOthers';
+import { BaseCard, CardHeader, EmptyState } from '../shared';
+import { useCardStyles, cardTokens } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestWaitingOnOthersData, getTestWaitingOnOthersTrend } from '../../services/testData/waitingOnOthers';
+
+// Styles for the summary card
+const useSummaryStyles = makeStyles({
+  // Taller card height for better content display
+  card: {
+    height: cardTokens.size.cardTallHeight,
+    minHeight: cardTokens.size.cardStandardHeight,
+    maxHeight: cardTokens.size.cardTallHeight,
+  },
+  // Stats grid
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: tokens.spacingVerticalM,
+    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`,
+  },
+  statItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacingVerticalXS,
+    padding: tokens.spacingVerticalM,
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderRadius: tokens.borderRadiusMedium,
+    textAlign: 'center',
+  },
+  statLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacingHorizontalXS,
+    fontSize: '11px',
+    fontWeight: 500,
+    color: tokens.colorNeutralForeground3,
+    textTransform: 'uppercase',
+    letterSpacing: '0.3px',
+  },
+  statIcon: {
+    fontSize: '14px',
+  },
+  statValue: {
+    fontSize: '28px',
+    fontWeight: 600,
+    color: tokens.colorNeutralForeground1,
+    lineHeight: 1,
+    textAlign: 'center',
+  },
+  statValueWarning: {
+    color: tokens.colorPaletteYellowForeground1,
+  },
+  statValueDanger: {
+    color: tokens.colorPaletteRedForeground1,
+  },
+  // Top people section
+  topPeopleSection: {
+    padding: `0 ${tokens.spacingHorizontalL}`,
+    paddingBottom: tokens.spacingVerticalL,
+  },
+  sectionLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: tokens.colorNeutralForeground3,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    marginBottom: tokens.spacingVerticalS,
+  },
+  topPeopleList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalXS,
+  },
+  personRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
+    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground2,
+  },
+  personInfo: {
+    flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontSize: '13px',
+    color: tokens.colorNeutralForeground1,
+  },
+  personWait: {
+    fontSize: '12px',
+    color: tokens.colorNeutralForeground3,
+  },
+  personWaitWarning: {
+    color: tokens.colorPaletteYellowForeground1,
+  },
+  personWaitDanger: {
+    color: tokens.colorPaletteRedForeground1,
+  },
+  // Chart container
+  chartContainer: {
+    padding: `0 ${tokens.spacingHorizontalL}`,
+    marginBottom: tokens.spacingVerticalS,
+  },
+  // Expand prompt
+  expandPrompt: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacingHorizontalS,
+    padding: tokens.spacingVerticalM,
+    marginTop: 'auto',
+    cursor: 'pointer',
+    color: tokens.colorBrandForeground1,
+    fontSize: '13px',
+    fontWeight: 500,
+    ':hover': {
+      textDecoration: 'underline',
+    },
+  },
+});
 
 interface WaitingOnOthersCardProps {
   context: WebPartContext;
   settings?: IWaitingOnOthersSettings;
   dataMode?: DataMode;
+  /** Callback to toggle between large and medium card size */
+  onToggleSize?: () => void;
 }
 
 export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
   context,
   settings = DEFAULT_WAITING_ON_OTHERS_SETTINGS,
-  dataMode = 'api'
+  dataMode = 'api',
+  onToggleSize
 }) => {
-  const styles = useStyles();
+  const styles = useCardStyles();
+  const summaryStyles = useSummaryStyles();
 
   // Test data state (used when dataMode === 'test')
   const [testData, setTestData] = useState<GroupedPendingData | null>(null);
@@ -60,7 +181,6 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
   React.useEffect(() => {
     if (dataMode === 'test') {
       setTestLoading(true);
-      // Simulate loading delay
       const timer = setTimeout(() => {
         setTestData(getTestWaitingOnOthersData());
         setTestTrendData(getTestWaitingOnOthersTrend());
@@ -79,7 +199,6 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
   const isLoading = dataMode === 'test' ? testLoading : apiHook.isLoading;
   const error = dataMode === 'test' ? null : apiHook.error;
   const lastRefreshed = dataMode === 'test' ? new Date() : apiHook.lastRefreshed;
-  const updateFilter = dataMode === 'test' ? () => {} : apiHook.updateFilter;
   const refresh = dataMode === 'test'
     ? async () => {
         setTestLoading(true);
@@ -90,257 +209,177 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
         }, 500);
       }
     : apiHook.refresh;
-  const resolveItem = dataMode === 'test' ? () => {} : apiHook.resolveItem;
-  const snoozeItem = dataMode === 'test' ? () => {} : apiHook.snoozeItem;
-  const unsnoozeItem = dataMode === 'test' ? () => {} : apiHook.unsnoozeItem;
-  const recordReminderSent = dataMode === 'test' ? () => {} : apiHook.recordReminderSent;
 
-  const [viewMode, setViewMode] = useState<ViewMode>('people');
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [reminderTarget, setReminderTarget] = useState<PendingResponse | null>(null);
-  const [snoozeTarget, setSnoozeTarget] = useState<PendingResponse | null>(null);
-
-  // Handlers
-  const handleToggleGroup = useCallback((groupId: string) => {
-    setExpandedGroups(prev => {
-      const next = new Set(prev);
-      if (next.has(groupId)) {
-        next.delete(groupId);
-      } else {
-        next.add(groupId);
-      }
-      return next;
-    });
-  }, []);
-
-  const handleSendReminder = useCallback(async (subject: string, body: string, template: string) => {
-    if (!reminderTarget) return false;
-
-    try {
-      const graphClient = await context.msGraphClientFactory.getClient('3');
-      const userResponse = await graphClient.api('/me').select('id,mail').get();
-
-      // Create service instance for sending
-      const service = new WaitingOnOthersService(
-        graphClient,
-        userResponse.id,
-        userResponse.mail,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        null as any, // These aren't needed for sending
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        null as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        null as any
-      );
-
-      const success = await service.sendReminder(reminderTarget, subject, body);
-
-      if (success) {
-        recordReminderSent(reminderTarget.id, template);
-        setReminderTarget(null);
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.error('Failed to send reminder:', err);
-      return false;
-    }
-  }, [reminderTarget, context, recordReminderSent]);
-
-  const handleSnooze = useCallback((until: Date, reason?: string) => {
-    if (snoozeTarget) {
-      snoozeItem(snoozeTarget.id, until, reason);
-      setSnoozeTarget(null);
-    }
-  }, [snoozeTarget, snoozeItem]);
-
-  const handleItemClick = useCallback((webUrl: string) => {
-    window.open(webUrl, '_blank');
-  }, []);
-
-  // Summary text
-  const summaryText = useMemo(() => {
-    if (!data) return '';
-    const { totalPeopleOwing, totalItems, oldestWaitDays } = data;
-
-    if (totalPeopleOwing === 0) return 'No one owes you a response';
-
-    const parts = [];
-    parts.push(`${totalPeopleOwing} ${totalPeopleOwing === 1 ? 'person' : 'people'} owes you`);
-    parts.push(`${totalItems} item${totalItems > 1 ? 's' : ''}`);
-    if (oldestWaitDays > 0) {
-      parts.push(`${oldestWaitDays}d longest`);
-    }
-
-    return parts.join(' · ');
+  // Top 3 people with longest waits
+  const topPeople = useMemo(() => {
+    if (!data) return [];
+    return data.byPerson
+      .sort((a, b) => b.longestWaitHours - a.longestWaitHours)
+      .slice(0, 3);
   }, [data]);
 
-  // Loading state
-  if (isLoading && !data) {
-    return (
-      <Card className={styles.card}>
-        <div className={styles.loadingContainer}>
-          <Spinner size="medium" label="Checking who owes you..." />
-        </div>
-      </Card>
-    );
-  }
+  const getStatValueClass = (hours: number): string => {
+    const days = hours / 24;
+    if (days >= 7) return summaryStyles.statValueDanger;
+    if (days >= 3) return summaryStyles.statValueWarning;
+    return summaryStyles.statValue;
+  };
 
-  // Error state
-  if (error) {
-    return (
-      <Card className={styles.card}>
-        <div className={styles.errorContainer}>
-          <Text>Unable to load data</Text>
-          <Button appearance="primary" onClick={refresh}>Try again</Button>
-        </div>
-      </Card>
-    );
-  }
+  // Format wait duration
+  const formatWait = (hours: number): string => {
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `${days}d`;
+  };
+
+  // Expand button for switching to large card view
+  const expandButton = onToggleSize ? (
+    <Tooltip content="View all details" relationship="label">
+      <Button
+        appearance="subtle"
+        size="small"
+        icon={<ArrowExpand20Regular />}
+        onClick={onToggleSize}
+        aria-label="Expand card"
+      />
+    </Tooltip>
+  ) : undefined;
+
+  // Header actions
+  const headerActions = (
+    <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
+      <Tooltip content="Refresh" relationship="label">
+        <Button
+          appearance="subtle"
+          icon={<ArrowClockwiseRegular />}
+          size="small"
+          onClick={refresh}
+        />
+      </Tooltip>
+      {expandButton}
+    </div>
+  );
 
   // Empty state
-  if (!data || data.totalItems === 0) {
+  if (!isLoading && !error && (!data || data.totalItems === 0)) {
     return (
-      <Card className={styles.card}>
+      <BaseCard testId="waiting-on-others-card" empty>
         <CardHeader
-          header={<Text weight="semibold" size={400}>Waiting On Others</Text>}
+          icon={<ClockRegular />}
+          title="Waiting On Others"
+          actions={expandButton}
         />
-        <div className={styles.emptyState}>
-          <ClockRegular className={styles.emptyIcon} />
-          <Text size={400} weight="semibold">No pending responses</Text>
-          <Text size={300} className={styles.emptySubtext}>
-            Everyone has responded to you. Nice!
-          </Text>
-        </div>
-      </Card>
+        <EmptyState
+          icon={<ClockRegular />}
+          title="No pending responses"
+          description="Everyone has responded to you. Nice!"
+        />
+      </BaseCard>
     );
   }
 
   return (
-    <Card className={styles.card}>
-      {/* Header */}
+    <BaseCard
+      loading={isLoading && !data}
+      error={error?.message}
+      loadingMessage="Checking who owes you..."
+      testId="waiting-on-others-card"
+      className={summaryStyles.card}
+    >
       <CardHeader
-        header={
-          <div className={styles.header}>
-            <div className={styles.headerLeft}>
-              <Text weight="semibold" size={400}>Waiting On Others</Text>
-              {data.oldestWaitDays >= 7 && (
-                <Badge appearance="tint" color="warning" size="small">
-                  {data.oldestWaitDays}d oldest
-                </Badge>
-              )}
-            </div>
-            <div className={styles.headerActions}>
-              <Tooltip content="Refresh" relationship="label">
-                <Button
-                  appearance="subtle"
-                  icon={<ArrowClockwiseRegular />}
-                  size="small"
-                  onClick={refresh}
-                />
-              </Tooltip>
-              <Menu>
-                <MenuTrigger disableButtonEnhancement>
-                  <Button appearance="subtle" icon={<FilterRegular />} size="small" />
-                </MenuTrigger>
-                <MenuPopover>
-                  <MenuList>
-                    <MenuItem onClick={() => updateFilter({ minWaitDuration: 24 })}>
-                      After 24 hours
-                    </MenuItem>
-                    <MenuItem onClick={() => updateFilter({ minWaitDuration: 48 })}>
-                      After 48 hours
-                    </MenuItem>
-                    <MenuItem onClick={() => updateFilter({ minWaitDuration: 72 })}>
-                      After 72 hours
-                    </MenuItem>
-                  </MenuList>
-                </MenuPopover>
-              </Menu>
-            </div>
-          </div>
-        }
-        description={
-          <Text size={200} className={styles.subheader}>{summaryText}</Text>
-        }
+        icon={<ClockRegular />}
+        title="Waiting On Others"
+        badge={data?.totalItems}
+        badgeVariant={data && data.oldestWaitDays >= 7 ? 'warning' : 'brand'}
+        actions={headerActions}
       />
 
-      {/* View Mode Tabs */}
-      <div className={styles.tabContainer}>
-        <TabList
-          selectedValue={viewMode}
-          onTabSelect={(_, d) => setViewMode(d.value as ViewMode)}
-          size="small"
-        >
-          <Tab value="people" icon={<PeopleRegular />}>People</Tab>
-          <Tab value="list" icon={<ListRegular />}>All</Tab>
-        </TabList>
-      </div>
-
-      <Divider className={styles.divider} />
-
-      {/* Content */}
-      <div className={styles.content}>
-        {viewMode === 'people' && (
-          <PeopleView
-            groups={data.byPerson}
-            expandedGroups={expandedGroups}
-            onToggleGroup={handleToggleGroup}
-            onSendReminder={setReminderTarget}
-            onResolve={resolveItem}
-            onSnooze={setSnoozeTarget}
-            onUnsnooze={unsnoozeItem}
-            onItemClick={handleItemClick}
-          />
-        )}
-
-        {viewMode === 'list' && (
-          <ListView
-            items={data.allPendingItems}
-            onSendReminder={setReminderTarget}
-            onResolve={resolveItem}
-            onSnooze={setSnoozeTarget}
-            onUnsnooze={unsnoozeItem}
-            onItemClick={handleItemClick}
-          />
-        )}
-      </div>
-
       {/* Trend Chart */}
-      {settings.showChart && trendData && data.totalItems > 0 && (
-        <>
-          <Divider className={styles.divider} />
+      {settings.showChart && trendData && data && data.totalItems > 0 && (
+        <div className={summaryStyles.chartContainer}>
           <WaitingTrendChart data={trendData} />
-        </>
+        </div>
+      )}
+
+      {/* Statistics Grid */}
+      {data && (
+        <div className={summaryStyles.statsGrid}>
+          <div className={summaryStyles.statItem}>
+            <div className={summaryStyles.statLabel}>
+              <Person20Regular className={summaryStyles.statIcon} />
+              People
+            </div>
+            <Text className={summaryStyles.statValue}>{data.totalPeopleOwing}</Text>
+          </div>
+          <div className={summaryStyles.statItem}>
+            <div className={summaryStyles.statLabel}>
+              <DocumentMultiple20Regular className={summaryStyles.statIcon} />
+              Items
+            </div>
+            <Text className={summaryStyles.statValue}>{data.totalItems}</Text>
+          </div>
+          <div className={summaryStyles.statItem}>
+            <div className={summaryStyles.statLabel}>
+              <Timer20Regular className={summaryStyles.statIcon} />
+              Longest Wait
+            </div>
+            <Text className={getStatValueClass(data.oldestWaitDays * 24)}>
+              {data.oldestWaitDays}d
+            </Text>
+          </div>
+          <div className={summaryStyles.statItem}>
+            <div className={summaryStyles.statLabel}>
+              <AlertUrgent20Regular className={summaryStyles.statIcon} />
+              Overdue
+            </div>
+            <Text className={summaryStyles.statValue}>
+              {data.byPerson.filter(p => p.longestWaitHours >= 168).length}
+            </Text>
+          </div>
+        </div>
+      )}
+
+      {/* Top People Waiting */}
+      {topPeople.length > 0 && (
+        <div className={summaryStyles.topPeopleSection}>
+          <Text className={summaryStyles.sectionLabel}>Longest Waiting</Text>
+          <div className={summaryStyles.topPeopleList}>
+            {topPeople.map((group) => (
+              <div key={group.person.id || group.person.email} className={summaryStyles.personRow}>
+                <Avatar
+                  name={group.person.displayName}
+                  image={group.person.photoUrl ? { src: group.person.photoUrl } : undefined}
+                  size={24}
+                />
+                <span className={summaryStyles.personInfo}>{group.person.displayName}</span>
+                <Badge
+                  appearance="tint"
+                  color={group.longestWaitHours >= 168 ? 'danger' : group.longestWaitHours >= 72 ? 'warning' : 'informative'}
+                  size="small"
+                >
+                  {formatWait(group.longestWaitHours)} · {group.itemCount} item{group.itemCount > 1 ? 's' : ''}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Expand Prompt */}
+      {onToggleSize && (
+        <div className={summaryStyles.expandPrompt} onClick={onToggleSize}>
+          <ArrowExpand20Regular />
+          <span>View all {data?.totalItems} pending responses</span>
+        </div>
       )}
 
       {/* Footer */}
-      <div className={styles.footer}>
-        <Text size={200} className={styles.footerText}>
+      <div className={styles.cardFooter}>
+        <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
           {lastRefreshed && `Updated ${lastRefreshed.toLocaleTimeString()}`}
         </Text>
       </div>
-
-      {/* Reminder Composer Dialog */}
-      {reminderTarget && (
-        <ReminderComposer
-          open={!!reminderTarget}
-          onOpenChange={(open) => !open && setReminderTarget(null)}
-          pendingItem={reminderTarget}
-          onSend={handleSendReminder}
-        />
-      )}
-
-      {/* Snooze Dialog (reused from WaitingOnYou) */}
-      {snoozeTarget && (
-        <SnoozeDialog
-          open={!!snoozeTarget}
-          onOpenChange={(open) => !open && setSnoozeTarget(null)}
-          onSnooze={handleSnooze}
-          conversationSubject={snoozeTarget.subject}
-        />
-      )}
-    </Card>
+    </BaseCard>
   );
 };
 

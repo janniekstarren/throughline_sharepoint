@@ -21,6 +21,7 @@ export interface Person {
   email: string;
   photoUrl?: string;
   relationship: PersonRelationship;
+  isVip?: boolean;  // VIP contacts (executives, key stakeholders)
 }
 
 // ============================================
@@ -77,6 +78,7 @@ export interface PersonOwesGroup {
 export interface GroupedPendingData {
   byPerson: PersonOwesGroup[];
   allPendingItems: PendingResponse[];
+  snoozedItems?: PendingResponse[];  // Items that are currently snoozed
 
   // Summary stats
   totalPeopleOwing: number;
@@ -174,7 +176,9 @@ export interface WaitingOnOthersPersistedState {
 // Component State
 // ============================================
 
-export type ViewMode = 'people' | 'list';
+export type ViewMode = 'people' | 'list' | 'snoozed';
+
+export type SortMode = 'priority' | 'name' | 'oldest' | 'newest';
 
 export interface WaitingOnOthersState {
   data: GroupedPendingData | null;
