@@ -1369,6 +1369,184 @@ export const getGenericAICardSummary = (cardType: string): IAICardSummary => {
   };
 };
 
+// ============================================
+// AI Enhanced WaitingOnYou Data
+// ============================================
+
+export interface IAIEnhancedWaitingOnYouConversation {
+  conversationId: string;
+  aiScore: number;
+  aiPriority: 'critical' | 'high' | 'medium' | 'low';
+  aiInsights: IAIInsight[];
+  aiSuggestion?: string;
+}
+
+export const getAIEnhancedWaitingOnYou = (): IAIEnhancedWaitingOnYouConversation[] => [
+  // Critical - Manager waiting, overdue
+  {
+    conversationId: 'conv-1',
+    aiScore: 98,
+    aiPriority: 'critical',
+    aiSuggestion: 'Respond immediately - CFO escalation risk',
+    aiInsights: [
+      {
+        id: 'woy-insight-1a',
+        type: 'urgency',
+        severity: 'critical',
+        title: 'CFO waiting 3 days',
+        description: 'Sarah Chen (CFO) has been waiting for your budget approval for 3 days.',
+        confidence: 99,
+        reasoning: 'Executive-level request with explicit deadline that has passed.',
+        actionLabel: 'Reply now',
+        actionType: 'reply',
+      },
+      {
+        id: 'woy-insight-1b',
+        type: 'prediction',
+        severity: 'warning',
+        title: 'Escalation likely',
+        description: 'Based on patterns, executive requests unanswered > 2 days often get escalated.',
+        confidence: 85,
+        reasoning: 'Historical data shows 78% of 3+ day delays result in follow-up escalation.',
+      },
+    ],
+  },
+
+  // High priority - External stakeholder
+  {
+    conversationId: 'conv-2',
+    aiScore: 82,
+    aiPriority: 'high',
+    aiSuggestion: 'Client waiting - prioritize for relationship',
+    aiInsights: [
+      {
+        id: 'woy-insight-2a',
+        type: 'urgency',
+        severity: 'warning',
+        title: 'Client proposal review',
+        description: 'Acme Corp is waiting for your feedback on the proposal - deal closing soon.',
+        confidence: 91,
+        reasoning: 'Cross-referenced with sales pipeline. Contract signing scheduled for next week.',
+        actionLabel: 'View proposal',
+        actionType: 'open',
+      },
+      {
+        id: 'woy-insight-2b',
+        type: 'pattern',
+        severity: 'info',
+        title: 'Typical response: 24h',
+        description: 'You usually respond to client proposals within 24 hours. This is now 48h.',
+        confidence: 88,
+      },
+    ],
+  },
+
+  // Medium priority - Team member question
+  {
+    conversationId: 'conv-3',
+    aiScore: 58,
+    aiPriority: 'medium',
+    aiSuggestion: 'Quick reply could unblock development',
+    aiInsights: [
+      {
+        id: 'woy-insight-3a',
+        type: 'suggestion',
+        severity: 'warning',
+        title: 'May be blocking work',
+        description: 'Emily\'s question about API integration could be blocking her tasks.',
+        confidence: 76,
+        reasoning: 'Detected question pattern with technical content. Team member has no commits today.',
+        actionLabel: 'Reply',
+        actionType: 'reply',
+      },
+      {
+        id: 'woy-insight-3b',
+        type: 'prediction',
+        severity: 'info',
+        title: 'Effort: ~5 min',
+        description: 'Similar technical clarifications typically take you 5-10 minutes.',
+        confidence: 82,
+      },
+    ],
+  },
+
+  // Low priority - FYI that needs acknowledgment
+  {
+    conversationId: 'conv-4',
+    aiScore: 35,
+    aiPriority: 'low',
+    aiSuggestion: 'Quick acknowledgment sufficient',
+    aiInsights: [
+      {
+        id: 'woy-insight-4a',
+        type: 'suggestion',
+        severity: 'info',
+        title: 'Simple acknowledgment',
+        description: 'This update just needs a quick acknowledgment - no detailed response needed.',
+        confidence: 90,
+        reasoning: 'Pattern analysis shows similar emails get one-line responses.',
+        actionLabel: 'Quick reply',
+        actionType: 'quickReply',
+      },
+    ],
+  },
+
+  // Warning - Multiple from same person
+  {
+    conversationId: 'conv-5',
+    aiScore: 72,
+    aiPriority: 'high',
+    aiSuggestion: 'Multiple items from David - batch respond',
+    aiInsights: [
+      {
+        id: 'woy-insight-5a',
+        type: 'pattern',
+        severity: 'warning',
+        title: '3 items from David',
+        description: 'David has sent 3 separate items waiting for your response. Consider batching.',
+        confidence: 94,
+        reasoning: 'Consolidating responses is more efficient than individual replies.',
+        actionLabel: 'View all',
+        actionType: 'viewAll',
+      },
+      {
+        id: 'woy-insight-5b',
+        type: 'suggestion',
+        severity: 'info',
+        title: '1:1 opportunity',
+        description: 'You have a 1:1 with David tomorrow - could discuss in person.',
+        confidence: 88,
+        reasoning: 'Cross-referenced with calendar. 1:1 scheduled for tomorrow 2pm.',
+      },
+    ],
+  },
+];
+
+export const getAIWaitingOnYouCardSummary = (): IAICardSummary => {
+  const items = getAIEnhancedWaitingOnYou();
+  const allInsights = items.reduce<IAIInsight[]>((acc, item) => {
+    return acc.concat(item.aiInsights || []);
+  }, []);
+  const criticalCount = allInsights.filter((i) => i.severity === 'critical').length;
+  const warningCount = allInsights.filter((i) => i.severity === 'warning').length;
+
+  return {
+    insightCount: allInsights.length,
+    criticalCount,
+    warningCount,
+    topInsight: allInsights.find((i) => i.severity === 'critical'),
+    summary: criticalCount > 0
+      ? `${criticalCount} urgent response${criticalCount > 1 ? 's' : ''} needed`
+      : `${allInsights.length} response insights available`,
+  };
+};
+
+export const getAllWaitingOnYouInsights = (): IAIInsight[] => {
+  return getAIEnhancedWaitingOnYou().reduce<IAIInsight[]>((acc, item) => {
+    return acc.concat(item.aiInsights || []);
+  }, []);
+};
+
 export const getGenericAIInsights = (cardType: string): IAIInsight[] => {
   const insightsByType: Record<string, IAIInsight[]> = {
     upcomingWeek: [

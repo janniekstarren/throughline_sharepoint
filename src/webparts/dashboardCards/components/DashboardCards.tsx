@@ -26,7 +26,7 @@ import { SharedWithMeCard, SharedWithMeCardLarge } from './SharedWithMeCard';
 import { SiteActivityCard } from './SiteActivityCard';
 import { QuickLinksCard } from './QuickLinksCard';
 // Waiting On cards
-import { WaitingOnYouCard } from './WaitingOnYouCard';
+import { WaitingOnYouCard, WaitingOnYouCardLarge } from './WaitingOnYouCard';
 import { WaitingOnOthersCard } from './WaitingOnOthersCard';
 import { WaitingOnOthersCardLarge } from './WaitingOnOthersCardLarge';
 // Context Switching card
@@ -61,7 +61,7 @@ export type { ICategoryConfig };
 const LARGE_CARDS = [
   'todaysAgenda', 'upcomingWeek', 'email',
   'myTasks', 'recentFiles', 'sharedWithMe', 'myTeam', 'siteActivity', 'quickLinks',
-  'waitingOnOthers', 'contextSwitching'
+  'waitingOnYou', 'waitingOnOthers', 'contextSwitching'
 ];
 
 // Default icon IDs for system categories (matches AVAILABLE_ICONS in CardConfigDialog)
@@ -444,19 +444,34 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
         return wrapWithErrorBoundary(
           <QuickLinksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
         );
-      // Analytics cards (medium-only)
+      // Analytics cards
       case 'waitingOnYou':
         return wrapWithErrorBoundary(
-          <WaitingOnYouCard
-            graphClient={graphClient || null}
-            showChart={waitingOnYouSettings.showChart}
-            staleDays={waitingOnYouSettings.staleDays}
-            includeEmail={waitingOnYouSettings.includeEmail}
-            includeTeamsChats={waitingOnYouSettings.includeTeamsChats}
-            includeChannels={waitingOnYouSettings.includeChannels}
-            includeMentions={waitingOnYouSettings.includeMentions}
-            dataMode={dataMode}
-          />
+          isLarge
+            ? <WaitingOnYouCardLarge
+                graphClient={graphClient || null}
+                showChart={waitingOnYouSettings.showChart}
+                staleDays={waitingOnYouSettings.staleDays}
+                includeEmail={waitingOnYouSettings.includeEmail}
+                includeTeamsChats={waitingOnYouSettings.includeTeamsChats}
+                includeChannels={waitingOnYouSettings.includeChannels}
+                includeMentions={waitingOnYouSettings.includeMentions}
+                dataMode={dataMode}
+                aiDemoMode={dataMode === 'test' && aiDemoMode}
+                onToggleSize={() => toggleCardSize(cardId)}
+              />
+            : <WaitingOnYouCard
+                graphClient={graphClient || null}
+                showChart={waitingOnYouSettings.showChart}
+                staleDays={waitingOnYouSettings.staleDays}
+                includeEmail={waitingOnYouSettings.includeEmail}
+                includeTeamsChats={waitingOnYouSettings.includeTeamsChats}
+                includeChannels={waitingOnYouSettings.includeChannels}
+                includeMentions={waitingOnYouSettings.includeMentions}
+                dataMode={dataMode}
+                aiDemoMode={dataMode === 'test' && aiDemoMode}
+                onToggleSize={() => toggleCardSize(cardId)}
+              />
         );
       case 'waitingOnOthers':
         return wrapWithErrorBoundary(

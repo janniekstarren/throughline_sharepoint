@@ -20,7 +20,8 @@ import {
   PeopleRegular,
   PeopleTeamRegular,
   ListRegular,
-  ErrorCircleRegular
+  ErrorCircleRegular,
+  ArrowMaximizeRegular,
 } from '@fluentui/react-icons';
 import { MSGraphClientV3 } from '@microsoft/sp-http';
 
@@ -36,6 +37,9 @@ import { TeamsView } from './views/TeamsView';
 import { ListView } from './views/ListView';
 import { WaitingDebtChart } from './components/WaitingDebtChart';
 import { SnoozeDialog } from './components/SnoozeDialog';
+// AI Demo Mode imports
+import { AIInsightBanner } from '../shared/AIComponents';
+import { getAIWaitingOnYouCardSummary, getAllWaitingOnYouInsights } from '../../services/testData/aiDemoData';
 
 export interface WaitingOnYouCardProps {
   graphClient: MSGraphClientV3 | null;
@@ -46,6 +50,10 @@ export interface WaitingOnYouCardProps {
   includeChannels?: boolean;
   includeMentions?: boolean;
   dataMode?: DataMode;
+  /** AI Demo Mode - show AI-enhanced content (only when dataMode === 'test') */
+  aiDemoMode?: boolean;
+  /** Callback to toggle between medium and large card size */
+  onToggleSize?: () => void;
 }
 
 export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
@@ -57,6 +65,8 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
   includeChannels = false,
   includeMentions = true,
   dataMode = 'api',
+  aiDemoMode = false,
+  onToggleSize,
 }) => {
   const styles = useWaitingOnYouStyles();
 
@@ -352,6 +362,15 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
               onClick={() => setShowSettings(!showSettings)}
             />
           </Tooltip>
+          {onToggleSize && (
+            <Tooltip content="Expand" relationship="label">
+              <Button
+                appearance="subtle"
+                icon={<ArrowMaximizeRegular />}
+                onClick={onToggleSize}
+              />
+            </Tooltip>
+          )}
         </div>
       </div>
 
@@ -393,6 +412,16 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
               label="@Mentions"
             />
           </div>
+        </div>
+      )}
+
+      {/* AI Insight Banner (only in AI Demo Mode) */}
+      {aiDemoMode && (
+        <div style={{ padding: `0 ${tokens.spacingHorizontalM}`, marginBottom: tokens.spacingVerticalS }}>
+          <AIInsightBanner
+            summary={getAIWaitingOnYouCardSummary()}
+            insights={getAllWaitingOnYouInsights()}
+          />
         </div>
       )}
 
