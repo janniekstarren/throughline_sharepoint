@@ -43,16 +43,16 @@
 
 // ============================================
 // LARGE CARDS ROW
-// Full-width cards stacked vertically
+// 2-column grid for large cards (half width each)
 // Height adapts to detail panel content
 // ============================================
 .largeCardsRow {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);  // 2 large cards per row
   gap: 20px;
   margin-bottom: 20px;
 
-  // Each large card takes full width
+  // Each large card takes half width
   // Height determined by detail panel content
   > div {
     width: 100%;
@@ -61,6 +61,11 @@
   // Remove bottom margin if no medium cards follow
   &:last-child {
     margin-bottom: 0;
+  }
+
+  // Full width on smaller screens
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -84,16 +89,16 @@
 .masonryGrid {
   display: flex;
   width: auto;
-  margin-left: -24px; // Offset for column gap (increased for wider cards)
+  margin-left: -16px; // Reduced offset for tighter 4-column grid
 }
 
 .masonryColumn {
-  padding-left: 24px; // Gap between columns (increased for wider cards)
+  padding-left: 16px; // Reduced gap for 4-column layout
   background-clip: padding-box;
 
   // Gap between rows (cards in same column)
   > div {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     // Cards use dynamic height based on content
     // Removed fixed min-height to allow cards to size naturally
 
@@ -110,12 +115,16 @@
 // ============================================
 .gridLayout {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); // 2 columns by default for wider cards
-  gap: 24px;
+  grid-template-columns: repeat(4, 1fr); // 4 columns by default for narrower cards
+  gap: 16px;
   min-height: 100px;
   padding: 8px;
   border-radius: 8px;
   transition: background-color 0.2s ease;
+
+  @media (max-width: 1400px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
 
   @media (max-width: 1024px) {
     grid-template-columns: repeat(2, 1fr);
@@ -163,23 +172,23 @@
 // RESPONSIVE ADJUSTMENTS
 // ============================================
 
-// Tablet/Medium screens - keep 2 columns
-@media (max-width: 1199px) {
+// Tablet/Medium screens - 3 columns for masonry
+@media (max-width: 1399px) {
   .masonryGrid {
-    margin-left: -20px;
+    margin-left: -14px;
   }
 
   .masonryColumn {
-    padding-left: 20px;
+    padding-left: 14px;
 
     > div {
-      margin-bottom: 20px;
+      margin-bottom: 14px;
     }
   }
 
   .largeCardsRow {
-    gap: 20px;
-    margin-bottom: 20px;
+    gap: 16px;
+    margin-bottom: 16px;
   }
 }
 
@@ -210,4 +219,21 @@
     gap: 12px;
     margin-bottom: 12px;
   }
+}
+
+// ============================================
+// SMALL CARDS ROW
+// Horizontal row of compact card chips
+// ============================================
+.smallCardsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.smallCardWrapper {
+  flex: 0 0 auto;
+  min-width: 180px;
+  max-width: 280px;
 }

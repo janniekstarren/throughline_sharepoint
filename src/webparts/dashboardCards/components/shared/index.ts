@@ -19,6 +19,9 @@ export type { IListItemProps, ListItemHighlight } from './ListItem';
 export { MasterDetailCard } from './MasterDetailCard';
 export type { IMasterDetailCardProps } from './MasterDetailCard';
 
+export { SmallCard } from './SmallCard';
+export type { ISmallCardProps } from './SmallCard';
+
 // Chart components
 export { TrendBarChart, DonutChart, StatsGrid, TopItemsList, ChartCarousel } from './charts';
 export type {

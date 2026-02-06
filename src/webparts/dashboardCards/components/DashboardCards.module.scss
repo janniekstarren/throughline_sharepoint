@@ -7,11 +7,21 @@
 .dashboard {
   padding: 20px;
   position: relative;
-  background: transparent;
+  background: transparent !important;
+  background-color: transparent !important;
   min-height: 100vh;
   max-width: 1600px;
   margin: 0 auto;
   overflow-x: hidden; // Prevent horizontal scroll
+}
+
+// Ensure FluentProvider wrapper is also transparent
+:global {
+  // Target the FluentProvider root div
+  .fui-FluentProvider {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
 }
 
 // Drawer wrapper for property pane

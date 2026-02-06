@@ -8,11 +8,17 @@
  * Storage is scoped per-user and per-webpart instance to avoid conflicts.
  */
 
+import { CardSize, ICardSizeState } from '../types/CardSize';
+
 export interface IUserPreferences {
   cardOrder?: string[];
   collapsedCardIds?: string[];
+  cardSizes?: ICardSizeState;
   lastUpdated?: string;
 }
+
+// Re-export for convenience
+export type { CardSize, ICardSizeState };
 
 // Storage key prefix
 const STORAGE_KEY_PREFIX = 'throughline_dashboard_prefs_';

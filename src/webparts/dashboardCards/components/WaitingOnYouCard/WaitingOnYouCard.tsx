@@ -1,7 +1,8 @@
 // ============================================
-// WaitingOnYouCard - Medium card (Summary View)
-// Shows statistics and trend chart only
-// User can expand to large card for full content
+// WaitingOnYouCard - Card with size variants
+// Small: Compact chip with AI popover
+// Medium: Summary view with stats and chart
+// Large: Full master-detail layout
 // ============================================
 
 import * as React from 'react';
@@ -33,11 +34,13 @@ import { DataMode } from '../../services/testData';
 import { getTestWaitingOnYouData, getTestWaitingOnYouTrend } from '../../services/testData/waitingOnYou';
 import { WaitingDebtChart } from './components/WaitingDebtChart';
 // Shared components
-import { BaseCard, CardHeader, EmptyState, AIInsightBanner, AIOnboardingDialog } from '../shared';
+import { BaseCard, CardHeader, EmptyState, AIInsightBanner, AIOnboardingDialog, SmallCard } from '../shared';
 import { useCardStyles } from '../cardStyles';
 // AI Demo Mode imports
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { getAIWaitingOnYouCardSummary, getAllWaitingOnYouInsights } from '../../services/testData/aiDemoData';
+// Card size type
+import { CardSize } from '../../types/CardSize';
 
 // Local storage key for AI onboarding state
 const AI_ONBOARDING_KEY = 'dashboardCards_aiOnboardingDismissed_waitingOnYou';
@@ -53,7 +56,11 @@ export interface WaitingOnYouCardProps {
   dataMode?: DataMode;
   /** AI Demo Mode - show AI-enhanced content (only when dataMode === 'test') */
   aiDemoMode?: boolean;
-  /** Callback to toggle between medium and large card size */
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback to cycle through card sizes (small → medium → large → small) */
+  onCycleSize?: () => void;
+  /** @deprecated Use size and onCycleSize instead */
   onToggleSize?: () => void;
 }
 
@@ -67,8 +74,12 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
   includeMentions = true,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
   const styles = useWaitingOnYouStyles();
   const cardStyles = useCardStyles();
 
@@ -142,6 +153,38 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
       }
     : apiHook.refresh;
 
+  // Get AI summary text for small card
+  const aiSummaryText = useMemo(() => {
+    if (!aiCardSummary) return undefined;
+    return aiCardSummary.summary;
+  }, [aiCardSummary]);
+
+  // Get AI insights array for small card (use title for short display)
+  const aiInsightsList = useMemo(() => {
+    return aiInsights.map(insight => insight.title);
+  }, [aiInsights]);
+
+  // ============================================
+  // SMALL CARD VARIANT
+  // Compact chip with title, count, and AI popover
+  // ============================================
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="waitingOnYou"
+        title="Waiting On You"
+        icon={<PersonClockRegular />}
+        itemCount={data?.totalItems}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiSummaryText}
+        aiInsights={aiInsightsList}
+        onCycleSize={handleCycleSize || (() => {})}
+        isLoading={isLoading}
+        hasError={!!error}
+      />
+    );
+  }
+
   // Top 3 people waiting on you (sorted by longest wait)
   // Use byPerson only - it already contains all conversations grouped by person
   const topPeople = useMemo(() => {
@@ -173,13 +216,13 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
   }, [data]);
 
   // Expand button for switching to large card view
-  const expandButton = onToggleSize ? (
+  const expandButton = handleCycleSize ? (
     <Tooltip content="View all details" relationship="label">
       <Button
         appearance="subtle"
         size="small"
         icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
+        onClick={handleCycleSize}
         aria-label="Expand card"
       />
     </Tooltip>
@@ -330,8 +373,8 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
       )}
 
       {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
+      {handleCycleSize && (
+        <div className={styles.expandPrompt} onClick={handleCycleSize}>
           <ArrowExpand20Regular />
           <span>View all {data?.totalItems} items waiting on you</span>
         </div>

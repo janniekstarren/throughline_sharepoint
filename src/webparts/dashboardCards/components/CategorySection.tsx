@@ -3,12 +3,16 @@ import Masonry from 'react-masonry-css';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
 import { mergeClasses } from '@fluentui/react-components';
 import { getIconById } from '../propertyPane/CardConfigDialog';
+import { CardSize } from '../types/CardSize';
 import styles from './CategorySection.module.scss';
 
 // A card with its size information for ordered rendering
 export interface IOrderedCard {
   id: string;
-  isLarge: boolean;
+  /** Card size: 'small', 'medium', or 'large'. If not provided, falls back to isLarge */
+  size?: CardSize;
+  /** @deprecated Use size instead */
+  isLarge?: boolean;
   /** Whether the card needs extra height (e.g., AI mode) */
   isTall?: boolean;
   element: React.ReactNode;
@@ -25,11 +29,12 @@ export interface ICategorySectionProps {
 }
 
 // Responsive breakpoints for masonry columns
-// 2 columns by default for wider cards that fit more content
+// 4 columns by default for narrower cards that fit more per row
 const masonryBreakpoints = {
-  default: 2,  // 2 columns on large screens (wider cards)
-  1024: 2,     // 2 columns on medium screens
-  768: 1       // 1 column on mobile (<768px)
+  default: 4,   // 4 columns on large screens
+  1400: 3,      // 3 columns on medium-large screens
+  1024: 2,      // 2 columns on medium screens
+  768: 1        // 1 column on mobile (<768px)
 };
 
 export const CategorySection: React.FC<ICategorySectionProps> = ({
@@ -46,20 +51,46 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
     return null;
   }
 
-  // Separate large and medium cards while preserving order
-  const mediumCards = orderedCards.filter(card => !card.isLarge);
-  const largeCards = orderedCards.filter(card => card.isLarge);
+  // Helper to determine card size (supports both new 'size' prop and legacy 'isLarge')
+  const getCardSize = (card: IOrderedCard): CardSize => {
+    if (card.size) return card.size;
+    // Fallback for legacy isLarge prop
+    return card.isLarge ? 'large' : 'medium';
+  };
 
-  // Render large cards as full-width rows (not draggable - they're already full width)
-  const renderLargeCards = (): React.ReactNode[] => {
-    return largeCards.map(card => (
-      <div key={card.id} className={mergeClasses(
-        styles.largeCardsRow,
-        card.isTall && styles.largeCardsRowTall
-      )}>
-        <div>{card.element}</div>
+  // Separate cards by size while preserving order
+  const smallCards = orderedCards.filter(card => getCardSize(card) === 'small');
+  const mediumCards = orderedCards.filter(card => getCardSize(card) === 'medium');
+  const largeCards = orderedCards.filter(card => getCardSize(card) === 'large');
+
+  // Render small cards as horizontal row of chips
+  const renderSmallCards = (): React.ReactNode => {
+    if (smallCards.length === 0) return null;
+
+    return (
+      <div className={styles.smallCardsRow}>
+        {smallCards.map(card => (
+          <div key={card.id} className={styles.smallCardWrapper}>
+            {card.element}
+          </div>
+        ))}
       </div>
-    ));
+    );
+  };
+
+  // Render large cards in 2-column grid (not draggable)
+  const renderLargeCards = (): React.ReactNode => {
+    if (largeCards.length === 0) return null;
+
+    return (
+      <div className={styles.largeCardsRow}>
+        {largeCards.map(card => (
+          <div key={card.id} className={card.isTall ? styles.largeCardsRowTall : undefined}>
+            {card.element}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   // Render medium cards with drag-and-drop support
@@ -141,10 +172,13 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
         </h3>
       )}
 
-      {/* Render large cards first (full width) */}
+      {/* Render small cards first (horizontal row of chips) */}
+      {renderSmallCards()}
+
+      {/* Render large cards (2-column grid) */}
       {renderLargeCards()}
 
-      {/* Render medium cards with DnD support */}
+      {/* Render medium cards with DnD support (4-column masonry) */}
       {renderMediumCards()}
     </section>
   );
