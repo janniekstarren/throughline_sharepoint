@@ -30,7 +30,7 @@ import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { useWaitingOnOthers, IWaitingOnOthersSettings, DEFAULT_WAITING_ON_OTHERS_SETTINGS } from '../../hooks/useWaitingOnOthers';
 import { WaitingTrendChart } from './components/WaitingTrendChart';
 import { GroupedPendingData, PendingTrendData } from '../../models/WaitingOnOthers';
-import { BaseCard, CardHeader, EmptyState, AIInsightBanner, AIOnboardingDialog } from '../shared';
+import { BaseCard, CardHeader, EmptyState, AIInsightBanner, AIOnboardingDialog, SmallCard } from '../shared';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestWaitingOnOthersData, getTestWaitingOnOthersTrend } from '../../services/testData/waitingOnOthers';
@@ -42,6 +42,8 @@ import {
   getAllWaitingOnOthersInsights,
   IAIEnhancedPersonGroup,
 } from '../../services/testData/aiDemoData';
+// Card size type
+import { CardSize } from '../../types/CardSize';
 
 // Local storage key for AI onboarding state
 const AI_ONBOARDING_KEY = 'dashboardCards_aiOnboardingDismissed';
@@ -183,7 +185,11 @@ interface WaitingOnOthersCardProps {
   dataMode?: DataMode;
   /** Enable AI Demo Mode (only works with test data) */
   aiDemoMode?: boolean;
-  /** Callback to toggle between large and medium card size */
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback to cycle through card sizes (small → medium → large → small) */
+  onCycleSize?: () => void;
+  /** @deprecated Use size and onCycleSize instead */
   onToggleSize?: () => void;
 }
 
@@ -192,8 +198,12 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
   settings = DEFAULT_WAITING_ON_OTHERS_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize
+  size = 'medium',
+  onCycleSize,
+  onToggleSize, // deprecated
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
   const styles = useCardStyles();
   const summaryStyles = useSummaryStyles();
 
@@ -260,6 +270,38 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
       }
     : apiHook.refresh;
 
+  // Get AI summary text for small card
+  const aiSummaryText = useMemo(() => {
+    if (!aiCardSummary) return undefined;
+    return aiCardSummary.summary;
+  }, [aiCardSummary]);
+
+  // Get AI insights array for small card
+  const aiInsightsList = useMemo(() => {
+    return aiInsights.map(insight => insight.title);
+  }, [aiInsights]);
+
+  // ============================================
+  // SMALL CARD VARIANT
+  // Compact chip with title, count, and AI popover
+  // ============================================
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="waitingOnOthers"
+        title="Waiting On Others"
+        icon={<ClockRegular />}
+        itemCount={data?.totalItems}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiSummaryText}
+        aiInsights={aiInsightsList}
+        onCycleSize={handleCycleSize || (() => {})}
+        isLoading={isLoading}
+        hasError={!!error}
+      />
+    );
+  }
+
   // Top 3 people with longest waits
   const topPeople = useMemo(() => {
     if (!data) return [];
@@ -283,13 +325,13 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
   };
 
   // Expand button for switching to large card view
-  const expandButton = onToggleSize ? (
+  const expandButton = handleCycleSize ? (
     <Tooltip content="View all details" relationship="label">
       <Button
         appearance="subtle"
         size="small"
         icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
+        onClick={handleCycleSize}
         aria-label="Expand card"
       />
     </Tooltip>
@@ -440,8 +482,8 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
       )}
 
       {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={summaryStyles.expandPrompt} onClick={onToggleSize}>
+      {handleCycleSize && (
+        <div className={summaryStyles.expandPrompt} onClick={handleCycleSize}>
           <ArrowExpand20Regular />
           <span>View all {data?.totalItems} pending responses</span>
         </div>

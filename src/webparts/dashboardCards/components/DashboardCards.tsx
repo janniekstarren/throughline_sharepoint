@@ -34,6 +34,7 @@ import { ContextSwitchingCard, ContextSwitchingCardLarge } from './ContextSwitch
 import { Salutation, SalutationType, SalutationSize } from './Salutation';
 import { CategorySection, IOrderedCard } from './CategorySection';
 import { getFluentTheme, ThemeMode } from '../utils/themeUtils';
+import { CardSize } from '../types/CardSize';
 import styles from './DashboardCards.module.scss';
 
 export interface ICardVisibility {
@@ -57,12 +58,14 @@ import { ICategoryConfig } from '../propertyPane/CardConfigDialog';
 // Re-export for convenience
 export type { ICategoryConfig };
 
-// Large cards - these get full-width layout (master-detail)
-const LARGE_CARDS = [
+// Cards that have large variants (master-detail layout)
+// Note: All cards now support 3 sizes (small/medium/large) via cardSizes
+const _CARDS_WITH_LARGE_VARIANT = [
   'todaysAgenda', 'upcomingWeek', 'email',
   'myTasks', 'recentFiles', 'sharedWithMe', 'myTeam', 'siteActivity', 'quickLinks',
   'waitingOnYou', 'waitingOnOthers', 'contextSwitching'
 ];
+void _CARDS_WITH_LARGE_VARIANT; // Suppress unused warning - kept for documentation
 
 // Default icon IDs for system categories (matches AVAILABLE_ICONS in CardConfigDialog)
 const DEFAULT_CATEGORY_ICONS: Record<string, string> = {
@@ -214,12 +217,14 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   // Get current user ID for per-user preferences
   const userId = context.pageContext?.user?.loginName || '';
 
-  // Use user preferences hook for per-user card order and collapsed state
+  // Use user preferences hook for per-user card order, collapsed state, and card sizes
   const {
     cardOrder,
     collapsedCardIds,
     setCardOrder: setUserCardOrder,
     setCollapsedCardIds: setUserCollapsedCardIds,
+    cycleCardSize,
+    getCardSize,
   } = useUserPreferences({
     userId,
     defaultCardOrder,
@@ -240,26 +245,28 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     [collapsedCardIds]
   );
 
-  // Toggle a card between collapsed (medium) and expanded (large)
-  const toggleCardSize = React.useCallback((cardId: string): void => {
-    const newCollapsedIds = collapsedCards.has(cardId)
-      ? collapsedCardIds.filter(id => id !== cardId)
-      : [...collapsedCardIds, cardId];
-
-    // Save to user preferences (localStorage)
-    setUserCollapsedCardIds(newCollapsedIds);
-
-    // Also notify parent for property pane sync
-    if (onCollapsedCardsChange) {
-      onCollapsedCardsChange(newCollapsedIds);
-    }
-  }, [collapsedCards, collapsedCardIds, setUserCollapsedCardIds, onCollapsedCardsChange]);
+  // Legacy toggle function - kept for backwards compatibility with collapsedCardIds
+  // New code should use cycleCardSize for 3-tier sizing
+  void collapsedCards; // Suppress unused warning - kept for legacy support
+  void setUserCollapsedCardIds; // Suppress unused warning
 
   // Check if a card should render as large (considering collapsed state)
+  // Legacy function for backwards compatibility
   const isCardLarge = React.useCallback((cardId: string): boolean => {
-    // Only LARGE_CARDS can be large, and only if not collapsed
-    return LARGE_CARDS.includes(cardId) && !collapsedCards.has(cardId);
-  }, [collapsedCards]);
+    // Use the new cardSizes system - check if size is 'large'
+    const size = getCardSize(cardId);
+    return size === 'large';
+  }, [getCardSize]);
+
+  // Get the current size of a card (for 3-tier sizing)
+  const getCardSizeForRender = React.useCallback((cardId: string): CardSize => {
+    return getCardSize(cardId);
+  }, [getCardSize]);
+
+  // Handle cycling card size (small → medium → large → small)
+  const handleCycleCardSize = React.useCallback((cardId: string): void => {
+    cycleCardSize(cardId);
+  }, [cycleCardSize]);
 
   // Handle drag end - reorder cards
   const handleDragEnd = React.useCallback((result: DropResult) => {
@@ -391,168 +398,174 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
 
     switch (cardId) {
       // Enhanced cards with charts, stats, and top items
-      // Pass context, dataMode, and onToggleSize - cards handle their own data fetching
+      // These cards use legacy toggle for now - pass handleCycleCardSize for consistent behavior
       case 'todaysAgenda':
         return wrapWithErrorBoundary(
           isLarge
-            ? <TodaysAgendaCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <TodaysAgendaCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <TodaysAgendaCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            : <TodaysAgendaCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'email':
         return wrapWithErrorBoundary(
           isLarge
-            ? <EmailCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <EmailCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <EmailCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            : <EmailCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'upcomingWeek':
         return wrapWithErrorBoundary(
           isLarge
-            ? <UpcomingWeekCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <UpcomingWeekCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <UpcomingWeekCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            : <UpcomingWeekCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'myTasks':
         return wrapWithErrorBoundary(
           isLarge
-            ? <MyTasksCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <MyTasksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <MyTasksCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            : <MyTasksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'recentFiles':
         return wrapWithErrorBoundary(
           isLarge
-            ? <RecentFilesCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <RecentFilesCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <RecentFilesCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            : <RecentFilesCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'myTeam':
         return wrapWithErrorBoundary(
           isLarge
-            ? <MyTeamCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <MyTeamCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <MyTeamCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            : <MyTeamCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'sharedWithMe':
         return wrapWithErrorBoundary(
           isLarge
-            ? <SharedWithMeCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
-            : <SharedWithMeCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+            ? <SharedWithMeCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            : <SharedWithMeCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'siteActivity':
         // SiteActivityCardLarge not yet updated to new pattern - always use medium
         return wrapWithErrorBoundary(
-          <SiteActivityCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+          <SiteActivityCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'quickLinks':
         // QuickLinksCardLarge has different props - use medium for now
         return wrapWithErrorBoundary(
-          <QuickLinksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => toggleCardSize(cardId)} />
+          <QuickLinksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
         );
       // Analytics cards
-      case 'waitingOnYou':
+      case 'waitingOnYou': {
+        const cardSize = getCardSizeForRender(cardId);
+        // Large size uses the large card variant
+        if (cardSize === 'large') {
+          return wrapWithErrorBoundary(
+            <WaitingOnYouCardLarge
+              graphClient={graphClient || null}
+              showChart={waitingOnYouSettings.showChart}
+              staleDays={waitingOnYouSettings.staleDays}
+              includeEmail={waitingOnYouSettings.includeEmail}
+              includeTeamsChats={waitingOnYouSettings.includeTeamsChats}
+              includeChannels={waitingOnYouSettings.includeChannels}
+              includeMentions={waitingOnYouSettings.includeMentions}
+              dataMode={dataMode}
+              aiDemoMode={dataMode === 'test' && aiDemoMode}
+              onToggleSize={() => handleCycleCardSize(cardId)}
+            />
+          );
+        }
+        // Small and Medium sizes use the standard card with size prop
         return wrapWithErrorBoundary(
-          isLarge
-            ? <WaitingOnYouCardLarge
-                graphClient={graphClient || null}
-                showChart={waitingOnYouSettings.showChart}
-                staleDays={waitingOnYouSettings.staleDays}
-                includeEmail={waitingOnYouSettings.includeEmail}
-                includeTeamsChats={waitingOnYouSettings.includeTeamsChats}
-                includeChannels={waitingOnYouSettings.includeChannels}
-                includeMentions={waitingOnYouSettings.includeMentions}
-                dataMode={dataMode}
-                aiDemoMode={dataMode === 'test' && aiDemoMode}
-                onToggleSize={() => toggleCardSize(cardId)}
-              />
-            : <WaitingOnYouCard
-                graphClient={graphClient || null}
-                showChart={waitingOnYouSettings.showChart}
-                staleDays={waitingOnYouSettings.staleDays}
-                includeEmail={waitingOnYouSettings.includeEmail}
-                includeTeamsChats={waitingOnYouSettings.includeTeamsChats}
-                includeChannels={waitingOnYouSettings.includeChannels}
-                includeMentions={waitingOnYouSettings.includeMentions}
-                dataMode={dataMode}
-                aiDemoMode={dataMode === 'test' && aiDemoMode}
-                onToggleSize={() => toggleCardSize(cardId)}
-              />
+          <WaitingOnYouCard
+            graphClient={graphClient || null}
+            showChart={waitingOnYouSettings.showChart}
+            staleDays={waitingOnYouSettings.staleDays}
+            includeEmail={waitingOnYouSettings.includeEmail}
+            includeTeamsChats={waitingOnYouSettings.includeTeamsChats}
+            includeChannels={waitingOnYouSettings.includeChannels}
+            includeMentions={waitingOnYouSettings.includeMentions}
+            dataMode={dataMode}
+            aiDemoMode={dataMode === 'test' && aiDemoMode}
+            size={cardSize}
+            onCycleSize={() => handleCycleCardSize(cardId)}
+          />
         );
-      case 'waitingOnOthers':
+      }
+      case 'waitingOnOthers': {
+        const cardSize = getCardSizeForRender(cardId);
+        if (cardSize === 'large') {
+          return wrapWithErrorBoundary(
+            <WaitingOnOthersCardLarge
+              context={context}
+              settings={{
+                minWaitHours: waitingOnOthersSettings.minWaitHours,
+                includeEmail: waitingOnOthersSettings.includeEmail,
+                includeTeamsChats: waitingOnOthersSettings.includeTeamsChats,
+                includeMentions: waitingOnOthersSettings.includeMentions,
+                showChart: waitingOnOthersSettings.showChart,
+              }}
+              dataMode={dataMode}
+              aiDemoMode={dataMode === 'test' && aiDemoMode}
+              onToggleSize={() => handleCycleCardSize(cardId)}
+            />
+          );
+        }
         return wrapWithErrorBoundary(
-          isLarge
-            ? <WaitingOnOthersCardLarge
-                context={context}
-                settings={{
-                  minWaitHours: waitingOnOthersSettings.minWaitHours,
-                  includeEmail: waitingOnOthersSettings.includeEmail,
-                  includeTeamsChats: waitingOnOthersSettings.includeTeamsChats,
-                  includeMentions: waitingOnOthersSettings.includeMentions,
-                  showChart: waitingOnOthersSettings.showChart,
-                }}
-                dataMode={dataMode}
-                aiDemoMode={dataMode === 'test' && aiDemoMode}
-                onToggleSize={() => toggleCardSize(cardId)}
-              />
-            : <WaitingOnOthersCard
-                context={context}
-                settings={{
-                  minWaitHours: waitingOnOthersSettings.minWaitHours,
-                  includeEmail: waitingOnOthersSettings.includeEmail,
-                  includeTeamsChats: waitingOnOthersSettings.includeTeamsChats,
-                  includeMentions: waitingOnOthersSettings.includeMentions,
-                  showChart: waitingOnOthersSettings.showChart,
-                }}
-                dataMode={dataMode}
-                aiDemoMode={dataMode === 'test' && aiDemoMode}
-                onToggleSize={() => toggleCardSize(cardId)}
-              />
+          <WaitingOnOthersCard
+            context={context}
+            settings={{
+              minWaitHours: waitingOnOthersSettings.minWaitHours,
+              includeEmail: waitingOnOthersSettings.includeEmail,
+              includeTeamsChats: waitingOnOthersSettings.includeTeamsChats,
+              includeMentions: waitingOnOthersSettings.includeMentions,
+              showChart: waitingOnOthersSettings.showChart,
+            }}
+            dataMode={dataMode}
+            aiDemoMode={dataMode === 'test' && aiDemoMode}
+            size={cardSize}
+            onCycleSize={() => handleCycleCardSize(cardId)}
+          />
         );
-      case 'contextSwitching':
+      }
+      case 'contextSwitching': {
+        const cardSize = getCardSizeForRender(cardId);
+        const contextSettings = {
+          minSwitchDuration: 30,
+          trackEmail: contextSwitchingSettings.trackEmail,
+          trackTeamsChat: contextSwitchingSettings.trackTeamsChat,
+          trackTeamsChannel: contextSwitchingSettings.trackTeamsChannel,
+          trackMeetings: contextSwitchingSettings.trackMeetings,
+          trackFiles: contextSwitchingSettings.trackFiles,
+          trackTasks: false,
+          focusGoal: contextSwitchingSettings.focusGoal,
+          workingHoursStart: 9,
+          workingHoursEnd: 17,
+          showFocusScore: contextSwitchingSettings.showFocusScore,
+          showHourlyChart: contextSwitchingSettings.showHourlyChart,
+          showDistribution: contextSwitchingSettings.showDistribution,
+          trendDays: 7,
+        };
+        if (cardSize === 'large') {
+          return wrapWithErrorBoundary(
+            <ContextSwitchingCardLarge
+              graphClient={graphClient}
+              dataMode={dataMode}
+              aiDemoMode={dataMode === 'test' && aiDemoMode}
+              title={cardTitle}
+              onToggleSize={() => handleCycleCardSize(cardId)}
+              settings={contextSettings}
+            />
+          );
+        }
         return wrapWithErrorBoundary(
-          isLarge
-            ? <ContextSwitchingCardLarge
-                graphClient={graphClient}
-                dataMode={dataMode}
-                aiDemoMode={dataMode === 'test' && aiDemoMode}
-                title={cardTitle}
-                onToggleSize={() => toggleCardSize(cardId)}
-                settings={{
-                  minSwitchDuration: 30,
-                  trackEmail: contextSwitchingSettings.trackEmail,
-                  trackTeamsChat: contextSwitchingSettings.trackTeamsChat,
-                  trackTeamsChannel: contextSwitchingSettings.trackTeamsChannel,
-                  trackMeetings: contextSwitchingSettings.trackMeetings,
-                  trackFiles: contextSwitchingSettings.trackFiles,
-                  trackTasks: false,
-                  focusGoal: contextSwitchingSettings.focusGoal,
-                  workingHoursStart: 9,
-                  workingHoursEnd: 17,
-                  showFocusScore: contextSwitchingSettings.showFocusScore,
-                  showHourlyChart: contextSwitchingSettings.showHourlyChart,
-                  showDistribution: contextSwitchingSettings.showDistribution,
-                  trendDays: 7,
-                }}
-              />
-            : <ContextSwitchingCard
-                graphClient={graphClient}
-                dataMode={dataMode}
-                aiDemoMode={dataMode === 'test' && aiDemoMode}
-                title={cardTitle}
-                onToggleSize={() => toggleCardSize(cardId)}
-                settings={{
-                  minSwitchDuration: 30,
-                  trackEmail: contextSwitchingSettings.trackEmail,
-                  trackTeamsChat: contextSwitchingSettings.trackTeamsChat,
-                  trackTeamsChannel: contextSwitchingSettings.trackTeamsChannel,
-                  trackMeetings: contextSwitchingSettings.trackMeetings,
-                  trackFiles: contextSwitchingSettings.trackFiles,
-                  trackTasks: false,
-                  focusGoal: contextSwitchingSettings.focusGoal,
-                  workingHoursStart: 9,
-                  workingHoursEnd: 17,
-                  showFocusScore: contextSwitchingSettings.showFocusScore,
-                  showHourlyChart: contextSwitchingSettings.showHourlyChart,
-                  showDistribution: contextSwitchingSettings.showDistribution,
-                  trendDays: 7,
-                }}
-              />
+          <ContextSwitchingCard
+            graphClient={graphClient}
+            dataMode={dataMode}
+            aiDemoMode={dataMode === 'test' && aiDemoMode}
+            title={cardTitle}
+            size={cardSize}
+            onCycleSize={() => handleCycleCardSize(cardId)}
+            settings={contextSettings}
+          />
         );
+      }
       default:
         return null;
     }
@@ -577,13 +590,17 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       // Maintain user's card order
       const orderedCards: IOrderedCard[] = cardOrder
         .filter(id => isCardVisible(id))
-        .map(id => ({
-          id,
-          isLarge: isCardLarge(id),
-          // Make EmailCard taller when in AI mode (more space for insights)
-          isTall: dataMode === 'test' && aiDemoMode && isCardLarge(id) && id === 'email',
-          element: renderCardElement(id)
-        }));
+        .map(id => {
+          const cardSize = getCardSizeForRender(id);
+          return {
+            id,
+            size: cardSize,
+            isLarge: cardSize === 'large', // Legacy support
+            // Make EmailCard taller when in AI mode (more space for insights)
+            isTall: dataMode === 'test' && aiDemoMode && cardSize === 'large' && id === 'email',
+            element: renderCardElement(id)
+          };
+        });
 
       return [
         <CategorySection
@@ -618,13 +635,17 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       cardsInCategory.forEach(id => renderedCards.add(id));
 
       // Create ordered cards array that preserves user's order
-      const orderedCards: IOrderedCard[] = cardsInCategory.map(id => ({
-        id,
-        isLarge: isCardLarge(id),
-        // Make card taller when in AI mode (more space for insights)
-        isTall: dataMode === 'test' && aiDemoMode && isCardLarge(id),
-        element: renderCardElement(id)
-      }));
+      const orderedCards: IOrderedCard[] = cardsInCategory.map(id => {
+        const cardSize = getCardSizeForRender(id);
+        return {
+          id,
+          size: cardSize,
+          isLarge: cardSize === 'large', // Legacy support
+          // Make card taller when in AI mode (more space for insights)
+          isTall: dataMode === 'test' && aiDemoMode && cardSize === 'large',
+          element: renderCardElement(id)
+        };
+      });
 
       const categoryName = categoryNames[categoryId] || categoryId;
       // Use custom icon if set, otherwise fall back to default icon for system categories
@@ -652,13 +673,17 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     );
 
     if (unassignedCards.length > 0) {
-      const orderedUnassigned: IOrderedCard[] = unassignedCards.map(id => ({
-        id,
-        isLarge: isCardLarge(id),
-        // Make card taller when in AI mode (more space for insights)
-        isTall: dataMode === 'test' && aiDemoMode && isCardLarge(id),
-        element: renderCardElement(id)
-      }));
+      const orderedUnassigned: IOrderedCard[] = unassignedCards.map(id => {
+        const cardSize = getCardSizeForRender(id);
+        return {
+          id,
+          size: cardSize,
+          isLarge: cardSize === 'large', // Legacy support
+          // Make card taller when in AI mode (more space for insights)
+          isTall: dataMode === 'test' && aiDemoMode && cardSize === 'large',
+          element: renderCardElement(id)
+        };
+      });
 
       result.push(
         <CategorySection

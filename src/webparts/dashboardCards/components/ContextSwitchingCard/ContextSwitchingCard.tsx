@@ -57,7 +57,8 @@ import {
   TrendChart,
   TimelineView
 } from './components';
-import { AIInsightBanner } from '../shared/AIComponents';
+import { AIInsightBanner, SmallCard } from '../shared';
+import { CardSize } from '../../types/CardSize';
 
 interface ContextSwitchingCardProps {
   graphClient?: MSGraphClientV3;
@@ -67,7 +68,11 @@ interface ContextSwitchingCardProps {
   title?: string;
   /** AI Demo Mode - show AI-enhanced content (only when dataMode === 'test') */
   aiDemoMode?: boolean;
-  /** Callback to toggle between medium and large card size */
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback to cycle through card sizes (small → medium → large → small) */
+  onCycleSize?: () => void;
+  /** @deprecated Use size and onCycleSize instead */
   onToggleSize?: () => void;
 }
 
@@ -100,8 +105,12 @@ export const ContextSwitchingCard: React.FC<ContextSwitchingCardProps> = ({
   variant = 'standard',
   title = 'Context Switching',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onCycleSize,
+  onToggleSize, // deprecated
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
   const styles = useContextSwitchingStyles();
 
   // State
@@ -190,6 +199,48 @@ export const ContextSwitchingCard: React.FC<ContextSwitchingCardProps> = ({
     const { todaySummary } = data;
     return `${todaySummary.totalSwitches} switches · ${formatFocusTime(todaySummary.totalFocusTime)} focus`;
   }, [data]);
+
+  // Get AI summary text for small card
+  const aiCardSummary = useMemo(() => {
+    if (!aiDemoMode) return undefined;
+    return getAIContextSwitchingCardSummary();
+  }, [aiDemoMode]);
+
+  const aiSummaryText = useMemo(() => {
+    if (!aiCardSummary) return undefined;
+    return aiCardSummary.summary;
+  }, [aiCardSummary]);
+
+  // Get AI insights array for small card
+  const aiInsights = useMemo(() => {
+    if (!aiDemoMode) return [];
+    return getAllContextSwitchingInsights();
+  }, [aiDemoMode]);
+
+  const aiInsightsList = useMemo(() => {
+    return aiInsights.map(insight => insight.title);
+  }, [aiInsights]);
+
+  // ============================================
+  // SMALL CARD VARIANT
+  // Compact chip with title, count, and AI popover
+  // ============================================
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="contextSwitching"
+        title={title}
+        icon={<BrainCircuitRegular />}
+        itemCount={data?.todaySummary.totalSwitches}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiSummaryText}
+        aiInsights={aiInsightsList}
+        onCycleSize={handleCycleSize || (() => {})}
+        isLoading={loading}
+        hasError={!!error}
+      />
+    );
+  }
 
   // Loading state
   if (loading && !data) {
@@ -284,13 +335,13 @@ export const ContextSwitchingCard: React.FC<ContextSwitchingCardProps> = ({
               disabled={loading}
             />
           </Tooltip>
-          {onToggleSize && (
+          {handleCycleSize && (
             <Tooltip content="Expand" relationship="label">
               <Button
                 appearance="subtle"
                 icon={<ArrowMaximizeRegular />}
                 size="small"
-                onClick={onToggleSize}
+                onClick={handleCycleSize}
               />
             </Tooltip>
           )}
