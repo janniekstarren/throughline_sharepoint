@@ -3,76 +3,129 @@
 import { makeStyles, tokens } from '@fluentui/react-components';
 
 export const useWaitingOnYouStyles = makeStyles({
+  // Dynamic height based on content (matching WaitingOnOthersCard)
   card: {
+    height: 'auto',
+    minHeight: '280px',
+    maxHeight: '600px',
+  },
+
+  // Stats grid - 2x2 layout
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: tokens.spacingVerticalM,
+    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`,
+  },
+  statItem: {
     display: 'flex',
     flexDirection: 'column',
-    height: '100%',
-    backgroundColor: tokens.colorNeutralBackground1,
-    borderRadius: tokens.borderRadiusXLarge, // 12px - consistent with other cards
-    boxShadow: tokens.shadow4,
-    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacingVerticalXS,
+    padding: tokens.spacingVerticalM,
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderRadius: tokens.borderRadiusMedium,
+    textAlign: 'center',
   },
-  header: {
+  statLabel: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalM}`,
-    paddingBottom: tokens.spacingVerticalS,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    justifyContent: 'center',
+    gap: tokens.spacingHorizontalXS,
+    fontSize: '11px',
+    fontWeight: 500,
+    color: tokens.colorNeutralForeground3,
+    textTransform: 'uppercase',
+    letterSpacing: '0.3px',
   },
-  headerLeft: {
+  statIcon: {
+    fontSize: '14px',
+  },
+  statValue: {
+    fontSize: '28px',
+    fontWeight: 600,
+    color: tokens.colorNeutralForeground1,
+    lineHeight: 1,
+    textAlign: 'center',
+  },
+  statValueWarning: {
+    color: tokens.colorPaletteYellowForeground1,
+  },
+  statValueDanger: {
+    color: tokens.colorPaletteRedForeground1,
+  },
+
+  // Top people section
+  topPeopleSection: {
+    padding: `0 ${tokens.spacingHorizontalL}`,
+    paddingBottom: tokens.spacingVerticalL,
+  },
+  sectionLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: tokens.colorNeutralForeground3,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    marginBottom: tokens.spacingVerticalS,
+  },
+  topPeopleList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalXS,
+  },
+  personRow: {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacingHorizontalS,
-  },
-  headerIcon: {
-    color: tokens.colorBrandForeground1,
-    fontSize: '20px',
-  },
-  headerTitle: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.spacingVerticalXXS,
-  },
-  headerActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
-  },
-  summaryBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
-  },
-  tabs: {
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}`,
-  },
-  content: {
-    flex: 1,
-    minHeight: 0,
-    overflow: 'auto',
-    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalM}`,
-  },
-  // Chart section - positioned at bottom before footer for consistency
-  chartSection: {
-    backgroundColor: tokens.colorNeutralBackground2,
+    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
     borderRadius: tokens.borderRadiusMedium,
-    marginLeft: tokens.spacingHorizontalM,
-    marginRight: tokens.spacingHorizontalM,
-    marginBottom: tokens.spacingVerticalS,
-    overflow: 'hidden',
+    backgroundColor: tokens.colorNeutralBackground2,
   },
-  footer: {
+  personInfo: {
+    flex: 1,
+    minWidth: 0,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+    gap: tokens.spacingHorizontalXS,
   },
-  lastRefreshed: {
-    color: tokens.colorNeutralForeground3,
+  personName: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontSize: '13px',
+    color: tokens.colorNeutralForeground1,
   },
+  vipIcon: {
+    color: tokens.colorPaletteYellowForeground1,
+    fontSize: '14px',
+    flexShrink: 0,
+  },
+
+  // Chart container - positioned below AI banner
+  chartContainer: {
+    padding: `0 ${tokens.spacingHorizontalL}`,
+    marginBottom: tokens.spacingVerticalS,
+  },
+
+  // Expand prompt
+  expandPrompt: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacingHorizontalS,
+    padding: tokens.spacingVerticalM,
+    marginTop: 'auto',
+    cursor: 'pointer',
+    color: tokens.colorBrandForeground1,
+    fontSize: '13px',
+    fontWeight: 500,
+    ':hover': {
+      textDecoration: 'underline',
+    },
+  },
+
+  // Loading and error states
   loadingContainer: {
     display: 'flex',
     alignItems: 'center',
@@ -88,19 +141,5 @@ export const useWaitingOnYouStyles = makeStyles({
     padding: tokens.spacingVerticalXXL,
     flex: 1,
     gap: tokens.spacingVerticalS,
-  },
-  filterBar: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalM,
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    flexWrap: 'wrap',
-  },
-  filterItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
   },
 });

@@ -19,8 +19,11 @@ import {
   MenuPopover,
   MenuList,
   MenuItemRadio,
+  MenuItemCheckbox,
+  MenuItem,
   MenuGroup,
   MenuGroupHeader,
+  MenuDivider,
 } from '@fluentui/react-components';
 import {
   PersonClockRegular,
@@ -39,6 +42,7 @@ import {
   ArrowClockwiseRegular,
   Dismiss20Regular,
   ArrowSort20Regular,
+  Filter20Regular,
   Crown20Filled,
   ChevronDown20Regular,
   ChevronRight20Regular,
@@ -345,15 +349,15 @@ const useStyles = makeStyles({
     fontSize: '14px',
     color: tokens.colorNeutralForeground3,
   },
-  // VIP icon
+  // VIP icon (manager crown)
   vipIcon: {
     color: tokens.colorPaletteYellowForeground1,
-    fontSize: '12px',
+    fontSize: '16px',
     flexShrink: 0,
   },
   managerIcon: {
-    color: tokens.colorBrandForeground1,
-    fontSize: '12px',
+    color: tokens.colorPaletteYellowForeground1,
+    fontSize: '14px',
     flexShrink: 0,
   },
 });
@@ -488,6 +492,11 @@ export const WaitingOnYouCardLarge: React.FC<WaitingOnYouCardLargeProps> = ({
   const [expandedItemId, setExpandedItemId] = React.useState<string | null>(null);
   const [showChartSection] = React.useState(false);
 
+  // Filter state - content-based filtering (matching WaitingOnOthersCardLarge pattern)
+  type FilterType = 'vip' | 'question' | 'deadline' | 'mention';
+  const [activeFilters, setActiveFilters] = React.useState<Set<FilterType>>(new Set());
+  const [checkedFilterValues, setCheckedFilterValues] = React.useState<Record<string, string[]>>({ filter: [] });
+
   // Test data state
   const [testData, setTestData] = React.useState<GroupedWaitingData | null>(null);
   const [testTrendData, setTestTrendData] = React.useState<WaitingDebtTrend | null>(null);
@@ -555,30 +564,66 @@ export const WaitingOnYouCardLarge: React.FC<WaitingOnYouCardLargeProps> = ({
     }
   };
 
+  // Handle filter change (matching WaitingOnOthersCardLarge pattern)
+  const handleFilterChange = React.useCallback((filters: string[]) => {
+    setActiveFilters(new Set(filters as FilterType[]));
+    setCheckedFilterValues({ filter: filters });
+  }, []);
+
+  // Filter conversations based on filter state - OR logic (any match passes)
+  const filterConversation = React.useCallback((conv: StaleConversation): boolean => {
+    // If no filters are active, show all items
+    if (activeFilters.size === 0) return true;
+
+    // OR logic: show if any filter matches
+    if (activeFilters.has('vip') && conv.sender.relationship === 'manager') return true;
+    if (activeFilters.has('question') && conv.isQuestion) return true;
+    if (activeFilters.has('deadline') && conv.hasDeadlineMention) return true;
+    if (activeFilters.has('mention') && conv.isMention) return true;
+
+    return false;
+  }, [activeFilters]);
+
   // Get list items based on view mode
   const listItems: ListItem[] = React.useMemo(() => {
     if (!data) return [];
 
     if (viewMode === 'people') {
-      const allPersonGroups = [...data.byPerson, ...data.ungroupedByPerson];
-      return sortPersonGroups(allPersonGroups, sortMode).map(group => ({
+      // Use byPerson only - it already contains all conversations grouped by person
+      // ungroupedByPerson is a subset for non-team conversations, not additional people
+      const filteredGroups = data.byPerson
+        .map(group => ({
+          ...group,
+          conversations: group.conversations.filter(filterConversation),
+          itemCount: group.conversations.filter(filterConversation).length,
+        }))
+        .filter(group => group.itemCount > 0);
+      return sortPersonGroups(filteredGroups, sortMode).map(group => ({
         type: 'person' as const,
         data: group,
       }));
     } else if (viewMode === 'teams') {
       // For teams view, show team groups as items
-      return data.byTeam.map(team => ({
+      const filteredTeams = data.byTeam
+        .map(team => ({
+          ...team,
+          conversations: team.conversations.filter(filterConversation),
+          itemCount: team.conversations.filter(filterConversation).length,
+        }))
+        .filter(team => team.itemCount > 0);
+      return filteredTeams.map(team => ({
         type: 'team' as const,
         data: team,
       }));
     } else {
       // List view - show all conversations
-      return sortConversations(data.allConversations, sortMode).map(conv => ({
+      const filteredConversations = data.allConversations.filter(filterConversation);
+      return sortConversations(filteredConversations, sortMode).map(conv => ({
         type: 'conversation' as const,
         data: conv,
       }));
     }
-  }, [data, viewMode, sortMode]);
+  }, [data, viewMode, sortMode, filterConversation]);
 
   // Reset selection when view mode changes
   React.useEffect(() => {
@@ -623,11 +668,6 @@ export const WaitingOnYouCardLarge: React.FC<WaitingOnYouCardLargeProps> = ({
           <div className={styles.personInfo}>
             <div className={styles.personNameRow}>
               <Text className={styles.personName}>{group.person.displayName}</Text>
-              {isManager && (
-                <Tooltip content="Your manager" relationship="label">
-                  <Crown20Filled className={styles.managerIcon} />
-                </Tooltip>
-              )}
             </div>
             <div className={styles.itemMeta}>
               <span className={`${styles.waitDays} ${isHighUrgency ? styles.overdueText : isMediumUrgency ? styles.warningText : ''}`}>
@@ -636,6 +676,11 @@ export const WaitingOnYouCardLarge: React.FC<WaitingOnYouCardLargeProps> = ({
             </div>
           </div>
           <div className={styles.masterItemRight}>
+            {isManager && (
+              <Tooltip content="Your manager" relationship="label">
+                <Crown20Filled className={styles.vipIcon} />
+              </Tooltip>
+            )}
             <Badge
               appearance="tint"
               color={isHighUrgency ? 'danger' : isMediumUrgency ? 'warning' : 'brand'}
@@ -741,9 +786,21 @@ export const WaitingOnYouCardLarge: React.FC<WaitingOnYouCardLargeProps> = ({
                       <div className={styles.conversationMeta}>
                         {getTypeIcon(conv.conversationType)}
                         <span>{formatWaitDuration(conv.staleDuration)} ago</span>
-                        {conv.isQuestion && <Badge size="small" appearance="outline" icon={<QuestionCircle20Regular />}>Question</Badge>}
-                        {conv.hasDeadlineMention && <Badge size="small" appearance="outline" color="warning" icon={<CalendarClock20Regular />}>Deadline</Badge>}
-                        {conv.isMention && <Badge size="small" appearance="outline" color="brand" icon={<Mention20Regular />}>@Mention</Badge>}
+                        {conv.isQuestion && (
+                          <Tooltip content="Contains a question" relationship="label">
+                            <Badge size="small" appearance="tint" color="informative" icon={<QuestionCircle20Regular />} />
+                          </Tooltip>
+                        )}
+                        {conv.hasDeadlineMention && (
+                          <Tooltip content="Mentions a deadline" relationship="label">
+                            <Badge size="small" appearance="tint" color="warning" icon={<CalendarClock20Regular />} />
+                          </Tooltip>
+                        )}
+                        {conv.isMention && (
+                          <Tooltip content="You were @mentioned" relationship="label">
+                            <Badge size="small" appearance="tint" color="brand" icon={<Mention20Regular />} />
+                          </Tooltip>
+                        )}
                       </div>
                     </div>
                     <div className={styles.conversationActions}>
@@ -801,19 +858,19 @@ export const WaitingOnYouCardLarge: React.FC<WaitingOnYouCardLargeProps> = ({
                           Urgency: {conv.urgencyScore}/10
                         </Badge>
                         {conv.isQuestion && (
-                          <Badge color="informative" appearance="outline">
-                            Question
-                          </Badge>
+                          <Tooltip content="Contains a question" relationship="label">
+                            <Badge color="informative" appearance="tint" icon={<QuestionCircle20Regular />} />
+                          </Tooltip>
                         )}
                         {conv.hasDeadlineMention && (
-                          <Badge color="warning" appearance="outline">
-                            Has Deadline
-                          </Badge>
+                          <Tooltip content="Mentions a deadline" relationship="label">
+                            <Badge color="warning" appearance="tint" icon={<CalendarClock20Regular />} />
+                          </Tooltip>
                         )}
                         {conv.isMention && (
-                          <Badge color="brand" appearance="outline">
-                            @Mentioned
-                          </Badge>
+                          <Tooltip content="You were @mentioned" relationship="label">
+                            <Badge color="brand" appearance="tint" icon={<Mention20Regular />} />
+                          </Tooltip>
                         )}
                       </div>
                       <div className={styles.detailRow}>
@@ -860,19 +917,19 @@ export const WaitingOnYouCardLarge: React.FC<WaitingOnYouCardLargeProps> = ({
               </Badge>
             )}
             {conv.isQuestion && (
-              <Badge color="informative" appearance="outline">
-                Question
-              </Badge>
+              <Tooltip content="Contains a question" relationship="label">
+                <Badge color="informative" appearance="tint" icon={<QuestionCircle20Regular />} />
+              </Tooltip>
             )}
             {conv.hasDeadlineMention && (
-              <Badge color="warning" appearance="outline">
-                Has Deadline
-              </Badge>
+              <Tooltip content="Mentions a deadline" relationship="label">
+                <Badge color="warning" appearance="tint" icon={<CalendarClock20Regular />} />
+              </Tooltip>
             )}
             {conv.isMention && (
-              <Badge color="brand" appearance="outline">
-                @Mentioned
-              </Badge>
+              <Tooltip content="You were @mentioned" relationship="label">
+                <Badge color="brand" appearance="tint" icon={<Mention20Regular />} />
+              </Tooltip>
             )}
           </div>
         </div>
@@ -1186,6 +1243,55 @@ export const WaitingOnYouCardLarge: React.FC<WaitingOnYouCardLargeProps> = ({
                   </Tab>
                 </TabList>
                 <div className={styles.tabToolbar}>
+                  {/* Filter Menu - content-based filtering like WaitingOnOthersCardLarge */}
+                  <Menu
+                    checkedValues={checkedFilterValues}
+                    onCheckedValueChange={(_, menuData) => {
+                      handleFilterChange(menuData.checkedItems);
+                    }}
+                  >
+                    <MenuTrigger disableButtonEnhancement>
+                      <Tooltip content={activeFilters.size > 0 ? `${activeFilters.size} filter(s) active` : 'Filter'} relationship="label">
+                        <Button
+                          appearance="subtle"
+                          size="small"
+                          icon={<Filter20Regular />}
+                          aria-label="Filter options"
+                        />
+                      </Tooltip>
+                    </MenuTrigger>
+                    <MenuPopover>
+                      <MenuList>
+                        <MenuGroup>
+                          <MenuGroupHeader>Filter by</MenuGroupHeader>
+                          <MenuItemCheckbox name="filter" value="vip">
+                            VIP (Manager)
+                          </MenuItemCheckbox>
+                          <MenuItemCheckbox name="filter" value="question">
+                            Question asked
+                          </MenuItemCheckbox>
+                          <MenuItemCheckbox name="filter" value="deadline">
+                            Has deadline
+                          </MenuItemCheckbox>
+                          <MenuItemCheckbox name="filter" value="mention">
+                            @Mentioned
+                          </MenuItemCheckbox>
+                        </MenuGroup>
+                        {activeFilters.size > 0 && (
+                          <>
+                            <MenuDivider />
+                            <MenuItem
+                              icon={<Dismiss20Regular />}
+                              onClick={() => handleFilterChange([])}
+                            >
+                              Clear all filters
+                            </MenuItem>
+                          </>
+                        )}
+                      </MenuList>
+                    </MenuPopover>
+                  </Menu>
+                  {/* Sort Menu */}
                   <Menu
                     checkedValues={checkedSortValues}
                     onCheckedValueChange={(_, menuData) => {
