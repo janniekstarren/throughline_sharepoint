@@ -25,7 +25,6 @@ import {
   DataPieRegular,
   ArrowTrendingRegular,
   TargetRegular,
-  ArrowMaximizeRegular,
 } from '@fluentui/react-icons';
 import {
   MailRegular,
@@ -113,10 +112,8 @@ export const ContextSwitchingCard: React.FC<ContextSwitchingCardProps> = ({
   onCycleSize,
   onToggleSize, // deprecated
 }) => {
-  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
-  const handleCycleSize = onCycleSize || onToggleSize;
   // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
-  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+  const handleSizeChange = onSizeChange || ((_newSize: CardSize) => {
     if (onCycleSize) onCycleSize();
     else if (onToggleSize) onToggleSize();
   });
