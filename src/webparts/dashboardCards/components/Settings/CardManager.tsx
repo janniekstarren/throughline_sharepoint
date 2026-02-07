@@ -3,28 +3,10 @@
 // ============================================
 // Allows users to show/hide cards and change their sizes.
 // Grouped by category with expand/collapse.
+// Uses pure HTML/CSS to avoid React Error #310 in SharePoint.
 
 import * as React from 'react';
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Toggle, ChoiceGroup, IChoiceGroupOption } from '@fluentui/react';
-import {
-  ReOrderDotsVertical24Regular,
   ChevronDown16Regular,
   ChevronRight16Regular,
 } from '@fluentui/react-icons';
@@ -68,18 +50,9 @@ export interface ICardManagerProps {
 }
 
 /**
- * Size options for the ChoiceGroup
+ * Props for a single card item
  */
-const sizeOptions: IChoiceGroupOption[] = [
-  { key: 'small', text: 'S', title: 'Small' },
-  { key: 'medium', text: 'M', title: 'Medium' },
-  { key: 'large', text: 'L', title: 'Large' },
-];
-
-/**
- * Props for a single sortable card item
- */
-interface ISortableCardItemProps {
+interface ICardItemProps {
   cardId: string;
   config: ICardConfig;
   onSizeChange: (cardId: string, size: CardSize) => void;
@@ -87,42 +60,25 @@ interface ISortableCardItemProps {
 }
 
 /**
- * SortableCardItem Component
- * Individual draggable card item.
+ * CardItem Component
+ * Individual card item with pure HTML/CSS controls.
  */
-const SortableCardItem: React.FC<ISortableCardItemProps> = ({
+const CardItem: React.FC<ICardItemProps> = ({
   cardId,
   config,
   onSizeChange,
   onVisibilityChange,
 }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: cardId });
-
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
   const handleVisibilityToggle = React.useCallback(
-    (ev: React.MouseEvent<HTMLElement>, checked?: boolean) => {
-      onVisibilityChange(cardId, checked ?? false);
+    (ev: React.ChangeEvent<HTMLInputElement>) => {
+      onVisibilityChange(cardId, ev.target.checked);
     },
     [cardId, onVisibilityChange]
   );
 
-  const handleSizeChange = React.useCallback(
-    (ev?: React.FormEvent<HTMLElement>, option?: IChoiceGroupOption) => {
-      if (option) {
-        onSizeChange(cardId, option.key as CardSize);
-      }
+  const handleSizeClick = React.useCallback(
+    (size: CardSize) => {
+      onSizeChange(cardId, size);
     },
     [cardId, onSizeChange]
   );
@@ -131,47 +87,54 @@ const SortableCardItem: React.FC<ISortableCardItemProps> = ({
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className={`${styles.cardItem} ${isDragging ? styles.dragging : ''} ${
-        !config.visible ? styles.hidden : ''
-      }`}
+      className={`${styles.cardItem} ${!config.visible ? styles.hidden : ''}`}
     >
-      {/* Drag handle */}
-      <button
-        className={styles.dragHandle}
-        {...attributes}
-        {...listeners}
-        aria-label={`Drag to reorder ${displayName}`}
-      >
-        <ReOrderDotsVertical24Regular />
-      </button>
+      {/* Visibility toggle - pure CSS toggle switch */}
+      <label className={styles.switchLabel}>
+        <input
+          type="checkbox"
+          checked={config.visible}
+          onChange={handleVisibilityToggle}
+          className={styles.switchInput}
+          aria-label={`Show ${displayName}`}
+        />
+        <span className={styles.switchTrack}>
+          <span className={styles.switchThumb} />
+        </span>
+      </label>
 
       {/* Card info */}
       <div className={styles.cardInfo}>
         <span className={styles.cardName}>{displayName}</span>
       </div>
 
-      {/* Size selector */}
+      {/* Size selector - pure CSS buttons */}
       <div className={styles.sizeSelector}>
-        <ChoiceGroup
-          selectedKey={config.size}
-          options={sizeOptions}
-          onChange={handleSizeChange}
-          styles={{
-            root: { display: 'flex', flexDirection: 'row' },
-            flexContainer: { display: 'flex', gap: 4 },
-          }}
-        />
+        <button
+          className={`${styles.sizeButton} ${config.size === 'small' ? styles.active : ''}`}
+          onClick={() => handleSizeClick('small')}
+          title="Small"
+          aria-pressed={config.size === 'small'}
+        >
+          S
+        </button>
+        <button
+          className={`${styles.sizeButton} ${config.size === 'medium' ? styles.active : ''}`}
+          onClick={() => handleSizeClick('medium')}
+          title="Medium"
+          aria-pressed={config.size === 'medium'}
+        >
+          M
+        </button>
+        <button
+          className={`${styles.sizeButton} ${config.size === 'large' ? styles.active : ''}`}
+          onClick={() => handleSizeClick('large')}
+          title="Large"
+          aria-pressed={config.size === 'large'}
+        >
+          L
+        </button>
       </div>
-
-      {/* Visibility toggle */}
-      <Toggle
-        checked={config.visible}
-        onChange={handleVisibilityToggle}
-        ariaLabel={`Show ${displayName}`}
-        styles={{ root: { marginBottom: 0 } }}
-      />
     </div>
   );
 };
@@ -184,7 +147,6 @@ interface ICategoryCardGroupProps {
   cards: Record<string, ICardConfig>;
   onSizeChange: (cardId: string, size: CardSize) => void;
   onVisibilityChange: (cardId: string, visible: boolean) => void;
-  onReorder: (cardIds: string[]) => void;
 }
 
 /**
@@ -196,33 +158,8 @@ const CategoryCardGroup: React.FC<ICategoryCardGroupProps> = ({
   cards,
   onSizeChange,
   onVisibilityChange,
-  onReorder,
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
-
-  // DnD sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  // Handle drag end
-  const handleDragEnd = React.useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-
-      if (over && active.id !== over.id) {
-        const oldIndex = category.cardIds.indexOf(active.id as string);
-        const newIndex = category.cardIds.indexOf(over.id as string);
-
-        const newOrder = arrayMove(category.cardIds, oldIndex, newIndex);
-        onReorder(newOrder);
-      }
-    },
-    [category.cardIds, onReorder]
-  );
 
   const toggleExpanded = React.useCallback(() => {
     setIsExpanded(prev => !prev);
@@ -253,31 +190,20 @@ const CategoryCardGroup: React.FC<ICategoryCardGroupProps> = ({
       {/* Cards list */}
       {isExpanded && (
         <div className={styles.cardsContainer}>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={category.cardIds}
-              strategy={verticalListSortingStrategy}
-            >
-              {category.cardIds.map(cardId => {
-                const config = cards[cardId];
-                if (!config) return null;
+          {category.cardIds.map(cardId => {
+            const config = cards[cardId];
+            if (!config) return null;
 
-                return (
-                  <SortableCardItem
-                    key={cardId}
-                    cardId={cardId}
-                    config={config}
-                    onSizeChange={onSizeChange}
-                    onVisibilityChange={onVisibilityChange}
-                  />
-                );
-              })}
-            </SortableContext>
-          </DndContext>
+            return (
+              <CardItem
+                key={cardId}
+                cardId={cardId}
+                config={config}
+                onSizeChange={onSizeChange}
+                onVisibilityChange={onVisibilityChange}
+              />
+            );
+          })}
         </div>
       )}
     </div>
@@ -293,15 +219,8 @@ export const CardManager: React.FC<ICardManagerProps> = ({
   cards,
   onSizeChange,
   onVisibilityChange,
-  onReorderInCategory,
+  // onReorderInCategory - temporarily disabled
 }) => {
-  const handleReorder = React.useCallback(
-    (categoryId: string) => (cardIds: string[]) => {
-      onReorderInCategory(categoryId, cardIds);
-    },
-    [onReorderInCategory]
-  );
-
   return (
     <div className={styles.cardManager}>
       {categories.map(category => (
@@ -311,7 +230,6 @@ export const CardManager: React.FC<ICardManagerProps> = ({
           cards={cards}
           onSizeChange={onSizeChange}
           onVisibilityChange={onVisibilityChange}
-          onReorder={handleReorder(category.categoryId)}
         />
       ))}
     </div>

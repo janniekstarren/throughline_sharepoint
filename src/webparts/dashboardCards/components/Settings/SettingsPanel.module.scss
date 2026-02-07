@@ -1,6 +1,6 @@
 // ============================================
 // Settings Panel Styles
-// CSS Module for SharePoint compatibility
+// Pure CSS sliding panel (no React portal) for SharePoint compatibility
 // ============================================
 
 // Colors
@@ -11,21 +11,158 @@ $text-secondary: #616161;
 $accent-color: #0078d4;
 
 // ============================================
+// Overlay
+// ============================================
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 200ms ease, visibility 200ms ease;
+}
+
+.overlayVisible {
+  opacity: 1;
+  visibility: visible;
+}
+
+// ============================================
+// Settings Panel (sliding from right)
+// ============================================
+
+.settingsPanel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 400px;
+  max-width: 90vw;
+  background: #fff;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
+  z-index: 1000001;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 250ms ease;
+}
+
+.open {
+  transform: translateX(0);
+}
+
+.closed {
+  transform: translateX(100%);
+}
+
+// ============================================
+// Panel Header
+// ============================================
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid $border-color;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: $text-secondary;
+  transition: all 150ms ease;
+
+  &:hover {
+    background: $bg-hover;
+    color: $text-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $accent-color;
+    outline-offset: 2px;
+  }
+}
+
+// ============================================
+// Tab Navigation
+// ============================================
+
+.tabList {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid $border-color;
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-secondary;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 150ms ease;
+  margin-bottom: -1px;
+
+  &:hover {
+    color: $text-primary;
+    background: $bg-hover;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $accent-color;
+    outline-offset: -2px;
+  }
+}
+
+.tabActive {
+  color: $accent-color;
+  border-bottom-color: $accent-color;
+
+  &:hover {
+    color: $accent-color;
+  }
+}
+
+// ============================================
 // Panel Content
 // ============================================
 
-.settingsContent {
-  padding: 0;
+.content {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
 }
 
-.tabContent {
-  padding: 16px 0;
-}
-
-.tabDescription {
+.description {
   color: $text-secondary;
   font-size: 13px;
-  margin-bottom: 16px;
+  margin: 0 0 16px 0;
   line-height: 1.4;
 }
 
@@ -33,16 +170,37 @@ $accent-color: #0078d4;
 // Panel Footer
 // ============================================
 
-.panelFooter {
+.footer {
   display: flex;
   gap: 8px;
-  padding: 16px 24px;
+  padding: 16px 20px;
   border-top: 1px solid $border-color;
-  background: #fff;
+  flex-shrink: 0;
+}
+
+.doneButton {
+  padding: 8px 20px;
+  border: none;
+  background: $accent-color;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 150ms ease;
+
+  &:hover {
+    background: darken($accent-color, 8%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $accent-color;
+    outline-offset: 2px;
+  }
 }
 
 // ============================================
-// Settings Button
+// Settings Button (in header)
 // ============================================
 
 .settingsButton {
@@ -71,56 +229,119 @@ $accent-color: #0078d4;
 }
 
 // ============================================
-// Category Manager
+// Preferences Tab
 // ============================================
 
-.categoryManager {
+.preferenceItem {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid $border-color;
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
-.categoryItem {
+.preferenceDescription {
+  font-size: 12px;
+  color: $text-secondary;
+  margin-left: 48px;
+}
+
+// Custom Toggle Switch
+.switchLabel {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.switchInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+
+  &:checked + .switchTrack {
+    background: $accent-color;
+
+    .switchThumb {
+      transform: translateX(16px);
+    }
+  }
+
+  &:focus-visible + .switchTrack {
+    outline: 2px solid $accent-color;
+    outline-offset: 2px;
+  }
+}
+
+.switchTrack {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  background: #c4c4c4;
+  border-radius: 12px;
+  transition: background 150ms ease;
+  flex-shrink: 0;
+}
+
+.switchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
   background: #fff;
-  border: 1px solid $border-color;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 150ms ease;
+}
+
+.switchText {
+  font-size: 14px;
+  color: $text-primary;
+}
+
+.resetSection {
+  margin-top: 24px;
+  padding: 16px;
+  background: $bg-hover;
   border-radius: 6px;
+}
+
+.resetDescription {
+  font-size: 13px;
+  color: $text-secondary;
+  margin: 8px 0 12px;
+}
+
+.resetButton {
+  padding: 8px 16px;
+  border: 1px solid $border-color;
+  background: #fff;
+  color: $text-primary;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
   transition: all 150ms ease;
 
   &:hover {
     background: $bg-hover;
+    border-color: darken($border-color, 10%);
   }
 
-  &.dragging {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 100;
+  &:focus-visible {
+    outline: 2px solid $accent-color;
+    outline-offset: 2px;
   }
-}
-
-.categoryInfo {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.categoryName {
-  font-size: 14px;
-  font-weight: 500;
-  color: $text-primary;
-}
-
-.cardCount {
-  font-size: 12px;
-  color: $text-secondary;
 }
 
 // ============================================
-// Card Manager
+// Card Manager Styles
 // ============================================
 
 .cardManager {
@@ -197,11 +418,6 @@ $accent-color: #0078d4;
     background: $bg-hover;
   }
 
-  &.dragging {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-    z-index: 100;
-  }
-
   &.hidden {
     opacity: 0.5;
   }
@@ -220,73 +436,81 @@ $accent-color: #0078d4;
   text-overflow: ellipsis;
 }
 
-.sizeSelector {
+// ============================================
+// Category Manager (for Categories tab)
+// ============================================
+
+.categoryManager {
   display: flex;
+  flex-direction: column;
   gap: 4px;
-
-  // Override Fluent ChoiceGroup styles for compact size selector
-  :global(.ms-ChoiceField) {
-    margin: 0 !important;
-  }
-
-  :global(.ms-ChoiceField-wrapper) {
-    margin: 0 !important;
-  }
-
-  :global(.ms-ChoiceFieldLabel) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    padding: 0 !important;
-    font-size: 11px;
-    font-weight: 600;
-    border: 1px solid $border-color;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 150ms ease;
-  }
-
-  :global(.ms-ChoiceField-field.is-checked + .ms-ChoiceFieldLabel) {
-    background: $accent-color;
-    color: #fff;
-    border-color: $accent-color;
-  }
-
-  // Hide the radio button circle
-  :global(.ms-ChoiceField-field) {
-    opacity: 0;
-    position: absolute;
-  }
 }
 
-// ============================================
-// Drag Handle
-// ============================================
-
-.dragHandle {
+.categoryItem {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: grab;
-  color: $text-secondary;
-  flex-shrink: 0;
-  touch-action: none;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  transition: all 150ms ease;
 
   &:hover {
     background: $bg-hover;
-    color: $text-primary;
+  }
+}
+
+.categoryInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.categoryName {
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-primary;
+}
+
+.cardCount {
+  font-size: 12px;
+  color: $text-secondary;
+}
+
+// Size Selector (S/M/L buttons)
+.sizeSelector {
+  display: flex;
+  gap: 4px;
+}
+
+.sizeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid $border-color;
+  background: #fff;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: $text-secondary;
+  cursor: pointer;
+  transition: all 150ms ease;
+
+  &:hover {
+    background: $bg-hover;
+    border-color: darken($border-color, 10%);
   }
 
-  &:active {
-    cursor: grabbing;
+  &.active {
+    background: $accent-color;
+    border-color: $accent-color;
+    color: #fff;
   }
 
   &:focus-visible {
@@ -296,49 +520,21 @@ $accent-color: #0078d4;
 }
 
 // ============================================
-// Preferences Tab
-// ============================================
-
-.preferenceItem {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 0;
-  border-bottom: 1px solid $border-color;
-
-  &:last-child {
-    border-bottom: none;
-  }
-}
-
-.preferenceDescription {
-  font-size: 12px;
-  color: $text-secondary;
-  margin-left: 48px; // Align with toggle
-}
-
-.resetSection {
-  margin-top: 24px;
-  padding: 16px;
-  background: $bg-hover;
-  border-radius: 6px;
-}
-
-.resetDescription {
-  font-size: 13px;
-  color: $text-secondary;
-  margin: 8px 0 12px;
-}
-
-// ============================================
 // Reduced Motion Support
 // ============================================
 
 @media (prefers-reduced-motion: reduce) {
-  .categoryItem,
+  .settingsPanel,
+  .overlay,
+  .closeButton,
+  .tab,
+  .doneButton,
+  .settingsButton,
+  .switchTrack,
+  .switchThumb,
+  .resetButton,
   .cardItem,
-  .dragHandle,
-  .settingsButton {
+  .categoryGroupHeader {
     transition: none !important;
   }
 }

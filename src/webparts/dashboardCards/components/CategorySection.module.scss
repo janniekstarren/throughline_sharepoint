@@ -1,7 +1,6 @@
 // ============================================
 // CATEGORY SECTION LAYOUT
-// Uses MasonryGrid for Pinterest-style layout
-// with @dnd-kit for drag-and-drop
+// Uses CSS Grid with fixed column counts
 // ============================================
 
 .categorySection {
@@ -76,51 +75,86 @@
 
 // ============================================
 // CATEGORY CONTENT
-// Container for cards with animation support
 // ============================================
 .categoryContent {
-  // Content wrapper - required for SCSS export
   display: block;
 }
 
 .animated {
-  // Animation class - required for SCSS export
-  // Animation handled by MasonryGrid internally
   display: block;
 }
 
 // ============================================
-// SMALL CARDS ROW
-// Horizontal row of compact card chips
+// CSS GRID LAYOUT - Dense Packing
+// 4-column grid with dense auto-flow for optimal packing
+// Cards are sorted by size in JS (large first) for best results
+// - Small: 1 col × 1 row
+// - Medium: 1 col × 2 rows
+// - Large: 2 cols × 2 rows (leaves 2 cols for small/medium beside it)
 // ============================================
-.smallCardsRow {
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: minmax(140px, auto); // Row height ~140px, cards span multiple
+  grid-auto-flow: dense; // Fill gaps by placing smaller items in holes
+  gap: 16px;
+
+  // 3 columns on medium screens
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  // 2 columns on tablet
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  // 1 column on mobile - no spanning
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    grid-auto-flow: row; // Normal flow on mobile
+  }
+}
+
+// Base card wrapper
+.cardWrapper {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
+  flex-direction: column;
+  min-width: 0; // Prevent overflow
 }
 
-.smallCardWrapper {
-  // Small cards determine their own size
-  flex-shrink: 0;
+// Small card - 1 column, 1 row (compact chip)
+.cardSmall {
+  grid-column: span 1;
+  grid-row: span 1;
 }
 
-// ============================================
-// DRAG AND DROP STYLES
-// Card being dragged
-// ============================================
-.cardDragging {
-  opacity: 0.8;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  transform: scale(1.02);
-  z-index: 1000;
-  cursor: grabbing !important;
+// Medium card - 1 column, 2 rows (standard card height)
+.cardMedium {
+  grid-column: span 1;
+  grid-row: span 2;
+
+  @media (max-width: 600px) {
+    grid-row: auto; // Natural height on mobile
+  }
+}
+
+// Large card - 2 columns, 2 rows (leaves 2 cols beside it for small/medium)
+.cardLarge {
+  grid-column: span 2;
+  grid-row: span 2;
+
+  // On mobile, single column
+  @media (max-width: 600px) {
+    grid-column: span 1;
+    grid-row: auto;
+  }
 }
 
 // ============================================
 // RESPONSIVE ADJUSTMENTS
 // ============================================
-
 @media (max-width: 768px) {
   .categorySection {
     margin-bottom: 16px;
@@ -134,9 +168,8 @@
     font-size: 13px;
   }
 
-  .smallCardsRow {
-    gap: 6px;
-    margin-bottom: 12px;
+  .cardGrid {
+    gap: 12px;
   }
 }
 
@@ -145,97 +178,7 @@
 // ============================================
 @media (prefers-reduced-motion: reduce) {
   .categoryHeader,
-  .chevron,
-  .cardDragging {
+  .chevron {
     transition: none !important;
   }
-}
-
-// ============================================
-// LEGACY STYLES (kept for backwards compatibility)
-// These can be removed once migration is complete
-// ============================================
-
-// Legacy masonry grid (react-masonry-css)
-.masonryWrapper {
-  position: relative;
-}
-
-.masonryGrid {
-  display: flex;
-  width: auto;
-  margin-left: -16px;
-}
-
-.masonryColumn {
-  padding-left: 16px;
-  background-clip: padding-box;
-
-  > div {
-    margin-bottom: 16px;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-}
-
-// Legacy grid layout for drag mode
-.gridLayout {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  min-height: 100px;
-  padding: 8px;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-
-  @media (max-width: 1400px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  @media (max-width: 1024px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.gridDragOver {
-  background-color: var(--colorBrandBackground2);
-}
-
-.draggableCard {
-  position: relative;
-  cursor: grab;
-
-  &:active {
-    cursor: grabbing;
-  }
-}
-
-// Legacy large cards row
-.largeCardsRow {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-  margin-bottom: 20px;
-
-  > div {
-    width: 100%;
-  }
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  @media (max-width: 1200px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.largeCardsRowTall {
-  display: flex;
 }

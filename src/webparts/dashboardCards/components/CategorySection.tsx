@@ -1,32 +1,15 @@
 // ============================================
-// CategorySection - Category Layout with Masonry Grid
+// CategorySection - Category Layout with Dense CSS Grid
 // ============================================
-// Renders cards grouped by category using the new MasonryGrid
-// with @dnd-kit for drag-and-drop reordering.
+// Renders cards using CSS Grid with dense packing.
+// Cards are sorted by size (large → medium → small) for optimal packing.
+// Large cards span 3 cols, leaving 1 col for small/medium cards beside them.
 
 import * as React from 'react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { mergeClasses } from '@fluentui/react-components';
 import { ChevronDown20Regular, ChevronRight20Regular } from '@fluentui/react-icons';
 import { getIconById } from '../propertyPane/CardConfigDialog';
-import { CardSize, getColumnSpan } from '../types/CardSize';
-import { MasonryGrid, IMasonryGridChild } from './Grid';
+import { CardSize } from '../types/CardSize';
 import styles from './CategorySection.module.scss';
 
 // ============================================
@@ -51,57 +34,21 @@ export interface ICategorySectionProps {
   categoryId: string;
   categoryName?: string;
   showTitle?: boolean;
-  iconId?: string; // Icon ID to display next to category title
-  orderedCards: IOrderedCard[]; // Cards in user-defined order with size info
-  isDragging?: boolean; // Enable drag mode layout (legacy, now handled internally)
-  startIndex?: number; // Global index offset for this section (legacy)
-  /** Whether the category is collapsed */
+  iconId?: string;
+  orderedCards: IOrderedCard[];
+  isDragging?: boolean;
+  startIndex?: number;
   collapsed?: boolean;
-  /** Callback when collapse state changes */
   onToggleCollapsed?: () => void;
-  /** Callback when cards are reordered */
   onReorder?: (cardIds: string[]) => void;
-  /** Enable animations */
   animationsEnabled?: boolean;
 }
 
-// ============================================
-// SortableCard - Draggable card wrapper
-// ============================================
-
-interface ISortableCardProps {
-  id: string;
-  children: React.ReactNode;
-}
-
-const SortableCard: React.FC<ISortableCardProps> = ({ id, children }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    cursor: 'grab',
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={isDragging ? styles.cardDragging : undefined}
-    >
-      {children}
-    </div>
-  );
+// Size priority for sorting (larger cards first for better packing)
+const SIZE_PRIORITY: Record<CardSize, number> = {
+  large: 0,
+  medium: 1,
+  small: 2,
 };
 
 // ============================================
@@ -116,123 +63,42 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
   orderedCards,
   collapsed = false,
   onToggleCollapsed,
-  onReorder,
   animationsEnabled = true,
 }) => {
-  // DnD sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // 8px movement before drag starts
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  // Handle drag end
-  const handleDragEnd = React.useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-
-      if (over && active.id !== over.id && onReorder) {
-        const oldIndex = orderedCards.findIndex(c => c.id === active.id);
-        const newIndex = orderedCards.findIndex(c => c.id === over.id);
-
-        const newOrder = arrayMove(
-          orderedCards.map(c => c.id),
-          oldIndex,
-          newIndex
-        );
-
-        onReorder(newOrder);
-      }
-    },
-    [orderedCards, onReorder]
-  );
-
   // Don't render empty sections
   if (orderedCards.length === 0) {
     return null;
   }
 
-  // Helper to determine card size (supports both new 'size' prop and legacy 'isLarge')
+  // Helper to determine card size
   const getCardSize = (card: IOrderedCard): CardSize => {
     if (card.size) return card.size;
-    // Fallback for legacy isLarge prop
     return card.isLarge ? 'large' : 'medium';
   };
 
-  // Separate cards by size while preserving order
-  const smallCards = orderedCards.filter(card => getCardSize(card) === 'small');
-  const mediumCards = orderedCards.filter(card => getCardSize(card) === 'medium');
-  const largeCards = orderedCards.filter(card => getCardSize(card) === 'large');
+  // Sort cards by size for optimal grid packing
+  // Large cards first, then medium, then small
+  // This allows dense packing to fill gaps properly
+  const sortedCards = React.useMemo(() => {
+    return [...orderedCards].sort((a, b) => {
+      const sizeA = getCardSize(a);
+      const sizeB = getCardSize(b);
+      return SIZE_PRIORITY[sizeA] - SIZE_PRIORITY[sizeB];
+    });
+  }, [orderedCards]);
 
-  // Combine non-small cards for masonry layout
-  const masonryCards = [...mediumCards, ...largeCards];
-
-  // Convert to MasonryGridChild format
-  const masonryChildren: IMasonryGridChild[] = masonryCards.map(card => {
+  // Get the appropriate CSS class for a card based on its size
+  const getCardClassName = (card: IOrderedCard): string => {
     const size = getCardSize(card);
-    return {
-      id: card.id,
-      columnSpan: getColumnSpan(size),
-      element: onReorder ? (
-        <SortableCard id={card.id}>{card.element}</SortableCard>
-      ) : (
-        card.element
-      ),
-    };
-  });
-
-  // Card IDs for sortable context
-  const sortableIds = masonryCards.map(c => c.id);
-
-  // Render small cards as horizontal row of chips
-  const renderSmallCards = (): React.ReactNode => {
-    if (smallCards.length === 0) return null;
-
-    return (
-      <div className={styles.smallCardsRow}>
-        {smallCards.map(card => (
-          <div key={card.id} className={styles.smallCardWrapper}>
-            {card.element}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // Render main content (masonry grid with drag-drop)
-  const renderMasonryContent = (): React.ReactNode => {
-    if (masonryCards.length === 0) return null;
-
-    const content = (
-      <MasonryGrid
-        gap={16}
-        animationsEnabled={animationsEnabled}
-      >
-        {masonryChildren}
-      </MasonryGrid>
-    );
-
-    // Wrap with DnD context if reorder callback provided
-    if (onReorder) {
-      return (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
-            {content}
-          </SortableContext>
-        </DndContext>
-      );
+    switch (size) {
+      case 'small':
+        return styles.cardSmall;
+      case 'large':
+        return styles.cardLarge;
+      case 'medium':
+      default:
+        return styles.cardMedium;
     }
-
-    return content;
   };
 
   return (
@@ -258,14 +124,19 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
         </button>
       )}
 
-      {/* Category content (hidden when collapsed) */}
+      {/* Category content - Dense CSS Grid layout */}
       {!collapsed && (
         <div className={mergeClasses(styles.categoryContent, animationsEnabled && styles.animated)}>
-          {/* Render small cards first (horizontal row of chips) */}
-          {renderSmallCards()}
-
-          {/* Render medium and large cards in masonry grid */}
-          {renderMasonryContent()}
+          <div className={styles.cardGrid}>
+            {sortedCards.map(card => (
+              <div
+                key={card.id}
+                className={mergeClasses(styles.cardWrapper, getCardClassName(card))}
+              >
+                {card.element}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </section>

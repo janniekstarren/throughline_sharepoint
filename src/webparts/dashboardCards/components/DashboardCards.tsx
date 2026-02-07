@@ -8,7 +8,7 @@ import {
   Spinner,
   IdPrefixProvider,
 } from '@fluentui/react-components';
-// Note: Drag-drop now handled by @dnd-kit in CategorySection
+// Note: Drag-drop temporarily disabled to fix React Error #310
 import { PortalProvider } from '../contexts/PortalContext';
 import { MSGraphClientV3 } from '@microsoft/sp-http';
 import { DataMode } from '../hooks/useDashboardData';
@@ -35,7 +35,9 @@ import { WaitingOnOthersCardLarge } from './WaitingOnOthersCardLarge';
 import { ContextSwitchingCard, ContextSwitchingCardLarge } from './ContextSwitchingCard';
 import { Salutation, SalutationType, SalutationSize } from './Salutation';
 import { CategorySection, IOrderedCard } from './CategorySection';
+// Settings panel for end-user customization (now using Fluent UI v9)
 import { SettingsButton, SettingsPanel } from './Settings';
+import { ICategoryConfig as ISettingsCategoryConfig, ICardConfig } from '../models/DashboardConfiguration';
 import { getFluentTheme, ThemeMode } from '../utils/themeUtils';
 import { CardSize } from '../types/CardSize';
 import styles from './DashboardCards.module.scss';
@@ -234,11 +236,11 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     defaultCollapsedCardIds,
   });
 
+  // Animation state (can be toggled via settings panel in the future)
+  const [animationsEnabled] = React.useState(true);
+
   // Settings panel state
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
-
-  // Animation state (can be toggled via settings panel)
-  const [animationsEnabled, setAnimationsEnabled] = React.useState(true);
 
   // Helper to get card title (custom or default)
   const getCardTitle = (cardId: string): string => {
@@ -696,40 +698,41 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     return result;
   };
 
-  // Build categories for settings panel from current config
-  // This creates a simplified view that works with the existing useUserPreferences hook
-  const settingsCategories = React.useMemo(() => {
-    // If we have category config, build from it
-    if (categoryOrder.length > 0 && Object.keys(categoryConfig).length > 0) {
-      return categoryOrder.map((catId, index) => ({
-        categoryId: catId,
-        displayName: categoryNames[catId] || catId,
-        icon: categoryIcons[catId] || DEFAULT_CATEGORY_ICONS[catId] || 'GridDots',
-        order: index,
-        visible: categoryConfig[catId]?.visible ?? true,
+  // Settings panel data - convert current state to format expected by SettingsPanel
+  const settingsCategories: ISettingsCategoryConfig[] = React.useMemo(() => {
+    if (categoryOrder.length === 0) {
+      // No categories - create a default "All Cards" category
+      return [{
+        categoryId: 'all',
+        displayName: 'All Cards',
+        icon: 'GridDots',
+        order: 0,
+        visible: true,
         collapsed: false,
         userEditable: true,
-        cardIds: cardOrder.filter(cardId => cardCategoryAssignment[cardId] === catId),
-      }));
+        cardIds: cardOrder.filter(id => isCardVisible(id)),
+      }];
     }
-    // Fallback: single category with all cards
-    return [{
-      categoryId: 'all',
-      displayName: 'All Cards',
-      icon: 'GridDots',
-      order: 0,
-      visible: true,
-      collapsed: false,
-      userEditable: true,
-      cardIds: cardOrder,
-    }];
-  }, [categoryOrder, categoryConfig, categoryNames, categoryIcons, cardOrder, cardCategoryAssignment]);
 
-  // Build card configs for settings panel
-  const settingsCards = React.useMemo(() => {
-    const cards: Record<string, { cardId: string; size: CardSize; columnSpan: number; visible: boolean; orderInCategory: number }> = {};
+    return categoryOrder.map((catId, index) => {
+      const catConfig = categoryConfig[catId];
+      return {
+        categoryId: catId,
+        displayName: categoryNames[catId] || catId,
+        icon: categoryIcons[catId] || 'GridDots',
+        order: index,
+        visible: catConfig?.visible !== false,
+        collapsed: false,
+        userEditable: true,
+        cardIds: cardOrder.filter(id => cardCategoryAssignment[id] === catId && isCardVisible(id)),
+      };
+    });
+  }, [categoryOrder, categoryConfig, categoryNames, categoryIcons, cardOrder, cardCategoryAssignment, cardVisibility]);
+
+  const settingsCards: Record<string, ICardConfig> = React.useMemo(() => {
+    const cards: Record<string, ICardConfig> = {};
     cardOrder.forEach((cardId, index) => {
-      const size = getCardSize(cardId);
+      const size = getCardSizeForRender(cardId);
       cards[cardId] = {
         cardId,
         size,
@@ -739,37 +742,45 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       };
     });
     return cards;
-  }, [cardOrder, getCardSize]);
+  }, [cardOrder, cardVisibility, getCardSizeForRender]);
 
-  // Handler for card visibility changes from settings
-  const handleCardVisibilityChange = React.useCallback((cardId: string, visible: boolean) => {
-    // Note: This would need to update the cardVisibility prop in the WebPart
-    // For now, we just log it - full implementation requires WebPart property update
-    console.log(`[Settings] Card visibility change: ${cardId} -> ${visible}`);
+  // Check if user has any custom preferences
+  const hasUserOverrides = React.useMemo(() => {
+    const orderChanged = JSON.stringify(cardOrder) !== JSON.stringify(defaultCardOrder);
+    const sizesChanged = cardOrder.some(id => getCardSizeForRender(id) !== 'medium');
+    return orderChanged || sizesChanged;
+  }, [cardOrder, defaultCardOrder, getCardSizeForRender]);
+
+  // Settings panel handlers
+  const handleCategoryReorder = React.useCallback((_categoryIds: string[]) => {
+    console.log('Category reorder requested:', _categoryIds);
   }, []);
 
-  // Handler for card reorder from settings
+  const handleCategoryCollapsedChange = React.useCallback((_categoryId: string, _collapsed: boolean) => {
+    console.log('Category collapsed change:', _categoryId, _collapsed);
+  }, []);
+
+  const handleCardVisibilityChange = React.useCallback((_cardId: string, _visible: boolean) => {
+    console.log('Card visibility change requested (admin-only):', _cardId, _visible);
+  }, []);
+
   const handleCardReorderInCategory = React.useCallback((categoryId: string, newCardIds: string[]) => {
+    console.log('Card reorder in category:', categoryId, newCardIds);
     handleCardReorder(newCardIds);
   }, [handleCardReorder]);
 
-  // Handler for moving card to different category
-  const handleCardMoveToCategory = React.useCallback((cardId: string, targetCategoryId: string) => {
-    // Note: This would need to update the cardCategoryAssignment prop
-    console.log(`[Settings] Move card ${cardId} to category ${targetCategoryId}`);
+  const handleCardMoveToCategory = React.useCallback((_cardId: string, _targetCategoryId: string) => {
+    console.log('Card move to category:', _cardId, _targetCategoryId);
   }, []);
 
-  // Handler for category reorder
-  const handleCategoryReorder = React.useCallback((categoryIds: string[]) => {
-    // Note: This would need to update the categoryOrder prop
-    console.log(`[Settings] Category reorder:`, categoryIds);
+  const handleAnimationsEnabledChange = React.useCallback((_enabled: boolean) => {
+    console.log('Animations enabled change:', _enabled);
   }, []);
 
-  // Handler for category collapsed state
-  const handleCategoryCollapsedChange = React.useCallback((categoryId: string, collapsed: boolean) => {
-    // Note: This would need to track collapsed state
-    console.log(`[Settings] Category ${categoryId} collapsed: ${collapsed}`);
-  }, []);
+  const handleResetToDefaults = React.useCallback(() => {
+    setUserCardOrder(defaultCardOrder);
+    cardOrder.forEach(id => setCardSize(id, 'medium'));
+  }, [defaultCardOrder, setUserCardOrder, cardOrder, setCardSize]);
 
   return (
     <IdPrefixProvider value="throughline-dashboard">
@@ -786,13 +797,13 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
               {/* Card grid */}
               {getOrderedCards()}
 
-              {/* Settings Panel */}
+              {/* Settings Panel (Fluent UI v9) */}
               <SettingsPanel
                 isOpen={isSettingsOpen}
                 onDismiss={() => setIsSettingsOpen(false)}
                 categories={settingsCategories}
                 cards={settingsCards}
-                hasUserOverrides={false}
+                hasUserOverrides={hasUserOverrides}
                 animationsEnabled={animationsEnabled}
                 onCategoryReorder={handleCategoryReorder}
                 onCategoryCollapsedChange={handleCategoryCollapsedChange}
@@ -800,11 +811,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
                 onCardVisibilityChange={handleCardVisibilityChange}
                 onCardReorderInCategory={handleCardReorderInCategory}
                 onCardMoveToCategory={handleCardMoveToCategory}
-                onAnimationsEnabledChange={setAnimationsEnabled}
-                onResetToDefaults={() => {
-                  // Reset to defaults - would need to clear user preferences
-                  console.log('[Settings] Reset to defaults');
-                }}
+                onAnimationsEnabledChange={handleAnimationsEnabledChange}
+                onResetToDefaults={handleResetToDefaults}
               />
             </div>
           </PortalProvider>

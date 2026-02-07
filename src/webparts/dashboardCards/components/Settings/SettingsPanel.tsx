@@ -2,21 +2,11 @@
 // SettingsPanel - User Dashboard Settings
 // ============================================
 // Modal panel for user dashboard customization.
-// Uses Fabric UI v8 Panel for SharePoint compatibility.
+// Uses pure CSS for the sliding panel to avoid React portal issues (Error #310)
+// that occur with Fabric v8 Panel and Fluent v9 Drawer in SharePoint.
 
 import * as React from 'react';
-import {
-  Panel,
-  PanelType,
-  PrimaryButton,
-  DefaultButton,
-  Pivot,
-  PivotItem,
-  Toggle,
-  Label,
-} from '@fluentui/react';
-import { Settings24Regular } from '@fluentui/react-icons';
-import { CategoryManager } from './CategoryManager';
+import { Settings24Regular, Dismiss24Regular } from '@fluentui/react-icons';
 import { CardManager } from './CardManager';
 import { ICategoryConfig, ICardConfig } from '../../models/DashboardConfiguration';
 import { CardSize } from '../../types/CardSize';
@@ -54,9 +44,12 @@ export interface ISettingsPanelProps {
   onResetToDefaults: () => void;
 }
 
+type TabValue = 'cards' | 'preferences';
+
 /**
  * SettingsPanel Component
- * User-facing settings modal for dashboard customization.
+ * User-facing settings panel for dashboard customization.
+ * Uses pure CSS sliding panel to avoid React portal issues in SharePoint.
  */
 export const SettingsPanel: React.FC<ISettingsPanelProps> = ({
   isOpen,
@@ -65,8 +58,6 @@ export const SettingsPanel: React.FC<ISettingsPanelProps> = ({
   cards,
   hasUserOverrides,
   animationsEnabled,
-  onCategoryReorder,
-  onCategoryCollapsedChange,
   onCardSizeChange,
   onCardVisibilityChange,
   onCardReorderInCategory,
@@ -74,145 +65,124 @@ export const SettingsPanel: React.FC<ISettingsPanelProps> = ({
   onAnimationsEnabledChange,
   onResetToDefaults,
 }) => {
-  // Track if there are unsaved changes (used for future confirmation dialog)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_isDirty, setIsDirty] = React.useState(false);
+  const [selectedTab, setSelectedTab] = React.useState<TabValue>('cards');
 
-  // Reset dirty state when panel opens
+  // Reset to cards tab when panel opens
   React.useEffect(() => {
     if (isOpen) {
-      setIsDirty(false);
+      setSelectedTab('cards');
     }
   }, [isOpen]);
 
-  // Wrap handlers to track changes
-  const handleCategoryReorder = React.useCallback(
-    (categoryIds: string[]) => {
-      onCategoryReorder(categoryIds);
-      setIsDirty(true);
-    },
-    [onCategoryReorder]
-  );
-
-  const handleCardSizeChange = React.useCallback(
-    (cardId: string, size: CardSize) => {
-      onCardSizeChange(cardId, size);
-      setIsDirty(true);
-    },
-    [onCardSizeChange]
-  );
-
-  const handleCardVisibilityChange = React.useCallback(
-    (cardId: string, visible: boolean) => {
-      onCardVisibilityChange(cardId, visible);
-      setIsDirty(true);
-    },
-    [onCardVisibilityChange]
-  );
-
-  const handleCardReorderInCategory = React.useCallback(
-    (categoryId: string, cardIds: string[]) => {
-      onCardReorderInCategory(categoryId, cardIds);
-      setIsDirty(true);
-    },
-    [onCardReorderInCategory]
-  );
+  // Handle ESC key to close
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onDismiss();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onDismiss]);
 
   const handleAnimationsChange = React.useCallback(
-    (ev: React.MouseEvent<HTMLElement>, checked?: boolean) => {
-      onAnimationsEnabledChange(checked ?? true);
-      setIsDirty(true);
+    (ev: React.ChangeEvent<HTMLInputElement>) => {
+      onAnimationsEnabledChange(ev.currentTarget.checked);
     },
     [onAnimationsEnabledChange]
   );
 
   const handleReset = React.useCallback(() => {
     onResetToDefaults();
-    setIsDirty(false);
   }, [onResetToDefaults]);
 
-  // Panel footer buttons
-  const onRenderFooterContent = React.useCallback(
-    () => (
-      <div className={styles.panelFooter}>
-        <PrimaryButton onClick={onDismiss}>
-          Done
-        </PrimaryButton>
-        {hasUserOverrides && (
-          <DefaultButton onClick={handleReset}>
-            Reset to Defaults
-          </DefaultButton>
-        )}
-      </div>
-    ),
-    [onDismiss, hasUserOverrides, handleReset]
-  );
+  // Don't render anything if not open (but keep the component mounted for animation)
+  const panelClasses = [
+    styles.settingsPanel,
+    isOpen ? styles.open : styles.closed,
+  ].join(' ');
+
+  const overlayClasses = [
+    styles.overlay,
+    isOpen ? styles.overlayVisible : '',
+  ].join(' ');
 
   return (
-    <Panel
-      isOpen={isOpen}
-      onDismiss={onDismiss}
-      type={PanelType.medium}
-      headerText="Dashboard Settings"
-      closeButtonAriaLabel="Close settings"
-      onRenderFooterContent={onRenderFooterContent}
-      isFooterAtBottom={true}
-      styles={{
-        main: {
-          zIndex: 1000001,
-        },
-        overlay: {
-          zIndex: 1000000,
-        },
-      }}
-    >
-      <div className={styles.settingsContent}>
-        <Pivot aria-label="Settings tabs">
-          {/* Categories Tab */}
-          <PivotItem headerText="Categories" itemIcon="GridViewMedium">
-            <div className={styles.tabContent}>
-              <p className={styles.tabDescription}>
-                Drag categories to reorder them on your dashboard.
-              </p>
-              <CategoryManager
-                categories={categories}
-                onReorder={handleCategoryReorder}
-                onCollapsedChange={onCategoryCollapsedChange}
-              />
-            </div>
-          </PivotItem>
+    <>
+      {/* Overlay */}
+      <div
+        className={overlayClasses}
+        onClick={onDismiss}
+        aria-hidden="true"
+      />
 
-          {/* Cards Tab */}
-          <PivotItem headerText="Cards" itemIcon="Tiles">
-            <div className={styles.tabContent}>
-              <p className={styles.tabDescription}>
-                Show, hide, or resize individual cards.
+      {/* Panel */}
+      <div className={panelClasses} role="dialog" aria-modal="true" aria-label="Dashboard Settings">
+        {/* Header */}
+        <div className={styles.header}>
+          <h2 className={styles.title}>Dashboard Settings</h2>
+          <button
+            className={styles.closeButton}
+            onClick={onDismiss}
+            aria-label="Close settings"
+          >
+            <Dismiss24Regular />
+          </button>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className={styles.tabList}>
+          <button
+            className={`${styles.tab} ${selectedTab === 'cards' ? styles.tabActive : ''}`}
+            onClick={() => setSelectedTab('cards')}
+          >
+            Cards
+          </button>
+          <button
+            className={`${styles.tab} ${selectedTab === 'preferences' ? styles.tabActive : ''}`}
+            onClick={() => setSelectedTab('preferences')}
+          >
+            Preferences
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className={styles.content}>
+          {selectedTab === 'cards' && (
+            <>
+              <p className={styles.description}>
+                Change card sizes using the dropdown menu on each card.
               </p>
               <CardManager
                 categories={categories}
                 cards={cards}
-                onSizeChange={handleCardSizeChange}
-                onVisibilityChange={handleCardVisibilityChange}
-                onReorderInCategory={handleCardReorderInCategory}
+                onSizeChange={onCardSizeChange}
+                onVisibilityChange={onCardVisibilityChange}
+                onReorderInCategory={onCardReorderInCategory}
                 onMoveToCategory={onCardMoveToCategory}
               />
-            </div>
-          </PivotItem>
+            </>
+          )}
 
-          {/* Preferences Tab */}
-          <PivotItem headerText="Preferences" itemIcon="Settings">
-            <div className={styles.tabContent}>
-              <p className={styles.tabDescription}>
+          {selectedTab === 'preferences' && (
+            <>
+              <p className={styles.description}>
                 Customize your dashboard experience.
               </p>
 
               <div className={styles.preferenceItem}>
-                <Toggle
-                  label="Enable animations"
-                  checked={animationsEnabled}
-                  onChange={handleAnimationsChange}
-                  inlineLabel
-                />
+                <label className={styles.switchLabel}>
+                  <input
+                    type="checkbox"
+                    checked={animationsEnabled}
+                    onChange={handleAnimationsChange}
+                    className={styles.switchInput}
+                  />
+                  <span className={styles.switchTrack}>
+                    <span className={styles.switchThumb} />
+                  </span>
+                  <span className={styles.switchText}>Enable animations</span>
+                </label>
                 <span className={styles.preferenceDescription}>
                   Show smooth animations when cards move or resize.
                 </span>
@@ -220,21 +190,28 @@ export const SettingsPanel: React.FC<ISettingsPanelProps> = ({
 
               {hasUserOverrides && (
                 <div className={styles.resetSection}>
-                  <Label>Reset Customizations</Label>
+                  <strong>Reset Customizations</strong>
                   <p className={styles.resetDescription}>
                     You have custom settings applied. Click below to restore the default
                     dashboard layout.
                   </p>
-                  <DefaultButton onClick={handleReset}>
+                  <button className={styles.resetButton} onClick={handleReset}>
                     Reset to Defaults
-                  </DefaultButton>
+                  </button>
                 </div>
               )}
-            </div>
-          </PivotItem>
-        </Pivot>
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className={styles.footer}>
+          <button className={styles.doneButton} onClick={onDismiss}>
+            Done
+          </button>
+        </div>
       </div>
-    </Panel>
+    </>
   );
 };
 
