@@ -232,7 +232,9 @@ export const ContextSwitchingCard: React.FC<ContextSwitchingCardProps> = ({
         title={title}
         icon={<BrainCircuitRegular />}
         metricValue={data?.todaySummary?.totalSwitches ?? 0}
-        metricLabel="SWITCHES"
+        smartLabelKey="switch"
+        chartData={data?.hourlyData?.map(h => ({ date: new Date(new Date().setHours(h.hour, 0, 0, 0)), value: h.switchCount }))}
+        chartColor="brand"
         currentSize={size}
         onSizeChange={handleSizeChange}
         isLoading={loading}

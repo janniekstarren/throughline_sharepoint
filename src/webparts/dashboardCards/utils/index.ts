@@ -26,3 +26,9 @@ export {
   unsnoozeInGroupedData,
   type GroupedData
 } from './groupedDataUpdater';
+
+export {
+  getSmartLabel,
+  isValidLabelKey,
+  type LabelKey
+} from './labelUtils';

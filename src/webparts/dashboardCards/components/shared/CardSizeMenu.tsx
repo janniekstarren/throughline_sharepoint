@@ -40,7 +40,8 @@ const useStyles = makeStyles({
     minWidth: 'auto',
   },
   menuPopover: {
-    zIndex: 1000000, // High z-index for SharePoint visibility
+    // z-index handled by global CSS in DashboardCardsWebPart.ts
+    // (Griffel z-index doesn't work for portal-rendered components)
   },
   menuList: {
     minWidth: '140px',

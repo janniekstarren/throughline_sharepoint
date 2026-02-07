@@ -171,7 +171,9 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
         title="Waiting On You"
         icon={<PersonClockRegular />}
         metricValue={data?.totalItems ?? 0}
-        metricLabel="WAITING"
+        smartLabelKey="waiting"
+        chartData={trendData?.dataPoints?.map(p => ({ date: new Date(p.date), value: p.itemCount }))}
+        chartColor="warning"
         currentSize={size}
         onSizeChange={handleSizeChange}
         isLoading={isLoading}

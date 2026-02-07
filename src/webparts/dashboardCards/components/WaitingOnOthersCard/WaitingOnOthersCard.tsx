@@ -289,7 +289,9 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
         title="Waiting On Others"
         icon={<ClockRegular />}
         metricValue={data?.totalItems ?? 0}
-        metricLabel="PENDING"
+        smartLabelKey="pending"
+        chartData={trendData?.dataPoints?.map(p => ({ date: new Date(p.date), value: p.itemCount }))}
+        chartColor="warning"
         currentSize={size}
         onSizeChange={handleSizeChange}
         isLoading={isLoading}

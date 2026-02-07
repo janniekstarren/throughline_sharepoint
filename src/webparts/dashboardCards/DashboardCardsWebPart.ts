@@ -195,6 +195,12 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
 
       /* Popover Surface */
       .fui-PopoverSurface { border-radius: 12px !important; }
+
+      /* Portal z-index for Fluent UI Popover/Menu in SharePoint */
+      /* These render in portals outside component DOM - need global CSS */
+      [data-portal-node] { z-index: 1000000 !important; }
+      .fui-MenuPopover { z-index: 1000001 !important; }
+      .fui-PopoverSurface { z-index: 1000001 !important; }
     `;
 
     const styleElement = document.createElement('style');

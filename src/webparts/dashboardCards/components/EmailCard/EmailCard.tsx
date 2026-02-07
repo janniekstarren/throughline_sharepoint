@@ -263,7 +263,9 @@ export const EmailCard: React.FC<EmailCardProps> = ({
         title="Email"
         icon={<Mail24Regular />}
         metricValue={data?.stats.unreadCount ?? 0}
-        metricLabel="UNREAD"
+        smartLabelKey="unread"
+        chartData={data?.trendData?.dataPoints.map(p => ({ date: p.date, value: p.unreadValue }))}
+        chartColor="brand"
         currentSize={size}
         onSizeChange={handleSizeChange}
         isLoading={isLoading}

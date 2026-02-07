@@ -20,6 +20,7 @@ import { CardSizeMenu } from './CardSizeMenu';
 import { TrendBarChart } from './charts';
 import { TrendDataPoint } from './charts/TrendBarChart';
 import { CardSize } from '../../types/CardSize';
+import { getSmartLabel, LabelKey } from '../../utils/labelUtils';
 
 export interface ISmallCardProps {
   /** Card identifier */
@@ -46,8 +47,10 @@ export interface ISmallCardProps {
   // NEW props for enhanced SmallCard
   /** Primary metric value (e.g., 6, 12, "4h") */
   metricValue?: string | number;
-  /** Metric label (e.g., "EVENTS", "TASKS", "UNREAD") */
+  /** Metric label (e.g., "EVENTS", "TASKS", "UNREAD") - deprecated, use smartLabelKey */
   metricLabel?: string;
+  /** Label key for smart pluralization (e.g., 'event', 'task', 'email') */
+  smartLabelKey?: LabelKey;
   /** Chart data for slide 2 */
   chartData?: TrendDataPoint[];
   /** Chart color scheme */
@@ -127,7 +130,7 @@ const useStyles = makeStyles({
     display: 'flex',
     flexDirection: 'column',
     gap: tokens.spacingVerticalS,
-    zIndex: 1000000, // High z-index for SharePoint
+    // z-index handled by global CSS in DashboardCardsWebPart.ts
   },
   aiSummary: {
     fontSize: tokens.fontSizeBase200,
@@ -244,6 +247,7 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
   hasError = false,
   metricValue,
   metricLabel,
+  smartLabelKey,
   chartData,
   chartColor = 'brand',
   currentSize = 'small',
@@ -259,6 +263,15 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
 
   // Get display metric value (use metricValue if provided, fall back to itemCount)
   const displayValue = metricValue !== undefined ? metricValue : itemCount;
+
+  // Compute display label with smart pluralization
+  const displayLabel = React.useMemo(() => {
+    if (smartLabelKey && displayValue !== undefined) {
+      const count = typeof displayValue === 'number' ? displayValue : parseInt(String(displayValue), 10) || 0;
+      return getSmartLabel(count, smartLabelKey);
+    }
+    return metricLabel || '';
+  }, [smartLabelKey, displayValue, metricLabel]);
 
   // Handle size change (support both new and deprecated props)
   const handleSizeChange = useCallback((size: CardSize) => {
@@ -292,7 +305,7 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
   return (
     <div
       className={cardClasses}
-      aria-label={`${title} card. ${displayValue !== undefined ? `${displayValue} ${metricLabel || 'items'}.` : ''}`}
+      aria-label={`${title} card. ${displayValue !== undefined ? `${displayValue} ${displayLabel || 'items'}.` : ''}`}
     >
       {/* Header */}
       <div className={styles.header}>
@@ -343,8 +356,8 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
             {displayValue !== undefined ? (
               <>
                 <Text className={styles.metricValue}>{displayValue}</Text>
-                {metricLabel && (
-                  <Text className={styles.metricLabel}>{metricLabel}</Text>
+                {displayLabel && (
+                  <Text className={styles.metricLabel}>{displayLabel}</Text>
                 )}
               </>
             ) : (
