@@ -40,11 +40,6 @@ export const CardSizeMenu: React.FC<ICardSizeMenuProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Don't render if onSizeChange is not provided
-  if (!onSizeChange) {
-    return null;
-  }
-
   // Close menu when clicking outside
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -75,13 +70,18 @@ export const CardSizeMenu: React.FC<ICardSizeMenuProps> = ({
 
   const handleSizeClick = useCallback(
     (size: CardSize) => {
-      if (size !== currentSize) {
+      if (size !== currentSize && onSizeChange) {
         onSizeChange(size);
       }
       setIsMenuOpen(false);
     },
     [currentSize, onSizeChange]
   );
+
+  // Don't render if onSizeChange is not provided - MUST be after all hooks
+  if (!onSizeChange) {
+    return null;
+  }
 
   const tooltipContent = tooltip || `Size: ${SIZE_LABELS[currentSize]}`;
 
