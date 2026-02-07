@@ -160,9 +160,11 @@ interface EmailCardProps {
   aiDemoMode?: boolean;
   /** Card size: 'small' | 'medium' | 'large' */
   size?: CardSize;
-  /** Callback to cycle through card sizes (small → medium → large → small) */
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
   onCycleSize?: () => void;
-  /** @deprecated Use size and onCycleSize instead */
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -199,10 +201,15 @@ export const EmailCard: React.FC<EmailCardProps> = ({
   dataMode = 'test',
   aiDemoMode = false,
   size = 'medium',
+  onSizeChange,
   onCycleSize,
-  onToggleSize, // deprecated, use onCycleSize
+  onToggleSize, // deprecated
 }) => {
-  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
   const handleCycleSize = onCycleSize || onToggleSize;
   const cardStyles = useCardStyles();
   const styles = useStyles();
@@ -245,33 +252,20 @@ export const EmailCard: React.FC<EmailCardProps> = ({
     aiInsights,
   } = useEmailCard(context, settings, dataMode, aiDemoMode);
 
-  // Get AI summary text for small card
-  const aiSummaryText = useMemo(() => {
-    if (!aiCardSummary) return undefined;
-    return aiCardSummary.summary;
-  }, [aiCardSummary]);
-
-  // Get AI insights array for small card (use title for short display)
-  const aiInsightsList = useMemo(() => {
-    return aiInsights ? aiInsights.map(insight => insight.title) : [];
-  }, [aiInsights]);
-
   // ============================================
   // SMALL CARD VARIANT
   // Compact chip with title, count, and AI popover
   // ============================================
   if (size === 'small') {
-    const totalEmails = data ? data.stats.unreadCount + data.stats.activeFlagsCount : 0;
     return (
       <SmallCard
         cardId="email"
         title="Email"
         icon={<Mail24Regular />}
-        itemCount={totalEmails}
-        aiDemoMode={aiDemoMode}
-        aiSummary={aiSummaryText}
-        aiInsights={aiInsightsList}
-        onCycleSize={handleCycleSize || (() => {})}
+        metricValue={data?.stats.unreadCount ?? 0}
+        metricLabel="UNREAD"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
         isLoading={isLoading}
         hasError={!!error}
       />
