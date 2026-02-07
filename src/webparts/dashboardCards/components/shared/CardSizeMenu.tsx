@@ -1,19 +1,13 @@
 // ============================================
 // CardSizeMenu - Size selection dropdown menu
-// Uses Fabric UI v8 ContextualMenu (native SharePoint support)
+// Uses pure CSS dropdown to avoid React Error #310 in SharePoint
 // ============================================
 
 import * as React from 'react';
-import { useRef, useState, useCallback } from 'react';
-import {
-  IContextualMenuProps,
-  IContextualMenuItem,
-  ContextualMenu,
-  DirectionalHint,
-  TooltipHost,
-} from '@fluentui/react';
-import { GridDotsRegular } from '@fluentui/react-icons';
+import { useRef, useState, useCallback, useEffect } from 'react';
+import { GridDotsRegular, Checkmark16Regular } from '@fluentui/react-icons';
 import { CardSize } from '../../types/CardSize';
+import styles from './CardSizeMenu.module.scss';
 
 export interface ICardSizeMenuProps {
   /** Current card size */
@@ -43,7 +37,7 @@ export const CardSizeMenu: React.FC<ICardSizeMenuProps> = ({
   tooltip,
   ariaLabel = 'Change card size',
 }) => {
-  const buttonRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Don't render if onSizeChange is not provided
@@ -51,90 +45,76 @@ export const CardSizeMenu: React.FC<ICardSizeMenuProps> = ({
     return null;
   }
 
-  const handleMenuItemClick = useCallback(
-    (ev?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>, item?: IContextualMenuItem): void => {
-      if (item?.key) {
-        const newSize = item.key as CardSize;
-        if (newSize !== currentSize) {
-          onSizeChange(newSize);
-        }
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuOpen]);
+
+  // Close menu on Escape
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isMenuOpen]);
+
+  const handleSizeClick = useCallback(
+    (size: CardSize) => {
+      if (size !== currentSize) {
+        onSizeChange(size);
       }
       setIsMenuOpen(false);
     },
     [currentSize, onSizeChange]
   );
 
-  const menuItems: IContextualMenuItem[] = [
-    {
-      key: 'small',
-      text: SIZE_LABELS.small,
-      canCheck: true,
-      isChecked: currentSize === 'small',
-      onClick: handleMenuItemClick,
-    },
-    {
-      key: 'medium',
-      text: SIZE_LABELS.medium,
-      canCheck: true,
-      isChecked: currentSize === 'medium',
-      onClick: handleMenuItemClick,
-    },
-    {
-      key: 'large',
-      text: SIZE_LABELS.large,
-      canCheck: true,
-      isChecked: currentSize === 'large',
-      onClick: handleMenuItemClick,
-    },
-  ];
-
-  const menuProps: IContextualMenuProps = {
-    items: menuItems,
-    directionalHint: DirectionalHint.bottomRightEdge,
-    gapSpace: 4,
-    isBeakVisible: false,
-    onDismiss: () => setIsMenuOpen(false),
-    // Force render in Layer at document.body to escape card's overflow:hidden
-    useTargetAsMinWidth: false,
-    calloutProps: {
-      isBeakVisible: false,
-      styles: {
-        root: {
-          zIndex: 1000001,
-        },
-      },
-    },
-  };
-
   const tooltipContent = tooltip || `Size: ${SIZE_LABELS[currentSize]}`;
 
   return (
-    <div ref={buttonRef} style={{ display: 'inline-block' }}>
-      <TooltipHost content={tooltipContent}>
-        <button
-          aria-label={ariaLabel}
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          style={{
-            width: 28,
-            height: 28,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            padding: 0,
-            color: 'inherit',
-          }}
-        >
-          <GridDotsRegular />
-        </button>
-      </TooltipHost>
-      {isMenuOpen && buttonRef.current && (
-        <ContextualMenu
-          {...menuProps}
-          target={buttonRef.current}
-        />
+    <div ref={containerRef} className={styles.container}>
+      <button
+        className={styles.triggerButton}
+        aria-label={ariaLabel}
+        aria-haspopup="menu"
+        aria-expanded={isMenuOpen}
+        title={tooltipContent}
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+      >
+        <GridDotsRegular />
+      </button>
+
+      {isMenuOpen && (
+        <div className={styles.dropdown} role="menu">
+          {(['small', 'medium', 'large'] as CardSize[]).map((size) => (
+            <button
+              key={size}
+              className={`${styles.menuItem} ${currentSize === size ? styles.menuItemActive : ''}`}
+              role="menuitem"
+              aria-checked={currentSize === size}
+              onClick={() => handleSizeClick(size)}
+            >
+              <span className={styles.checkmark}>
+                {currentSize === size && <Checkmark16Regular />}
+              </span>
+              <span>{SIZE_LABELS[size]}</span>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );

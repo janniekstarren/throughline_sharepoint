@@ -1,5 +1,6 @@
 // SmallCard AI Popover Styles
 // Uses CSS Modules for SharePoint compatibility (not makeStyles/Griffel)
+// Pure CSS popover to avoid React Error #310
 
 // Design tokens as SCSS variables (matching Fluent 2)
 $ai-accent: #a855f7;
@@ -11,7 +12,40 @@ $text-primary: #242424;
 $text-secondary: #616161;
 $border-color: #e0e0e0;
 
-// Popover container - must have high z-index for SharePoint
+// Wrapper for positioning the dropdown
+.aiPopoverWrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+// CSS-based dropdown (replaces Fabric UI Callout)
+.aiPopoverDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  min-width: 320px;
+  background: #ffffff;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(157, 79, 178, 0.12), 0 4px 16px rgba(157, 79, 178, 0.08);
+  z-index: 1000001; // SharePoint z-index
+  overflow: hidden;
+  animation: aiPopoverFadeIn 0.15s ease-out;
+}
+
+@keyframes aiPopoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Legacy - Popover container for old Callout-based approach (can be removed later)
 .aiPopoverContainer {
   z-index: 1000001 !important;
 }

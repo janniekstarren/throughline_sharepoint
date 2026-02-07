@@ -1,10 +1,11 @@
 // ============================================
 // SmallCard - Square card with metric/chart slider
 // Shows key metric on slide 1, mini chart on slide 2
+// Uses pure CSS popover to avoid React Error #310 in SharePoint
 // ============================================
 
 import * as React from 'react';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   makeStyles,
   tokens,
@@ -12,11 +13,6 @@ import {
   Button,
   mergeClasses,
 } from '@fluentui/react-components';
-// Fabric UI v8 components for SharePoint-native popover support
-import {
-  Callout,
-  DirectionalHint,
-} from '@fluentui/react';
 import {
   Sparkle20Regular,
   Sparkle16Regular,
@@ -129,29 +125,11 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalXS,
   },
 
-  // AI button and popover
+  // AI button
   aiButton: {
     color: tokens.colorBrandForeground1,
     minWidth: 'auto',
     padding: '4px',
-  },
-  aiPopover: {
-    padding: tokens.spacingHorizontalM,
-    maxWidth: '300px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.spacingVerticalS,
-  },
-  aiSummary: {
-    fontSize: tokens.fontSizeBase200,
-    color: tokens.colorNeutralForeground1,
-    lineHeight: tokens.lineHeightBase200,
-  },
-  aiInsight: {
-    fontSize: tokens.fontSizeBase200,
-    color: tokens.colorNeutralForeground2,
-    paddingLeft: tokens.spacingHorizontalS,
-    borderLeft: `2px solid ${tokens.colorBrandForeground1}`,
   },
 
   // Slide container
@@ -239,11 +217,6 @@ const useStyles = makeStyles({
       backgroundColor: tokens.colorBrandForeground1,
     },
   },
-  slideLabel: {
-    fontSize: tokens.fontSizeBase100,
-    color: tokens.colorNeutralForeground3,
-    marginTop: tokens.spacingVerticalXXS,
-  },
 });
 
 export const SmallCard: React.FC<ISmallCardProps> = ({
@@ -266,9 +239,9 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
 }) => {
   const styles = useStyles();
   const [activeSlide, setActiveSlide] = useState(0);
-  const [isCalloutVisible, setIsCalloutVisible] = useState(false);
+  const [isPopoverVisible, setIsPopoverVisible] = useState(false);
   const [isPopoverExpanded, setIsPopoverExpanded] = useState(true);
-  const aiButtonRef = useRef<HTMLDivElement>(null);
+  const popoverWrapperRef = useRef<HTMLDivElement>(null);
 
   // Determine if we have chart data for slide 2
   const hasChart = chartData && chartData.length > 0;
@@ -285,6 +258,34 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
     }
     return metricLabel || '';
   }, [smartLabelKey, displayValue, metricLabel]);
+
+  // Close popover when clicking outside
+  useEffect(() => {
+    if (!isPopoverVisible) return;
+
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (popoverWrapperRef.current && !popoverWrapperRef.current.contains(event.target as Node)) {
+        setIsPopoverVisible(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isPopoverVisible]);
+
+  // Close popover on Escape
+  useEffect(() => {
+    if (!isPopoverVisible) return;
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        setIsPopoverVisible(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isPopoverVisible]);
 
   // Handle size change (support both new and deprecated props)
   const handleSizeChange = useCallback((size: CardSize) => {
@@ -325,37 +326,20 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
         <span className={styles.headerIcon}>{icon}</span>
         <Text className={styles.headerTitle}>{title}</Text>
         <div className={styles.headerActions}>
-          {/* AI Insights Button - Using Fabric UI Callout for SharePoint z-index compatibility */}
+          {/* AI Insights Button - Using pure CSS popover for SharePoint compatibility */}
           {aiDemoMode && (aiSummary || (aiInsights && aiInsights.length > 0)) && (
-            <>
-              <div ref={aiButtonRef} style={{ display: 'inline-flex' }}>
-                <Button
-                  appearance="subtle"
-                  size="small"
-                  icon={<Sparkle20Regular />}
-                  className={styles.aiButton}
-                  aria-label="View AI insights"
-                  onClick={() => setIsCalloutVisible(!isCalloutVisible)}
-                />
-              </div>
-              {isCalloutVisible && aiButtonRef.current && (
-                <Callout
-                  target={aiButtonRef.current}
-                  onDismiss={() => setIsCalloutVisible(false)}
-                  directionalHint={DirectionalHint.bottomAutoEdge}
-                  gapSpace={8}
-                  isBeakVisible={false}
-                  className={popoverStyles.aiPopoverContainer}
-                  styles={{
-                    calloutMain: {
-                      padding: 0,
-                      borderRadius: 6,
-                      overflow: 'hidden',
-                      minWidth: 320,
-                      boxShadow: '0 2px 8px rgba(157, 79, 178, 0.12), 0 4px 16px rgba(157, 79, 178, 0.08)',
-                    },
-                  }}
-                >
+            <div ref={popoverWrapperRef} className={popoverStyles.aiPopoverWrapper}>
+              <Button
+                appearance="subtle"
+                size="small"
+                icon={<Sparkle20Regular />}
+                className={styles.aiButton}
+                aria-label="View AI insights"
+                aria-expanded={isPopoverVisible}
+                onClick={() => setIsPopoverVisible(!isPopoverVisible)}
+              />
+              {isPopoverVisible && (
+                <div className={popoverStyles.aiPopoverDropdown}>
                   {/* Banner header - collapsible */}
                   <div
                     className={popoverStyles.aiPopoverBanner}
@@ -401,9 +385,9 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
                       })}
                     </div>
                   )}
-                </Callout>
+                </div>
               )}
-            </>
+            </div>
           )}
           {/* Size Menu */}
           {(onSizeChange || onCycleSize) && (
