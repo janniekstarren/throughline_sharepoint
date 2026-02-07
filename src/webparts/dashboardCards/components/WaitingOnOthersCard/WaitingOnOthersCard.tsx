@@ -30,7 +30,7 @@ import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { useWaitingOnOthers, IWaitingOnOthersSettings, DEFAULT_WAITING_ON_OTHERS_SETTINGS } from '../../hooks/useWaitingOnOthers';
 import { WaitingTrendChart } from './components/WaitingTrendChart';
 import { GroupedPendingData, PendingTrendData } from '../../models/WaitingOnOthers';
-import { BaseCard, CardHeader, EmptyState, AIInsightBanner, AIOnboardingDialog, SmallCard } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, AIInsightBanner, AIOnboardingDialog, SmallCard } from '../shared';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestWaitingOnOthersData, getTestWaitingOnOthersTrend } from '../../services/testData/waitingOnOthers';
@@ -320,19 +320,6 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
     return `${days}d`;
   };
 
-  // Expand button for switching to large card view
-  const expandButton = handleCycleSize ? (
-    <Tooltip content="View all details" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={handleCycleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
   // Header actions
   const headerActions = (
     <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
@@ -344,7 +331,7 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -355,7 +342,7 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
         <CardHeader
           icon={<ClockRegular />}
           title="Waiting On Others"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<ClockRegular />}

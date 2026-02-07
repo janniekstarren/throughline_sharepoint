@@ -57,7 +57,7 @@ import {
   TrendChart,
   TimelineView
 } from './components';
-import { AIInsightBanner, SmallCard } from '../shared';
+import { AIInsightBanner, CardSizeMenu, SmallCard } from '../shared';
 import { CardSize } from '../../types/CardSize';
 
 interface ContextSwitchingCardProps {
@@ -321,16 +321,7 @@ export const ContextSwitchingCard: React.FC<ContextSwitchingCardProps> = ({
               disabled={loading}
             />
           </Tooltip>
-          {handleCycleSize && (
-            <Tooltip content="Expand" relationship="label">
-              <Button
-                appearance="subtle"
-                icon={<ArrowMaximizeRegular />}
-                size="small"
-                onClick={handleCycleSize}
-              />
-            </Tooltip>
-          )}
+          <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
         </div>
       </div>
 
