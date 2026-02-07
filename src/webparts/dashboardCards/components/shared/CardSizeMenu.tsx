@@ -39,6 +39,9 @@ const useStyles = makeStyles({
   menuButton: {
     minWidth: 'auto',
   },
+  menuPopover: {
+    zIndex: 1000000, // High z-index for SharePoint visibility
+  },
   menuList: {
     minWidth: '140px',
   },
@@ -107,7 +110,7 @@ export const CardSizeMenu: React.FC<ICardSizeMenuProps> = ({
           />
         </Tooltip>
       </MenuTrigger>
-      <MenuPopover>
+      <MenuPopover className={styles.menuPopover}>
         <MenuList className={styles.menuList}>
           <MenuItemRadio name="size" value="small">
             {SIZE_LABELS.small}
