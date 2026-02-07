@@ -294,6 +294,9 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
         onSizeChange={handleSizeChange}
         isLoading={isLoading}
         hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
       />
     );
   }

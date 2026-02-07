@@ -320,6 +320,9 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
         onSizeChange={handleSizeChange}
         isLoading={loading}
         hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
       />
     );
   }

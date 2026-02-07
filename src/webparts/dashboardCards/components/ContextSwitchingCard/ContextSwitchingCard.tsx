@@ -59,6 +59,7 @@ import {
 } from './components';
 import { AIInsightBanner, CardSizeMenu, SmallCard } from '../shared';
 import { CardSize } from '../../types/CardSize';
+import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 
 interface ContextSwitchingCardProps {
   graphClient?: MSGraphClientV3;
@@ -127,6 +128,21 @@ export const ContextSwitchingCard: React.FC<ContextSwitchingCardProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ContextViewMode>('overview');
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+
+  // AI Demo Mode state
+  const [aiCardSummary, setAiCardSummary] = useState<IAICardSummary | null>(null);
+  const [aiInsights, setAiInsights] = useState<IAIInsight[]>([]);
+
+  // Load AI demo data when enabled
+  React.useEffect(() => {
+    if (aiDemoMode) {
+      setAiCardSummary(getAIContextSwitchingCardSummary());
+      setAiInsights(getAllContextSwitchingInsights());
+    } else {
+      setAiCardSummary(null);
+      setAiInsights([]);
+    }
+  }, [aiDemoMode]);
 
   // Service ref
   const serviceRef = React.useRef<ContextSwitchingService | null>(null);
@@ -224,6 +240,9 @@ export const ContextSwitchingCard: React.FC<ContextSwitchingCardProps> = ({
         onSizeChange={handleSizeChange}
         isLoading={loading}
         hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
       />
     );
   }
@@ -326,10 +345,10 @@ export const ContextSwitchingCard: React.FC<ContextSwitchingCardProps> = ({
       </div>
 
       {/* AI Insight Banner (only in AI Demo Mode) */}
-      {aiDemoMode && (
+      {aiDemoMode && aiCardSummary && (
         <AIInsightBanner
-          summary={getAIContextSwitchingCardSummary()}
-          insights={getAllContextSwitchingInsights()}
+          summary={aiCardSummary}
+          insights={aiInsights}
         />
       )}
 

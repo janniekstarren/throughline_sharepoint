@@ -277,6 +277,9 @@ export const SharedWithMeCard: React.FC<SharedWithMeCardProps> = ({
         onSizeChange={handleSizeChange}
         isLoading={isLoading}
         hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
       />
     );
   }

@@ -291,6 +291,9 @@ export const RecentFilesCard: React.FC<RecentFilesCardProps> = ({
         onSizeChange={handleSizeChange}
         isLoading={isLoading}
         hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
       />
     );
   }
