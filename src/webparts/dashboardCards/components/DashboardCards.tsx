@@ -35,6 +35,7 @@ import { WaitingOnOthersCardLarge } from './WaitingOnOthersCardLarge';
 import { ContextSwitchingCard, ContextSwitchingCardLarge } from './ContextSwitchingCard';
 import { Salutation, SalutationType, SalutationSize } from './Salutation';
 import { CategorySection, IOrderedCard } from './CategorySection';
+import { SettingsButton, SettingsPanel } from './Settings';
 import { getFluentTheme, ThemeMode } from '../utils/themeUtils';
 import { CardSize } from '../types/CardSize';
 import styles from './DashboardCards.module.scss';
@@ -233,8 +234,11 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     defaultCollapsedCardIds,
   });
 
-  // Animation state (can be toggled via future settings panel)
-  const animationsEnabled = true;
+  // Settings panel state
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+
+  // Animation state (can be toggled via settings panel)
+  const [animationsEnabled, setAnimationsEnabled] = React.useState(true);
 
   // Helper to get card title (custom or default)
   const getCardTitle = (cardId: string): string => {
@@ -692,14 +696,116 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     return result;
   };
 
+  // Build categories for settings panel from current config
+  // This creates a simplified view that works with the existing useUserPreferences hook
+  const settingsCategories = React.useMemo(() => {
+    // If we have category config, build from it
+    if (categoryOrder.length > 0 && Object.keys(categoryConfig).length > 0) {
+      return categoryOrder.map((catId, index) => ({
+        categoryId: catId,
+        displayName: categoryNames[catId] || catId,
+        icon: categoryIcons[catId] || DEFAULT_CATEGORY_ICONS[catId] || 'GridDots',
+        order: index,
+        visible: categoryConfig[catId]?.visible ?? true,
+        collapsed: false,
+        userEditable: true,
+        cardIds: cardOrder.filter(cardId => cardCategoryAssignment[cardId] === catId),
+      }));
+    }
+    // Fallback: single category with all cards
+    return [{
+      categoryId: 'all',
+      displayName: 'All Cards',
+      icon: 'GridDots',
+      order: 0,
+      visible: true,
+      collapsed: false,
+      userEditable: true,
+      cardIds: cardOrder,
+    }];
+  }, [categoryOrder, categoryConfig, categoryNames, categoryIcons, cardOrder, cardCategoryAssignment]);
+
+  // Build card configs for settings panel
+  const settingsCards = React.useMemo(() => {
+    const cards: Record<string, { cardId: string; size: CardSize; columnSpan: number; visible: boolean; orderInCategory: number }> = {};
+    cardOrder.forEach((cardId, index) => {
+      const size = getCardSize(cardId);
+      cards[cardId] = {
+        cardId,
+        size,
+        columnSpan: size === 'large' ? 2 : 1,
+        visible: isCardVisible(cardId),
+        orderInCategory: index,
+      };
+    });
+    return cards;
+  }, [cardOrder, getCardSize]);
+
+  // Handler for card visibility changes from settings
+  const handleCardVisibilityChange = React.useCallback((cardId: string, visible: boolean) => {
+    // Note: This would need to update the cardVisibility prop in the WebPart
+    // For now, we just log it - full implementation requires WebPart property update
+    console.log(`[Settings] Card visibility change: ${cardId} -> ${visible}`);
+  }, []);
+
+  // Handler for card reorder from settings
+  const handleCardReorderInCategory = React.useCallback((categoryId: string, newCardIds: string[]) => {
+    handleCardReorder(newCardIds);
+  }, [handleCardReorder]);
+
+  // Handler for moving card to different category
+  const handleCardMoveToCategory = React.useCallback((cardId: string, targetCategoryId: string) => {
+    // Note: This would need to update the cardCategoryAssignment prop
+    console.log(`[Settings] Move card ${cardId} to category ${targetCategoryId}`);
+  }, []);
+
+  // Handler for category reorder
+  const handleCategoryReorder = React.useCallback((categoryIds: string[]) => {
+    // Note: This would need to update the categoryOrder prop
+    console.log(`[Settings] Category reorder:`, categoryIds);
+  }, []);
+
+  // Handler for category collapsed state
+  const handleCategoryCollapsedChange = React.useCallback((categoryId: string, collapsed: boolean) => {
+    // Note: This would need to track collapsed state
+    console.log(`[Settings] Category ${categoryId} collapsed: ${collapsed}`);
+  }, []);
+
   return (
     <IdPrefixProvider value="throughline-dashboard">
       <RendererProvider renderer={renderer}>
         <FluentProvider theme={currentTheme}>
           <PortalProvider>
             <div className={styles.dashboard} ref={portalMountRef}>
-              <Salutation type={salutationType} size={salutationSize} userName={userName} />
+              {/* Header with Salutation and Settings button */}
+              <div className={styles.dashboardHeader}>
+                <Salutation type={salutationType} size={salutationSize} userName={userName} />
+                <SettingsButton onClick={() => setIsSettingsOpen(true)} />
+              </div>
+
+              {/* Card grid */}
               {getOrderedCards()}
+
+              {/* Settings Panel */}
+              <SettingsPanel
+                isOpen={isSettingsOpen}
+                onDismiss={() => setIsSettingsOpen(false)}
+                categories={settingsCategories}
+                cards={settingsCards}
+                hasUserOverrides={false}
+                animationsEnabled={animationsEnabled}
+                onCategoryReorder={handleCategoryReorder}
+                onCategoryCollapsedChange={handleCategoryCollapsedChange}
+                onCardSizeChange={handleSetCardSize}
+                onCardVisibilityChange={handleCardVisibilityChange}
+                onCardReorderInCategory={handleCardReorderInCategory}
+                onCardMoveToCategory={handleCardMoveToCategory}
+                onAnimationsEnabledChange={setAnimationsEnabled}
+                onResetToDefaults={() => {
+                  // Reset to defaults - would need to clear user preferences
+                  console.log('[Settings] Reset to defaults');
+                }}
+              />
             </div>
           </PortalProvider>
         </FluentProvider>
