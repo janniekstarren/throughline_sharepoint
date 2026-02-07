@@ -188,21 +188,6 @@ const useStyles = makeStyles({
       backgroundColor: tokens.colorBrandForeground1,
     },
   },
-
-  // Click to resize text
-  resizeHint: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: tokens.spacingHorizontalXS,
-    padding: tokens.spacingVerticalXS,
-    color: tokens.colorNeutralForeground3,
-    fontSize: tokens.fontSizeBase100,
-    cursor: 'pointer',
-    ':hover': {
-      color: tokens.colorBrandForeground1,
-    },
-  },
 });
 
 export const SmallCard: React.FC<ISmallCardProps> = ({
@@ -331,22 +316,6 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
           ))}
         </div>
       )}
-
-      {/* Resize hint */}
-      <div
-        className={styles.resizeHint}
-        onClick={() => handleSizeChange('medium')}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleSizeChange('medium');
-          }
-        }}
-      >
-        <span>Click to resize</span>
-      </div>
     </div>
   );
 };

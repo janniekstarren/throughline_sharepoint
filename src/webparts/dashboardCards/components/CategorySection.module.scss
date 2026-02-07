@@ -223,18 +223,27 @@
 
 // ============================================
 // SMALL CARDS ROW
-// Horizontal row of compact card chips
+// Grid layout matching medium card columns
 // ============================================
 .smallCardsRow {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);  // Same as gridLayout
   gap: 12px;
   margin-bottom: 16px;
+
+  @media (max-width: 1400px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .smallCardWrapper {
-  flex: 0 0 auto;
-  min-width: 180px;
-  max-width: 280px;
-  aspect-ratio: 1 / 1; // Ensure square
+  aspect-ratio: 1 / 1;  // Keep square
 }
