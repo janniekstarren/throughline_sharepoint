@@ -1,0 +1,131 @@
+// SmallCard AI Popover Styles
+// Uses CSS Modules for SharePoint compatibility (not makeStyles/Griffel)
+
+// Design tokens as SCSS variables (matching Fluent 2)
+$ai-accent: #a855f7;
+$ai-accent-light: rgba(168, 85, 247, 0.1);
+$critical-color: #dc2626;
+$warning-color: #f59e0b;
+$info-color: #3b82f6;
+$text-primary: #242424;
+$text-secondary: #616161;
+$border-color: #e0e0e0;
+
+// Popover container - must have high z-index for SharePoint
+.aiPopoverContainer {
+  z-index: 1000001 !important;
+}
+
+// Banner header row (collapsible)
+.aiPopoverBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid $border-color;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+
+  &:hover {
+    background: #fafafa;
+  }
+}
+
+// Sparkle icon
+.aiPopoverIcon {
+  color: $ai-accent;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+// Summary text
+.aiPopoverText {
+  flex: 1;
+  color: $ai-accent;
+  font-weight: 600;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Chevron (rotates when expanded)
+.aiPopoverChevron {
+  color: $ai-accent;
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: transform 150ms ease;
+}
+
+.aiPopoverChevronExpanded {
+  transform: rotate(90deg);
+}
+
+// Content area with insight items
+.aiPopoverContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+// Individual insight item row
+.aiInsightItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 150ms ease;
+
+  &:hover {
+    box-shadow: 0 3px 8px rgba(168, 85, 247, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+}
+
+// Insight icon (base)
+.aiInsightIcon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+// Icon color variants
+.aiInsightIconCritical {
+  color: $critical-color;
+}
+
+.aiInsightIconWarning {
+  color: $warning-color;
+}
+
+.aiInsightIconInfo {
+  color: $info-color;
+}
+
+// Insight text
+.aiInsightText {
+  flex: 1;
+  font-size: 12px;
+  color: $text-primary;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Action link (e.g., "Reply now >")
+.aiInsightAction {
+  font-size: 11px;
+  color: $ai-accent;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}

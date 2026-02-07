@@ -1,25 +1,19 @@
 // ============================================
 // CardSizeMenu - Size selection dropdown menu
-// Used across all card sizes (small/medium/large)
+// Uses Fabric UI v8 ContextualMenu (native SharePoint support)
 // ============================================
 
 import * as React from 'react';
+import { useRef, useState, useCallback } from 'react';
 import {
-  Menu,
-  MenuTrigger,
-  MenuPopover,
-  MenuList,
-  MenuItemRadio,
-  Button,
-  Tooltip,
-  makeStyles,
-  tokens,
-} from '@fluentui/react-components';
-import {
-  GridDots20Regular,
-} from '@fluentui/react-icons';
+  IContextualMenuProps,
+  IContextualMenuItem,
+  ContextualMenu,
+  DirectionalHint,
+  TooltipHost,
+} from '@fluentui/react';
+import { GridDotsRegular } from '@fluentui/react-icons';
 import { CardSize } from '../../types/CardSize';
-import { usePortalContainer } from '../../contexts/PortalContext';
 
 export interface ICardSizeMenuProps {
   /** Current card size */
@@ -36,24 +30,6 @@ export interface ICardSizeMenuProps {
   ariaLabel?: string;
 }
 
-const useStyles = makeStyles({
-  menuButton: {
-    minWidth: 'auto',
-  },
-  menuPopover: {
-    // z-index handled by global CSS in DashboardCardsWebPart.ts
-    // (Griffel z-index doesn't work for portal-rendered components)
-  },
-  menuList: {
-    minWidth: '140px',
-  },
-  menuItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
-  },
-});
-
 // Size labels for display
 const SIZE_LABELS: Record<CardSize, string> = {
   small: 'Small',
@@ -64,70 +40,103 @@ const SIZE_LABELS: Record<CardSize, string> = {
 export const CardSizeMenu: React.FC<ICardSizeMenuProps> = ({
   currentSize,
   onSizeChange,
-  appearance = 'subtle',
-  buttonSize = 'small',
   tooltip,
   ariaLabel = 'Change card size',
 }) => {
-  const styles = useStyles();
-  const portalContainer = usePortalContainer();
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Don't render if onSizeChange is not provided
   if (!onSizeChange) {
     return null;
   }
 
-  // Controlled checked values for the menu
-  const checkedValues = {
-    size: [currentSize],
-  };
-
-  // Handle size selection
-  const handleCheckedValueChange = (
-    _: unknown,
-    data: { name: string; checkedItems: string[] }
-  ): void => {
-    if (data.checkedItems.length > 0) {
-      const newSize = data.checkedItems[0] as CardSize;
-      if (newSize !== currentSize) {
-        onSizeChange(newSize);
+  const handleMenuItemClick = useCallback(
+    (ev?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>, item?: IContextualMenuItem): void => {
+      if (item?.key) {
+        const newSize = item.key as CardSize;
+        if (newSize !== currentSize) {
+          onSizeChange(newSize);
+        }
       }
-    }
+      setIsMenuOpen(false);
+    },
+    [currentSize, onSizeChange]
+  );
+
+  const menuItems: IContextualMenuItem[] = [
+    {
+      key: 'small',
+      text: SIZE_LABELS.small,
+      canCheck: true,
+      isChecked: currentSize === 'small',
+      onClick: handleMenuItemClick,
+    },
+    {
+      key: 'medium',
+      text: SIZE_LABELS.medium,
+      canCheck: true,
+      isChecked: currentSize === 'medium',
+      onClick: handleMenuItemClick,
+    },
+    {
+      key: 'large',
+      text: SIZE_LABELS.large,
+      canCheck: true,
+      isChecked: currentSize === 'large',
+      onClick: handleMenuItemClick,
+    },
+  ];
+
+  const menuProps: IContextualMenuProps = {
+    items: menuItems,
+    directionalHint: DirectionalHint.bottomRightEdge,
+    gapSpace: 4,
+    isBeakVisible: false,
+    onDismiss: () => setIsMenuOpen(false),
+    // Force render in Layer at document.body to escape card's overflow:hidden
+    useTargetAsMinWidth: false,
+    calloutProps: {
+      isBeakVisible: false,
+      styles: {
+        root: {
+          zIndex: 1000001,
+        },
+      },
+    },
   };
 
   const tooltipContent = tooltip || `Size: ${SIZE_LABELS[currentSize]}`;
 
   return (
-    <Menu
-      checkedValues={checkedValues}
-      onCheckedValueChange={handleCheckedValueChange}
-      mountNode={portalContainer}
-    >
-      <MenuTrigger disableButtonEnhancement>
-        <Tooltip content={tooltipContent} relationship="label">
-          <Button
-            appearance={appearance}
-            size={buttonSize}
-            icon={<GridDots20Regular />}
-            className={styles.menuButton}
-            aria-label={ariaLabel}
-          />
-        </Tooltip>
-      </MenuTrigger>
-      <MenuPopover className={styles.menuPopover}>
-        <MenuList className={styles.menuList}>
-          <MenuItemRadio name="size" value="small">
-            {SIZE_LABELS.small}
-          </MenuItemRadio>
-          <MenuItemRadio name="size" value="medium">
-            {SIZE_LABELS.medium}
-          </MenuItemRadio>
-          <MenuItemRadio name="size" value="large">
-            {SIZE_LABELS.large}
-          </MenuItemRadio>
-        </MenuList>
-      </MenuPopover>
-    </Menu>
+    <div ref={buttonRef} style={{ display: 'inline-block' }}>
+      <TooltipHost content={tooltipContent}>
+        <button
+          aria-label={ariaLabel}
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          style={{
+            width: 28,
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            color: 'inherit',
+          }}
+        >
+          <GridDotsRegular />
+        </button>
+      </TooltipHost>
+      {isMenuOpen && buttonRef.current && (
+        <ContextualMenu
+          {...menuProps}
+          target={buttonRef.current}
+        />
+      )}
+    </div>
   );
 };
 

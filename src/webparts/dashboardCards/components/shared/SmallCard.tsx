@@ -4,24 +4,34 @@
 // ============================================
 
 import * as React from 'react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   makeStyles,
   tokens,
   Text,
   Button,
-  Popover,
-  PopoverTrigger,
-  PopoverSurface,
   mergeClasses,
 } from '@fluentui/react-components';
-import { Sparkle20Regular } from '@fluentui/react-icons';
+// Fabric UI v8 components for SharePoint-native popover support
+import {
+  Callout,
+  DirectionalHint,
+} from '@fluentui/react';
+import {
+  Sparkle20Regular,
+  Sparkle16Regular,
+  ChevronRight16Regular,
+  Info12Regular,
+  Warning12Filled,
+  ErrorCircle12Filled,
+} from '@fluentui/react-icons';
 import { CardSizeMenu } from './CardSizeMenu';
 import { TrendBarChart } from './charts';
 import { TrendDataPoint } from './charts/TrendBarChart';
 import { CardSize } from '../../types/CardSize';
 import { getSmartLabel, LabelKey } from '../../utils/labelUtils';
-import { usePortalContainer } from '../../contexts/PortalContext';
+// CSS Module for AI popover (SharePoint-compatible, not makeStyles)
+import popoverStyles from './SmallCard.module.scss';
 
 export interface ISmallCardProps {
   /** Card identifier */
@@ -131,7 +141,6 @@ const useStyles = makeStyles({
     display: 'flex',
     flexDirection: 'column',
     gap: tokens.spacingVerticalS,
-    // z-index handled by global CSS in DashboardCardsWebPart.ts
   },
   aiSummary: {
     fontSize: tokens.fontSizeBase200,
@@ -257,7 +266,9 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
 }) => {
   const styles = useStyles();
   const [activeSlide, setActiveSlide] = useState(0);
-  const portalContainer = usePortalContainer();
+  const [isCalloutVisible, setIsCalloutVisible] = useState(false);
+  const [isPopoverExpanded, setIsPopoverExpanded] = useState(true);
+  const aiButtonRef = useRef<HTMLDivElement>(null);
 
   // Determine if we have chart data for slide 2
   const hasChart = chartData && chartData.length > 0;
@@ -314,27 +325,85 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
         <span className={styles.headerIcon}>{icon}</span>
         <Text className={styles.headerTitle}>{title}</Text>
         <div className={styles.headerActions}>
-          {/* AI Insights Button */}
+          {/* AI Insights Button - Using Fabric UI Callout for SharePoint z-index compatibility */}
           {aiDemoMode && (aiSummary || (aiInsights && aiInsights.length > 0)) && (
-            <Popover mountNode={portalContainer}>
-              <PopoverTrigger disableButtonEnhancement>
+            <>
+              <div ref={aiButtonRef} style={{ display: 'inline-flex' }}>
                 <Button
                   appearance="subtle"
                   size="small"
                   icon={<Sparkle20Regular />}
                   className={styles.aiButton}
                   aria-label="View AI insights"
+                  onClick={() => setIsCalloutVisible(!isCalloutVisible)}
                 />
-              </PopoverTrigger>
-              <PopoverSurface className={styles.aiPopover}>
-                {aiSummary && (
-                  <Text className={styles.aiSummary}>{aiSummary}</Text>
-                )}
-                {aiInsights && aiInsights.length > 0 && aiInsights.map((insight, index) => (
-                  <Text key={index} className={styles.aiInsight}>{insight}</Text>
-                ))}
-              </PopoverSurface>
-            </Popover>
+              </div>
+              {isCalloutVisible && aiButtonRef.current && (
+                <Callout
+                  target={aiButtonRef.current}
+                  onDismiss={() => setIsCalloutVisible(false)}
+                  directionalHint={DirectionalHint.bottomAutoEdge}
+                  gapSpace={8}
+                  isBeakVisible={false}
+                  className={popoverStyles.aiPopoverContainer}
+                  styles={{
+                    calloutMain: {
+                      padding: 0,
+                      borderRadius: 6,
+                      overflow: 'hidden',
+                      minWidth: 320,
+                      boxShadow: '0 2px 8px rgba(157, 79, 178, 0.12), 0 4px 16px rgba(157, 79, 178, 0.08)',
+                    },
+                  }}
+                >
+                  {/* Banner header - collapsible */}
+                  <div
+                    className={popoverStyles.aiPopoverBanner}
+                    onClick={() => setIsPopoverExpanded(!isPopoverExpanded)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && setIsPopoverExpanded(!isPopoverExpanded)}
+                  >
+                    <Sparkle16Regular className={popoverStyles.aiPopoverIcon} />
+                    <span className={popoverStyles.aiPopoverText}>
+                      {aiSummary || `${aiInsights?.length || 0} AI insights`}
+                    </span>
+                    <ChevronRight16Regular
+                      className={`${popoverStyles.aiPopoverChevron} ${isPopoverExpanded ? popoverStyles.aiPopoverChevronExpanded : ''}`}
+                    />
+                  </div>
+                  {/* Insight items */}
+                  {isPopoverExpanded && aiInsights && aiInsights.length > 0 && (
+                    <div className={popoverStyles.aiPopoverContent}>
+                      {aiInsights.map((insight, idx) => {
+                        const isUrgent = insight.toLowerCase().includes('response') || insight.toLowerCase().includes('deadline');
+                        const isWarning = insight.toLowerCase().includes('attention') || insight.toLowerCase().includes('pending') || insight.toLowerCase().includes('more');
+                        const actionLabel = insight.toLowerCase().includes('response') ? 'Reply now' :
+                                           insight.toLowerCase().includes('thread') || insight.toLowerCase().includes('schedule') ? 'Schedule call' : undefined;
+                        return (
+                          <div key={idx} className={popoverStyles.aiInsightItem}>
+                            {isUrgent ? (
+                              <ErrorCircle12Filled className={`${popoverStyles.aiInsightIcon} ${popoverStyles.aiInsightIconCritical}`} />
+                            ) : isWarning ? (
+                              <Warning12Filled className={`${popoverStyles.aiInsightIcon} ${popoverStyles.aiInsightIconWarning}`} />
+                            ) : (
+                              <Info12Regular className={`${popoverStyles.aiInsightIcon} ${popoverStyles.aiInsightIconInfo}`} />
+                            )}
+                            <span className={popoverStyles.aiInsightText}>{insight}</span>
+                            {actionLabel && (
+                              <span className={popoverStyles.aiInsightAction}>
+                                {actionLabel}
+                                <ChevronRight16Regular style={{ fontSize: 10 }} />
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </Callout>
+              )}
+            </>
           )}
           {/* Size Menu */}
           {(onSizeChange || onCycleSize) && (
