@@ -9,8 +9,13 @@ import {
   makeStyles,
   tokens,
   Text,
+  Button,
+  Popover,
+  PopoverTrigger,
+  PopoverSurface,
   mergeClasses,
 } from '@fluentui/react-components';
+import { Sparkle20Regular } from '@fluentui/react-icons';
 import { CardSizeMenu } from './CardSizeMenu';
 import { TrendBarChart } from './charts';
 import { TrendDataPoint } from './charts/TrendBarChart';
@@ -27,9 +32,9 @@ export interface ISmallCardProps {
   itemCount?: number;
   /** Whether AI demo mode is enabled */
   aiDemoMode?: boolean;
-  /** AI summary text for popover (backwards compatible, not used in new design) */
+  /** AI summary text for popover */
   aiSummary?: string;
-  /** AI insights list for popover (backwards compatible, not used in new design) */
+  /** AI insights list for popover */
   aiInsights?: string[];
   /** @deprecated Use onSizeChange instead */
   onCycleSize?: () => void;
@@ -105,6 +110,35 @@ const useStyles = makeStyles({
   },
   headerActions: {
     flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXS,
+  },
+
+  // AI button and popover
+  aiButton: {
+    color: tokens.colorBrandForeground1,
+    minWidth: 'auto',
+    padding: '4px',
+  },
+  aiPopover: {
+    padding: tokens.spacingHorizontalM,
+    maxWidth: '300px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalS,
+    zIndex: 1000000, // High z-index for SharePoint
+  },
+  aiSummary: {
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground1,
+    lineHeight: tokens.lineHeightBase200,
+  },
+  aiInsight: {
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground2,
+    paddingLeft: tokens.spacingHorizontalS,
+    borderLeft: `2px solid ${tokens.colorBrandForeground1}`,
   },
 
   // Slide container
@@ -194,6 +228,9 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
   title,
   icon,
   itemCount,
+  aiDemoMode = false,
+  aiSummary,
+  aiInsights,
   isLoading = false,
   hasError = false,
   metricValue,
@@ -253,6 +290,29 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
         <span className={styles.headerIcon}>{icon}</span>
         <Text className={styles.headerTitle}>{title}</Text>
         <div className={styles.headerActions}>
+          {/* AI Insights Button */}
+          {aiDemoMode && (aiSummary || (aiInsights && aiInsights.length > 0)) && (
+            <Popover>
+              <PopoverTrigger disableButtonEnhancement>
+                <Button
+                  appearance="subtle"
+                  size="small"
+                  icon={<Sparkle20Regular />}
+                  className={styles.aiButton}
+                  aria-label="View AI insights"
+                />
+              </PopoverTrigger>
+              <PopoverSurface className={styles.aiPopover}>
+                {aiSummary && (
+                  <Text className={styles.aiSummary}>{aiSummary}</Text>
+                )}
+                {aiInsights && aiInsights.length > 0 && aiInsights.map((insight, index) => (
+                  <Text key={index} className={styles.aiInsight}>{insight}</Text>
+                ))}
+              </PopoverSurface>
+            </Popover>
+          )}
+          {/* Size Menu */}
           {(onSizeChange || onCycleSize) && (
             <CardSizeMenu
               currentSize={currentSize}
