@@ -198,9 +198,20 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
 
       /* Portal z-index for Fluent UI Popover/Menu in SharePoint */
       /* These render in portals outside component DOM - need global CSS */
+      /* Target all possible portal containers SharePoint might use */
       [data-portal-node] { z-index: 1000000 !important; }
       .fui-MenuPopover { z-index: 1000001 !important; }
       .fui-PopoverSurface { z-index: 1000001 !important; }
+
+      /* SharePoint-specific portal targeting */
+      body > div[class*="fui-FluentProvider"] { z-index: 1000000 !important; }
+      body > div[data-popper-placement] { z-index: 1000001 !important; }
+      .fui-Portal { z-index: 1000000 !important; }
+
+      /* Ensure Menu/Popover content is above SP chrome */
+      .fui-Menu { z-index: 1000001 !important; }
+      .fui-MenuList { z-index: 1000001 !important; }
+      .fui-Popover { z-index: 1000001 !important; }
     `;
 
     const styleElement = document.createElement('style');

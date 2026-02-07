@@ -396,9 +396,6 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
               aria-current={activeSlide === index ? 'true' : undefined}
             />
           ))}
-          <Text className={styles.slideLabel}>
-            {activeSlide === 0 ? 'Overview' : 'Trend'}
-          </Text>
         </div>
       )}
     </div>

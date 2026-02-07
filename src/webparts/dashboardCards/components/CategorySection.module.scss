@@ -228,7 +228,7 @@
 .smallCardsRow {
   display: grid;
   grid-template-columns: repeat(4, 1fr);  // Same as gridLayout
-  gap: 12px;
+  gap: 16px;  // Match masonryGrid gap
   margin-bottom: 16px;
 
   @media (max-width: 1400px) {
