@@ -80,9 +80,11 @@ interface UpcomingWeekCardProps {
   aiDemoMode?: boolean;
   /** Card size: 'small' | 'medium' | 'large' */
   size?: CardSize;
-  /** Callback to cycle through card sizes (small → medium → large → small) */
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
   onCycleSize?: () => void;
-  /** @deprecated Use size and onCycleSize instead */
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -95,11 +97,17 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
   dataMode = 'api',
   aiDemoMode = false,
   size = 'medium',
+  onSizeChange,
   onCycleSize,
   onToggleSize, // deprecated, use onCycleSize
 }) => {
   // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
   const handleCycleSize = onCycleSize || onToggleSize;
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -216,17 +224,6 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
     }
   }, [trendData]);
 
-  // Get AI summary text for small card
-  const aiSummaryText = useMemo(() => {
-    if (!aiCardSummary) return undefined;
-    return aiCardSummary.summary;
-  }, [aiCardSummary]);
-
-  // Get AI insights array for small card
-  const aiInsightsList = useMemo(() => {
-    return aiInsights.map(insight => insight.title);
-  }, [aiInsights]);
-
   // SMALL CARD VARIANT
   if (size === 'small') {
     return (
@@ -234,11 +231,10 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
         cardId="upcomingWeek"
         title="Upcoming Week"
         icon={<CalendarWeekNumbers24Regular />}
-        itemCount={data?.totalCount}
-        aiDemoMode={aiDemoMode}
-        aiSummary={aiSummaryText}
-        aiInsights={aiInsightsList}
-        onCycleSize={handleCycleSize || (() => {})}
+        metricValue={data?.totalCount ?? 0}
+        metricLabel="THIS WEEK"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
         isLoading={isLoading}
         hasError={!!error}
       />

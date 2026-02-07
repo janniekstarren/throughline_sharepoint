@@ -64,9 +64,11 @@ export interface QuickLinksCardProps {
   title?: string;
   /** Card size: 'small' | 'medium' | 'large' */
   size?: CardSize;
-  /** Callback to cycle through card sizes (small → medium → large → small) */
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
   onCycleSize?: () => void;
-  /** @deprecated Use size and onCycleSize instead */
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -123,11 +125,17 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
   settings = DEFAULT_QUICK_LINKS_SETTINGS,
   title = 'Quick Links',
   size = 'medium',
+  onSizeChange,
   onCycleSize,
   onToggleSize, // deprecated, use onCycleSize
 }) => {
   // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
   const handleCycleSize = onCycleSize || onToggleSize;
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -299,17 +307,6 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
     }));
   }, [categoryData]);
 
-  // Get AI summary text for small card
-  const aiSummaryText = useMemo(() => {
-    if (!aiCardSummary) return undefined;
-    return aiCardSummary.summary;
-  }, [aiCardSummary]);
-
-  // Get AI insights array for small card
-  const aiInsightsList = useMemo(() => {
-    return aiInsights.map(insight => insight.title);
-  }, [aiInsights]);
-
   // SMALL CARD VARIANT
   if (size === 'small') {
     return (
@@ -317,11 +314,10 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
         cardId="quickLinks"
         title="Quick Links"
         icon={<Link24Regular />}
-        itemCount={data?.links?.length}
-        aiDemoMode={aiDemoMode}
-        aiSummary={aiSummaryText}
-        aiInsights={aiInsightsList}
-        onCycleSize={handleCycleSize || (() => {})}
+        metricValue={data?.links?.length ?? 0}
+        metricLabel="LINKS"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
         isLoading={loading}
         hasError={!!error}
       />

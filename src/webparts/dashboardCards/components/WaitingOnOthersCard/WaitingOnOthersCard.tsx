@@ -187,9 +187,11 @@ interface WaitingOnOthersCardProps {
   aiDemoMode?: boolean;
   /** Card size: 'small' | 'medium' | 'large' */
   size?: CardSize;
-  /** Callback to cycle through card sizes (small → medium → large → small) */
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
   onCycleSize?: () => void;
-  /** @deprecated Use size and onCycleSize instead */
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -199,11 +201,17 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
   dataMode = 'api',
   aiDemoMode = false,
   size = 'medium',
+  onSizeChange,
   onCycleSize,
   onToggleSize, // deprecated
 }) => {
   // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
   const handleCycleSize = onCycleSize || onToggleSize;
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
   const styles = useCardStyles();
   const summaryStyles = useSummaryStyles();
 
@@ -270,17 +278,6 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
       }
     : apiHook.refresh;
 
-  // Get AI summary text for small card
-  const aiSummaryText = useMemo(() => {
-    if (!aiCardSummary) return undefined;
-    return aiCardSummary.summary;
-  }, [aiCardSummary]);
-
-  // Get AI insights array for small card
-  const aiInsightsList = useMemo(() => {
-    return aiInsights.map(insight => insight.title);
-  }, [aiInsights]);
-
   // ============================================
   // SMALL CARD VARIANT
   // Compact chip with title, count, and AI popover
@@ -291,11 +288,10 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
         cardId="waitingOnOthers"
         title="Waiting On Others"
         icon={<ClockRegular />}
-        itemCount={data?.totalItems}
-        aiDemoMode={aiDemoMode}
-        aiSummary={aiSummaryText}
-        aiInsights={aiInsightsList}
-        onCycleSize={handleCycleSize || (() => {})}
+        metricValue={data?.totalItems ?? 0}
+        metricLabel="PENDING"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
         isLoading={isLoading}
         hasError={!!error}
       />
