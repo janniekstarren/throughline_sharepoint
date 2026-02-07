@@ -193,34 +193,43 @@ const useStyles = makeStyles({
     justifyContent: 'center',
   },
 
-  // Indicators
+  // Indicators - improved visibility
   indicators: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
-    padding: tokens.spacingVerticalXS,
+    gap: tokens.spacingHorizontalS,
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
     flexShrink: 0,
   },
   indicator: {
-    width: '8px',
-    height: '8px',
+    width: '10px',
+    height: '10px',
     borderRadius: tokens.borderRadiusCircular,
-    backgroundColor: tokens.colorNeutralStroke2,
+    backgroundColor: tokens.colorNeutralStroke1,
     cursor: 'pointer',
-    transition: 'background-color 0.2s ease, transform 0.2s ease',
-    border: 'none',
+    transition: 'all 0.2s ease',
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
     padding: 0,
     ':hover': {
       backgroundColor: tokens.colorNeutralStroke1,
+      transform: 'scale(1.1)',
     },
   },
   indicatorActive: {
     backgroundColor: tokens.colorBrandForeground1,
-    transform: 'scale(1.2)',
+    border: `1px solid ${tokens.colorBrandForeground1}`,
+    transform: 'scale(1.3)',
     ':hover': {
       backgroundColor: tokens.colorBrandForeground1,
     },
+  },
+  slideLabel: {
+    fontSize: tokens.fontSizeBase100,
+    color: tokens.colorNeutralForeground3,
+    marginTop: tokens.spacingVerticalXXS,
   },
 });
 
@@ -370,10 +379,13 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
               )}
               onClick={() => handleIndicatorClick(index)}
               onKeyDown={(e) => handleIndicatorKeyDown(e, index)}
-              aria-label={`Go to slide ${index + 1}`}
+              aria-label={`Go to slide ${index + 1}: ${index === 0 ? 'Overview' : 'Trend'}`}
               aria-current={activeSlide === index ? 'true' : undefined}
             />
           ))}
+          <Text className={styles.slideLabel}>
+            {activeSlide === 0 ? 'Overview' : 'Trend'}
+          </Text>
         </div>
       )}
     </div>
