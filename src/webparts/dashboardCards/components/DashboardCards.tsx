@@ -8,7 +8,7 @@ import {
   Spinner,
   IdPrefixProvider,
 } from '@fluentui/react-components';
-import { DragDropContext, DropResult } from 'react-beautiful-dnd';
+// Note: Drag-drop now handled by @dnd-kit in CategorySection
 import { PortalProvider } from '../contexts/PortalContext';
 import { MSGraphClientV3 } from '@microsoft/sp-http';
 import { DataMode } from '../hooks/useDashboardData';
@@ -233,8 +233,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     defaultCollapsedCardIds,
   });
 
-  // Drag state for switching to grid layout during drag
-  const [isDragging, setIsDragging] = React.useState(false);
+  // Animation state (can be toggled via future settings panel)
+  const animationsEnabled = true;
 
   // Helper to get card title (custom or default)
   const getCardTitle = (cardId: string): string => {
@@ -262,38 +262,21 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     setCardSize(cardId, size);
   }, [setCardSize]);
 
-  // Handle drag end - reorder cards
-  const handleDragEnd = React.useCallback((result: DropResult) => {
-    setIsDragging(false);
-
-    if (!result.destination) return;
-
-    const { source, destination } = result;
-    if (source.index === destination.index && source.droppableId === destination.droppableId) return;
-
-    // Get all visible cards in their current order
+  // Handle card reorder within a category (called from CategorySection)
+  const handleCardReorder = React.useCallback((newCardIds: string[]) => {
+    // Rebuild the full cardOrder with the new order for visible cards
     const visibleCards = cardOrder.filter(id => isCardVisible(id));
 
-    // Get the card being dragged
-    const draggedCardId = result.draggableId;
+    // Create a map of old positions to new positions for visible cards
+    const reorderedVisible = newCardIds.filter(id => visibleCards.includes(id));
 
-    // Find the source and destination indices in the visible cards array
-    const sourceIndex = visibleCards.indexOf(draggedCardId);
-    if (sourceIndex === -1) return;
-
-    // Calculate the destination index based on drop position
-    // The destination.index from react-beautiful-dnd is relative to the droppable
-    // We need to map it back to the full card order
-    const newVisibleOrder = [...visibleCards];
-    newVisibleOrder.splice(sourceIndex, 1);
-    newVisibleOrder.splice(destination.index, 0, draggedCardId);
-
-    // Rebuild the full cardOrder, preserving hidden cards in their positions
+    // Rebuild cardOrder preserving hidden cards
+    let visibleIndex = 0;
     const newCardOrder = cardOrder.map(id => {
-      if (visibleCards.includes(id)) {
-        // Replace with the reordered visible card at this position
-        const visibleIndex = cardOrder.filter(cid => visibleCards.includes(cid)).indexOf(id);
-        return newVisibleOrder[visibleIndex];
+      if (isCardVisible(id)) {
+        const newId = reorderedVisible[visibleIndex] || id;
+        visibleIndex++;
+        return newId;
       }
       return id;
     });
@@ -305,12 +288,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     if (onCardOrderChange) {
       onCardOrderChange(newCardOrder);
     }
-  }, [cardOrder, cardVisibility, setUserCardOrder, onCardOrderChange]);
-
-  // Handle drag start
-  const handleDragStart = React.useCallback(() => {
-    setIsDragging(true);
-  }, []);
+  }, [cardOrder, setUserCardOrder, onCardOrderChange]);
 
   // Get theme from SharePoint (converts SP theme to Fluent UI v9, respecting theme mode)
   const [currentTheme, setCurrentTheme] = React.useState<Theme | null>(null);
@@ -592,7 +570,6 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   // Cards are rendered in user-defined order within each category
   const getOrderedCards = (): React.ReactNode[] => {
     const result: React.ReactNode[] = [];
-    let globalIndex = 0; // Track global index for drag-and-drop
 
     // Check for valid category configuration:
     // - Must have categories defined
@@ -625,8 +602,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
           categoryId="all"
           showTitle={false}
           orderedCards={orderedCards}
-          isDragging={isDragging}
-          startIndex={0}
+          onReorder={handleCardReorder}
+          animationsEnabled={animationsEnabled}
         />
       ];
     }
@@ -676,12 +653,10 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
           showTitle={catConfig?.showTitle !== false}
           iconId={iconId}
           orderedCards={orderedCards}
-          isDragging={isDragging}
-          startIndex={globalIndex}
+          onReorder={handleCardReorder}
+          animationsEnabled={animationsEnabled}
         />
       );
-
-      globalIndex += orderedCards.length;
     });
 
     // Render any unassigned cards at the end (fallback)
@@ -708,8 +683,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
           categoryId="unassigned"
           showTitle={false}
           orderedCards={orderedUnassigned}
-          isDragging={isDragging}
-          startIndex={globalIndex}
+          onReorder={handleCardReorder}
+          animationsEnabled={animationsEnabled}
         />
       );
     }
@@ -722,15 +697,10 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       <RendererProvider renderer={renderer}>
         <FluentProvider theme={currentTheme}>
           <PortalProvider>
-            <DragDropContext
-              onDragEnd={handleDragEnd}
-              onDragStart={handleDragStart}
-            >
-              <div className={styles.dashboard} ref={portalMountRef}>
-                <Salutation type={salutationType} size={salutationSize} userName={userName} />
-                {getOrderedCards()}
-              </div>
-            </DragDropContext>
+            <div className={styles.dashboard} ref={portalMountRef}>
+              <Salutation type={salutationType} size={salutationSize} userName={userName} />
+              {getOrderedCards()}
+            </div>
           </PortalProvider>
         </FluentProvider>
       </RendererProvider>
