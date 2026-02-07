@@ -20,7 +20,7 @@ import {
   CalendarWeekNumbers24Regular,
   Video16Regular,
   Location16Regular,
-  ArrowMinimize20Regular,
+  
   ArrowClockwiseRegular,
 } from '@fluentui/react-icons';
 import { WebPartContext } from '@microsoft/sp-webpart-base';
@@ -32,6 +32,8 @@ import {
 } from '../../hooks/useUpcomingWeek';
 import { UpcomingWeekData, WeekEvent } from '../../models/UpcomingWeek';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
+import { CardSizeMenu } from '../shared';
+import { CardSize } from '../../types/CardSize';
 import { EventDetailPanel, EventDetailActions } from '../shared/EventDetailPanel';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
@@ -129,7 +131,7 @@ interface UpcomingWeekCardLargeProps {
   settings?: IUpcomingWeekSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
-  onToggleSize?: () => void;
+  onSizeChange?: (size: CardSize) => void;
 }
 
 // ============================================
@@ -155,7 +157,7 @@ export const UpcomingWeekCardLarge: React.FC<UpcomingWeekCardLargeProps> = ({
   settings = DEFAULT_UPCOMING_WEEK_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  onSizeChange,
 }) => {
   const styles = useStyles();
   const [selectedEvent, setSelectedEvent] = useState<WeekEvent | undefined>(undefined);
@@ -325,17 +327,7 @@ export const UpcomingWeekCardLarge: React.FC<UpcomingWeekCardLargeProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {onToggleSize && (
-        <Tooltip content="Collapse to compact view" relationship="label">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<ArrowMinimize20Regular />}
-            onClick={onToggleSize}
-            aria-label="Collapse card"
-          />
-        </Tooltip>
-      )}
+      <CardSizeMenu currentSize="large" onSizeChange={onSizeChange} />
     </div>
   );
 

@@ -18,7 +18,7 @@ import {
 import {
   LinkMultiple24Regular,
   ArrowClockwise20Regular,
-  ContractDownLeft20Regular,
+  
   Globe16Regular,
   Mail24Regular,
   PeopleTeam24Regular,
@@ -45,7 +45,8 @@ import {
 import { DataMode } from '../../services/testData';
 import { getTestQuickLinksData } from '../../services/testData/quickLinks';
 import { QuickLinksService } from '../../services/QuickLinksService';
-import { BaseCard, CardHeader, EmptyState } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState } from '../shared';
+import { CardSize } from '../../types/CardSize';
 import { useCardStyles } from '../cardStyles';
 
 // ============================================
@@ -63,8 +64,8 @@ export interface QuickLinksCardLargeProps {
   settings?: IQuickLinksSettings;
   /** Card title */
   title?: string;
-  /** Callback to collapse to medium view */
-  onCollapse?: () => void;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
 }
 
 // ============================================
@@ -252,7 +253,7 @@ export const QuickLinksCardLarge: React.FC<QuickLinksCardLargeProps> = ({
   dataMode = 'api',
   settings = DEFAULT_QUICK_LINKS_SETTINGS,
   title = 'Quick Links',
-  onCollapse,
+  onSizeChange,
 }) => {
   const styles = useCardStyles();
   const quickLinksStyles = useQuickLinksLargeStyles();
@@ -345,17 +346,7 @@ export const QuickLinksCardLarge: React.FC<QuickLinksCardLargeProps> = ({
           aria-label="Refresh links"
         />
       </Tooltip>
-      {onCollapse && (
-        <Tooltip content="Collapse" relationship="label">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<ContractDownLeft20Regular />}
-            onClick={onCollapse}
-            aria-label="Collapse card"
-          />
-        </Tooltip>
-      )}
+      <CardSizeMenu currentSize="large" onSizeChange={onSizeChange} />
     </>
   );
 

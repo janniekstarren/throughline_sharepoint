@@ -53,7 +53,7 @@ import {
   EmailSortMode,
   DEFAULT_EMAIL_CARD_SETTINGS,
 } from '../../hooks/useEmailCard';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem, TrendDataPoint } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
@@ -489,19 +489,6 @@ export const EmailCard: React.FC<EmailCardProps> = ({
     }
   }, [activeTab]);
 
-  // Expand button
-  const expandButton = handleCycleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={handleCycleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
   // Header actions
   const headerActions = (
     <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
@@ -513,7 +500,7 @@ export const EmailCard: React.FC<EmailCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -524,7 +511,7 @@ export const EmailCard: React.FC<EmailCardProps> = ({
         <CardHeader
           icon={<Mail24Regular />}
           title="Email"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<Mail24Regular />}

@@ -223,7 +223,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     collapsedCardIds,
     setCardOrder: setUserCardOrder,
     setCollapsedCardIds: setUserCollapsedCardIds,
-    cycleCardSize,
+    setCardSize,
     getCardSize,
   } = useUserPreferences({
     userId,
@@ -255,10 +255,10 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     return getCardSize(cardId);
   }, [getCardSize]);
 
-  // Handle cycling card size (small → medium → large → small)
-  const handleCycleCardSize = React.useCallback((cardId: string): void => {
-    cycleCardSize(cardId);
-  }, [cycleCardSize]);
+  // Handle setting card size directly (used by CardSizeMenu dropdown)
+  const handleSetCardSize = React.useCallback((cardId: string, size: CardSize): void => {
+    setCardSize(cardId, size);
+  }, [setCardSize]);
 
   // Handle drag end - reorder cards
   const handleDragEnd = React.useCallback((result: DropResult) => {
@@ -396,75 +396,75 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       case 'todaysAgenda':
         if (cardSize === 'large') {
           return wrapWithErrorBoundary(
-            <TodaysAgendaCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            <TodaysAgendaCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
           );
         }
         return wrapWithErrorBoundary(
-          <TodaysAgendaCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
+          <TodaysAgendaCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
         );
       case 'email':
         if (cardSize === 'large') {
           return wrapWithErrorBoundary(
-            <EmailCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            <EmailCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
           );
         }
         return wrapWithErrorBoundary(
-          <EmailCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
+          <EmailCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
         );
       case 'upcomingWeek':
         if (cardSize === 'large') {
           return wrapWithErrorBoundary(
-            <UpcomingWeekCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            <UpcomingWeekCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
           );
         }
         return wrapWithErrorBoundary(
-          <UpcomingWeekCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
+          <UpcomingWeekCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
         );
       case 'myTasks':
         if (cardSize === 'large') {
           return wrapWithErrorBoundary(
-            <MyTasksCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            <MyTasksCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
           );
         }
         return wrapWithErrorBoundary(
-          <MyTasksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
+          <MyTasksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
         );
       case 'recentFiles':
         if (cardSize === 'large') {
           return wrapWithErrorBoundary(
-            <RecentFilesCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            <RecentFilesCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
           );
         }
         return wrapWithErrorBoundary(
-          <RecentFilesCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
+          <RecentFilesCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
         );
       case 'myTeam':
         if (cardSize === 'large') {
           return wrapWithErrorBoundary(
-            <MyTeamCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            <MyTeamCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
           );
         }
         return wrapWithErrorBoundary(
-          <MyTeamCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
+          <MyTeamCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
         );
       case 'sharedWithMe':
         if (cardSize === 'large') {
           return wrapWithErrorBoundary(
-            <SharedWithMeCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+            <SharedWithMeCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
           );
         }
         return wrapWithErrorBoundary(
-          <SharedWithMeCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
+          <SharedWithMeCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
         );
       case 'siteActivity':
         // SiteActivityCardLarge not yet updated to new pattern - always use medium or small
         return wrapWithErrorBoundary(
-          <SiteActivityCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
+          <SiteActivityCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
         );
       case 'quickLinks':
         // QuickLinksCardLarge has different props - use medium or small for now
         return wrapWithErrorBoundary(
-          <QuickLinksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
+          <QuickLinksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onSizeChange={(size) => handleSetCardSize(cardId, size)} />
         );
       // Analytics cards
       case 'waitingOnYou': {
@@ -482,7 +482,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
               includeMentions={waitingOnYouSettings.includeMentions}
               dataMode={dataMode}
               aiDemoMode={dataMode === 'test' && aiDemoMode}
-              onToggleSize={() => handleCycleCardSize(cardId)}
+              onSizeChange={(size) => handleSetCardSize(cardId, size)}
             />
           );
         }
@@ -499,7 +499,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
             dataMode={dataMode}
             aiDemoMode={dataMode === 'test' && aiDemoMode}
             size={cardSize}
-            onCycleSize={() => handleCycleCardSize(cardId)}
+            onSizeChange={(size) => handleSetCardSize(cardId, size)}
           />
         );
       }
@@ -518,7 +518,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
               }}
               dataMode={dataMode}
               aiDemoMode={dataMode === 'test' && aiDemoMode}
-              onToggleSize={() => handleCycleCardSize(cardId)}
+              onSizeChange={(size) => handleSetCardSize(cardId, size)}
             />
           );
         }
@@ -535,7 +535,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
             dataMode={dataMode}
             aiDemoMode={dataMode === 'test' && aiDemoMode}
             size={cardSize}
-            onCycleSize={() => handleCycleCardSize(cardId)}
+            onSizeChange={(size) => handleSetCardSize(cardId, size)}
           />
         );
       }
@@ -564,7 +564,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
               dataMode={dataMode}
               aiDemoMode={dataMode === 'test' && aiDemoMode}
               title={cardTitle}
-              onToggleSize={() => handleCycleCardSize(cardId)}
+              onSizeChange={(size) => handleSetCardSize(cardId, size)}
               settings={contextSettings}
             />
           );
@@ -576,7 +576,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
             aiDemoMode={dataMode === 'test' && aiDemoMode}
             title={cardTitle}
             size={cardSize}
-            onCycleSize={() => handleCycleCardSize(cardId)}
+            onSizeChange={(size) => handleSetCardSize(cardId, size)}
             settings={contextSettings}
           />
         );

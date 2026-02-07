@@ -16,7 +16,7 @@ import {
 } from '@fluentui/react-components';
 import {
   People24Regular,
-  ArrowMinimize20Regular,
+  
   ArrowClockwiseRegular,
   Mail16Regular,
   Chat16Regular,
@@ -32,6 +32,8 @@ import {
 } from '../../hooks/useMyTeam';
 import { MyTeamData, TeamMember, PresenceStatus } from '../../models/MyTeam';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
+import { CardSizeMenu } from '../shared';
+import { CardSize } from '../../types/CardSize';
 import { DataMode } from '../../services/testData';
 import { getTestMyTeamData } from '../../services/testData/myTeam';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
@@ -151,7 +153,7 @@ interface MyTeamCardLargeProps {
   settings?: IMyTeamSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
-  onToggleSize?: () => void;
+  onSizeChange?: (size: CardSize) => void;
 }
 
 // ============================================
@@ -207,7 +209,7 @@ export const MyTeamCardLarge: React.FC<MyTeamCardLargeProps> = ({
   settings = DEFAULT_MY_TEAM_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  onSizeChange,
 }) => {
   const styles = useStyles();
   const [selectedMember, setSelectedMember] = useState<TeamMember | undefined>(undefined);
@@ -428,17 +430,7 @@ export const MyTeamCardLarge: React.FC<MyTeamCardLargeProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {onToggleSize && (
-        <Tooltip content="Collapse to compact view" relationship="label">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<ArrowMinimize20Regular />}
-            onClick={onToggleSize}
-            aria-label="Collapse card"
-          />
-        </Tooltip>
-      )}
+      <CardSizeMenu currentSize="large" onSizeChange={onSizeChange} />
     </div>
   );
 

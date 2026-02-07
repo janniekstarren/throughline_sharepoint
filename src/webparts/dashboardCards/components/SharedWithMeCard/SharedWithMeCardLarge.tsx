@@ -10,7 +10,7 @@ import {
   tokens,
   Text,
   Button,
-  Tooltip,
+
   Avatar,
 } from '@fluentui/react-components';
 import {
@@ -24,12 +24,14 @@ import {
   Clock24Regular,
   Link24Regular,
   Open24Regular,
-  ContractDownLeft20Regular,
+  
   Mail24Regular,
 } from '@fluentui/react-icons';
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 
 import { MasterDetailCard } from '../shared/MasterDetailCard';
+import { CardSizeMenu } from '../shared';
+import { CardSize } from '../../types/CardSize';
 import { SharedWithMeData, SharedFile } from '../../models/SharedWithMe';
 import {
   ISharedWithMeSettings,
@@ -50,7 +52,7 @@ export interface ISharedWithMeCardLargeProps {
   settings?: ISharedWithMeSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
-  onToggleSize?: () => void;
+  onSizeChange?: (size: CardSize) => void;
 }
 
 // ============================================
@@ -309,7 +311,7 @@ export const SharedWithMeCardLarge: React.FC<ISharedWithMeCardLargeProps> = ({
   settings = DEFAULT_SHARED_WITH_ME_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  onSizeChange,
 }) => {
   const styles = useStyles();
   const [selectedFile, setSelectedFile] = useState<SharedFile | undefined>(undefined);
@@ -545,17 +547,7 @@ export const SharedWithMeCardLarge: React.FC<ISharedWithMeCardLargeProps> = ({
         emptyMessage="No shared files"
         emptyIcon={<ShareMultiple24Regular />}
         headerActions={
-          onToggleSize && (
-            <Tooltip content="Collapse to compact view" relationship="label">
-              <Button
-                appearance="subtle"
-                size="small"
-                icon={<ContractDownLeft20Regular />}
-                onClick={onToggleSize}
-                aria-label="Collapse card"
-              />
-            </Tooltip>
-          )
+          <CardSizeMenu currentSize="large" onSizeChange={onSizeChange} />
         }
         headerContent={aiHeaderContent}
       />

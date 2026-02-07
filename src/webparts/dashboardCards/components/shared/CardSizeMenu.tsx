@@ -4,7 +4,6 @@
 // ============================================
 
 import * as React from 'react';
-import { useMemo } from 'react';
 import {
   Menu,
   MenuTrigger,
@@ -24,8 +23,8 @@ import { CardSize } from '../../types/CardSize';
 export interface ICardSizeMenuProps {
   /** Current card size */
   currentSize: CardSize;
-  /** Callback when size is changed */
-  onSizeChange: (size: CardSize) => void;
+  /** Callback when size is changed. If undefined, menu is not rendered */
+  onSizeChange?: (size: CardSize) => void;
   /** Button appearance */
   appearance?: 'subtle' | 'transparent';
   /** Button size */
@@ -67,23 +66,28 @@ export const CardSizeMenu: React.FC<ICardSizeMenuProps> = ({
 }) => {
   const styles = useStyles();
 
+  // Don't render if onSizeChange is not provided
+  if (!onSizeChange) {
+    return null;
+  }
+
   // Controlled checked values for the menu
-  const checkedValues = useMemo(() => ({
+  const checkedValues = {
     size: [currentSize],
-  }), [currentSize]);
+  };
 
   // Handle size selection
-  const handleCheckedValueChange = React.useCallback(
-    (_: unknown, data: { name: string; checkedItems: string[] }) => {
-      if (data.checkedItems.length > 0) {
-        const newSize = data.checkedItems[0] as CardSize;
-        if (newSize !== currentSize) {
-          onSizeChange(newSize);
-        }
+  const handleCheckedValueChange = (
+    _: unknown,
+    data: { name: string; checkedItems: string[] }
+  ): void => {
+    if (data.checkedItems.length > 0) {
+      const newSize = data.checkedItems[0] as CardSize;
+      if (newSize !== currentSize) {
+        onSizeChange(newSize);
       }
-    },
-    [currentSize, onSizeChange]
-  );
+    }
+  };
 
   const tooltipContent = tooltip || `Size: ${SIZE_LABELS[currentSize]}`;
 

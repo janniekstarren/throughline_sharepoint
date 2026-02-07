@@ -18,7 +18,7 @@ import {
 import {
   History24Regular,
   ArrowClockwiseRegular,
-  ContractDownLeft20Regular,
+  
   Document24Regular,
   Edit24Regular,
   Share24Regular,
@@ -33,6 +33,8 @@ import {
   Filter24Regular,
 } from '@fluentui/react-icons';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
+import { CardSizeMenu } from '../shared';
+import { CardSize } from '../../types/CardSize';
 import { ActivityItem, SiteActivityData } from '../../models/SiteActivity';
 
 export interface ISiteActivityCardLargeProps {
@@ -46,8 +48,8 @@ export interface ISiteActivityCardLargeProps {
   onActivityClick?: (activity: ActivityItem) => void;
   /** Callback to refresh data */
   onRefresh?: () => void;
-  /** Callback to toggle between large and medium card size */
-  onToggleSize?: () => void;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
   /** Card title override */
   title?: string;
 }
@@ -334,7 +336,7 @@ export const SiteActivityCardLarge: React.FC<ISiteActivityCardLargeProps> = ({
   error,
   onActivityClick,
   onRefresh,
-  onToggleSize,
+  onSizeChange,
   title = 'Site Activity',
 }) => {
   const styles = useStyles();
@@ -528,17 +530,7 @@ export const SiteActivityCardLarge: React.FC<ISiteActivityCardLargeProps> = ({
           />
         </Tooltip>
       )}
-      {onToggleSize && (
-        <Tooltip content="Collapse to compact view" relationship="label">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<ContractDownLeft20Regular />}
-            onClick={onToggleSize}
-            aria-label="Collapse card"
-          />
-        </Tooltip>
-      )}
+      <CardSizeMenu currentSize="large" onSizeChange={onSizeChange} />
     </>
   );
 

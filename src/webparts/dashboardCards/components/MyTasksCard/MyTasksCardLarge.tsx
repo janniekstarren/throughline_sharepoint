@@ -20,7 +20,7 @@ import {
   CheckmarkCircle16Regular,
   ArrowCircleRight16Regular,
   Warning16Regular,
-  ArrowMinimize20Regular,
+  
   ArrowClockwiseRegular,
   Calendar16Regular,
   Folder16Regular,
@@ -35,6 +35,8 @@ import {
 } from '../../hooks/useMyTasks';
 import { MyTasksData, TaskItem, TaskStatus } from '../../models/MyTasks';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
+import { CardSizeMenu } from '../shared';
+import { CardSize } from '../../types/CardSize';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { DataMode } from '../../services/testData';
@@ -186,7 +188,7 @@ interface MyTasksCardLargeProps {
   settings?: IMyTasksSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
-  onToggleSize?: () => void;
+  onSizeChange?: (size: CardSize) => void;
 }
 
 // ============================================
@@ -298,7 +300,7 @@ export const MyTasksCardLarge: React.FC<MyTasksCardLargeProps> = ({
   settings = DEFAULT_MY_TASKS_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  onSizeChange,
 }) => {
   const styles = useStyles();
   const [selectedTask, setSelectedTask] = useState<TaskItem | undefined>(undefined);
@@ -551,17 +553,7 @@ export const MyTasksCardLarge: React.FC<MyTasksCardLargeProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {onToggleSize && (
-        <Tooltip content="Collapse to compact view" relationship="label">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<ArrowMinimize20Regular />}
-            onClick={onToggleSize}
-            aria-label="Collapse card"
-          />
-        </Tooltip>
-      )}
+      <CardSizeMenu currentSize="large" onSizeChange={onSizeChange} />
     </div>
   );
 

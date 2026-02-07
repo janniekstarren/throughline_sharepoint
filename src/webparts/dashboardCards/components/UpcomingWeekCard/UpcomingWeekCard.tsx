@@ -29,7 +29,7 @@ import {
   DEFAULT_UPCOMING_WEEK_SETTINGS,
 } from '../../hooks/useUpcomingWeek';
 import { UpcomingWeekData, WeekTrendData } from '../../models/UpcomingWeek';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { StatItem, TopItem } from '../shared/charts';
@@ -241,19 +241,6 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
     );
   }
 
-  // Expand button
-  const expandButton = handleCycleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={handleCycleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
   // Header actions
   const headerActions = (
     <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
@@ -265,7 +252,7 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -276,7 +263,7 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
         <CardHeader
           icon={<CalendarWeekNumbers24Regular />}
           title="Upcoming Week"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<CalendarWeekNumbers24Regular />}

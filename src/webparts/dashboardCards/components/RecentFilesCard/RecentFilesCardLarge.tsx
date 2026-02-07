@@ -21,7 +21,7 @@ import {
   DocumentText16Regular,
   SlideText16Regular,
   Table16Regular,
-  ArrowMinimize20Regular,
+  
   ArrowClockwiseRegular,
   Open16Regular,
   Person16Regular,
@@ -37,6 +37,8 @@ import {
 } from '../../hooks/useRecentFiles';
 import { RecentFilesData, FileItem } from '../../models/RecentFiles';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
+import { CardSizeMenu } from '../shared';
+import { CardSize } from '../../types/CardSize';
 import { DataMode } from '../../services/testData';
 import { getTestRecentFilesData } from '../../services/testData/recentFiles';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
@@ -185,7 +187,7 @@ interface RecentFilesCardLargeProps {
   settings?: IRecentFilesSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
-  onToggleSize?: () => void;
+  onSizeChange?: (size: CardSize) => void;
 }
 
 // ============================================
@@ -326,7 +328,7 @@ export const RecentFilesCardLarge: React.FC<RecentFilesCardLargeProps> = ({
   settings = DEFAULT_RECENT_FILES_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  onSizeChange,
 }) => {
   const styles = useStyles();
   const [selectedFile, setSelectedFile] = useState<FileItem | undefined>(undefined);
@@ -518,17 +520,7 @@ export const RecentFilesCardLarge: React.FC<RecentFilesCardLargeProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {onToggleSize && (
-        <Tooltip content="Collapse to compact view" relationship="label">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<ArrowMinimize20Regular />}
-            onClick={onToggleSize}
-            aria-label="Collapse card"
-          />
-        </Tooltip>
-      )}
+      <CardSizeMenu currentSize="large" onSizeChange={onSizeChange} />
     </div>
   );
 

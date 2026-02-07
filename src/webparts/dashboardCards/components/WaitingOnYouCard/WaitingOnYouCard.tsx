@@ -34,7 +34,7 @@ import { DataMode } from '../../services/testData';
 import { getTestWaitingOnYouData, getTestWaitingOnYouTrend } from '../../services/testData/waitingOnYou';
 import { WaitingDebtChart } from './components/WaitingDebtChart';
 // Shared components
-import { BaseCard, CardHeader, EmptyState, AIInsightBanner, AIOnboardingDialog, SmallCard } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, AIInsightBanner, AIOnboardingDialog, SmallCard } from '../shared';
 import { useCardStyles } from '../cardStyles';
 // AI Demo Mode imports
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
@@ -58,9 +58,11 @@ export interface WaitingOnYouCardProps {
   aiDemoMode?: boolean;
   /** Card size: 'small' | 'medium' | 'large' */
   size?: CardSize;
-  /** Callback to cycle through card sizes (small → medium → large → small) */
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
   onCycleSize?: () => void;
-  /** @deprecated Use size and onCycleSize instead */
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -75,10 +77,15 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
   dataMode = 'api',
   aiDemoMode = false,
   size = 'medium',
+  onSizeChange,
   onCycleSize,
-  onToggleSize, // deprecated, use onCycleSize
+  onToggleSize, // deprecated
 }) => {
-  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
   const handleCycleSize = onCycleSize || onToggleSize;
   const styles = useWaitingOnYouStyles();
   const cardStyles = useCardStyles();
@@ -153,17 +160,6 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
       }
     : apiHook.refresh;
 
-  // Get AI summary text for small card
-  const aiSummaryText = useMemo(() => {
-    if (!aiCardSummary) return undefined;
-    return aiCardSummary.summary;
-  }, [aiCardSummary]);
-
-  // Get AI insights array for small card (use title for short display)
-  const aiInsightsList = useMemo(() => {
-    return aiInsights.map(insight => insight.title);
-  }, [aiInsights]);
-
   // ============================================
   // SMALL CARD VARIANT
   // Compact chip with title, count, and AI popover
@@ -174,11 +170,10 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
         cardId="waitingOnYou"
         title="Waiting On You"
         icon={<PersonClockRegular />}
-        itemCount={data?.totalItems}
-        aiDemoMode={aiDemoMode}
-        aiSummary={aiSummaryText}
-        aiInsights={aiInsightsList}
-        onCycleSize={handleCycleSize || (() => {})}
+        metricValue={data?.totalItems ?? 0}
+        metricLabel="WAITING"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
         isLoading={isLoading}
         hasError={!!error}
       />
@@ -215,19 +210,6 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
     return Math.round(data.totalWaitHours / data.totalItems);
   }, [data]);
 
-  // Expand button for switching to large card view
-  const expandButton = handleCycleSize ? (
-    <Tooltip content="View all details" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={handleCycleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
   // Header actions
   const headerActions = (
     <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
@@ -239,7 +221,7 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -250,7 +232,7 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
         <CardHeader
           icon={<PersonClockRegular />}
           title="Waiting On You"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<PersonClockRegular />}

@@ -33,7 +33,7 @@ import {
   DEFAULT_SHARED_WITH_ME_SETTINGS,
 } from '../../hooks/useSharedWithMe';
 import { SharedWithMeData, SharingTrendData } from '../../models/SharedWithMe';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
@@ -281,19 +281,6 @@ export const SharedWithMeCard: React.FC<SharedWithMeCardProps> = ({
     );
   }
 
-  // Expand button
-  const expandButton = handleCycleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={handleCycleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
   // Header actions
   const headerActions = (
     <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
@@ -305,7 +292,7 @@ export const SharedWithMeCard: React.FC<SharedWithMeCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -316,7 +303,7 @@ export const SharedWithMeCard: React.FC<SharedWithMeCardProps> = ({
         <CardHeader
           icon={<ShareMultiple24Regular />}
           title="Shared With Me"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<ShareMultiple24Regular />}

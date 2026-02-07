@@ -40,7 +40,7 @@ import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
 import { QuickLinksService } from '../../services/QuickLinksService';
-import { BaseCard, CardHeader, EmptyState, DonutChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, DonutChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem, DonutSegment } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { CardSize } from '../../types/CardSize';
@@ -324,19 +324,6 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
     );
   }
 
-  // Expand button
-  const expandButton = handleCycleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={handleCycleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
   // Header actions
   const headerActions = (
     <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
@@ -350,7 +337,7 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
           aria-label="Refresh links"
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -361,7 +348,7 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
         <CardHeader
           icon={<LinkMultiple24Regular />}
           title={title}
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<LinkMultiple24Regular />}

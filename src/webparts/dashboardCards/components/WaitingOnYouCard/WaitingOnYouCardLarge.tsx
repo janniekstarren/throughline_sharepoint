@@ -32,7 +32,6 @@ import {
   Chat24Regular,
   ChannelShare24Regular,
   Open20Regular,
-  ContractDownLeft20Regular,
   ClockAlarm20Regular,
   ClockAlarm20Filled,
   CheckmarkCircle24Regular,
@@ -53,6 +52,8 @@ import {
 import { MSGraphClientV3 } from '@microsoft/sp-http';
 
 import { MasterDetailCard } from '../shared/MasterDetailCard';
+import { CardSizeMenu } from '../shared';
+import { CardSize } from '../../types/CardSize';
 import {
   StaleConversation,
   PersonGroup,
@@ -82,8 +83,8 @@ export interface WaitingOnYouCardLargeProps {
   dataMode?: DataMode;
   /** AI Demo Mode - show AI-enhanced content (only when dataMode === 'test') */
   aiDemoMode?: boolean;
-  /** Callback to toggle between large and medium card size */
-  onToggleSize?: () => void;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
 }
 
 const useStyles = makeStyles({
@@ -482,7 +483,7 @@ export const WaitingOnYouCardLarge: React.FC<WaitingOnYouCardLargeProps> = ({
   includeMentions = true,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  onSizeChange,
 }) => {
   const styles = useStyles();
   const [viewMode, setViewMode] = React.useState<ViewMode>('people');
@@ -1193,17 +1194,7 @@ export const WaitingOnYouCardLarge: React.FC<WaitingOnYouCardLargeProps> = ({
                 onClick={refresh}
               />
             </Tooltip>
-            {onToggleSize && (
-              <Tooltip content="Collapse to summary view" relationship="label">
-                <Button
-                  appearance="subtle"
-                  size="small"
-                  icon={<ContractDownLeft20Regular />}
-                  onClick={onToggleSize}
-                  aria-label="Collapse card"
-                />
-              </Tooltip>
-            )}
+            <CardSizeMenu currentSize="large" onSizeChange={onSizeChange} />
           </div>
         }
         headerContent={

@@ -36,7 +36,7 @@ import {
   DEFAULT_RECENT_FILES_SETTINGS,
 } from '../../hooks/useRecentFiles';
 import { RecentFilesData, FileItem, FilesTrendData } from '../../models/RecentFiles';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
@@ -295,19 +295,6 @@ export const RecentFilesCard: React.FC<RecentFilesCardProps> = ({
     );
   }
 
-  // Expand button
-  const expandButton = handleCycleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={handleCycleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
   // Header actions
   const headerActions = (
     <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
@@ -319,7 +306,7 @@ export const RecentFilesCard: React.FC<RecentFilesCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -330,7 +317,7 @@ export const RecentFilesCard: React.FC<RecentFilesCardProps> = ({
         <CardHeader
           icon={<DocumentMultiple24Regular />}
           title="Recent Files"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<DocumentMultiple24Regular />}

@@ -30,7 +30,7 @@ import {
   DEFAULT_MY_TASKS_SETTINGS,
 } from '../../hooks/useMyTasks';
 import { MyTasksData, TasksTrendData } from '../../models/MyTasks';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, DonutChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, TrendBarChart, DonutChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { StatItem, TopItem, DonutSegment, ChartCarousel } from '../shared/charts';
@@ -303,19 +303,6 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
       .slice(0, 6); // Limit to top 6 lists for readability
   }, [data]);
 
-  // Expand button
-  const expandButton = handleCycleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={handleCycleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
   // Header actions
   const headerActions = (
     <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
@@ -327,7 +314,7 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -341,7 +328,7 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
         <CardHeader
           icon={<TaskListSquareLtr24Regular />}
           title="My Tasks"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<TaskListSquareLtr24Regular />}

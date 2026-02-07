@@ -29,7 +29,7 @@ import {
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 
 import { SiteActivityData, ActivityTrendData } from '../../models/SiteActivity';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
@@ -276,19 +276,6 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
     );
   }
 
-  // Expand button
-  const expandButton = handleCycleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={handleCycleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
   // Header actions
   const headerActions = (
     <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
@@ -300,7 +287,7 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -312,7 +299,7 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
           icon={<History24Regular />}
           title="Site Activity"
           cardId="siteActivity"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<History24Regular />}
