@@ -21,6 +21,7 @@ import { TrendBarChart } from './charts';
 import { TrendDataPoint } from './charts/TrendBarChart';
 import { CardSize } from '../../types/CardSize';
 import { getSmartLabel, LabelKey } from '../../utils/labelUtils';
+import { usePortalContainer } from '../../contexts/PortalContext';
 
 export interface ISmallCardProps {
   /** Card identifier */
@@ -256,6 +257,7 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
 }) => {
   const styles = useStyles();
   const [activeSlide, setActiveSlide] = useState(0);
+  const portalContainer = usePortalContainer();
 
   // Determine if we have chart data for slide 2
   const hasChart = chartData && chartData.length > 0;
@@ -314,7 +316,7 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
         <div className={styles.headerActions}>
           {/* AI Insights Button */}
           {aiDemoMode && (aiSummary || (aiInsights && aiInsights.length > 0)) && (
-            <Popover>
+            <Popover mountNode={portalContainer}>
               <PopoverTrigger disableButtonEnhancement>
                 <Button
                   appearance="subtle"

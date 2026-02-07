@@ -19,6 +19,7 @@ import {
   GridDots20Regular,
 } from '@fluentui/react-icons';
 import { CardSize } from '../../types/CardSize';
+import { usePortalContainer } from '../../contexts/PortalContext';
 
 export interface ICardSizeMenuProps {
   /** Current card size */
@@ -69,6 +70,7 @@ export const CardSizeMenu: React.FC<ICardSizeMenuProps> = ({
   ariaLabel = 'Change card size',
 }) => {
   const styles = useStyles();
+  const portalContainer = usePortalContainer();
 
   // Don't render if onSizeChange is not provided
   if (!onSizeChange) {
@@ -99,6 +101,7 @@ export const CardSizeMenu: React.FC<ICardSizeMenuProps> = ({
     <Menu
       checkedValues={checkedValues}
       onCheckedValueChange={handleCheckedValueChange}
+      mountNode={portalContainer}
     >
       <MenuTrigger disableButtonEnhancement>
         <Tooltip content={tooltipContent} relationship="label">

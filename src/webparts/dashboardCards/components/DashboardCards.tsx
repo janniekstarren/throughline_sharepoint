@@ -8,6 +8,7 @@ import {
   Spinner,
 } from '@fluentui/react-components';
 import { DragDropContext, DropResult } from 'react-beautiful-dnd';
+import { PortalProvider } from '../contexts/PortalContext';
 import { MSGraphClientV3 } from '@microsoft/sp-http';
 import { DataMode } from '../hooks/useDashboardData';
 import { useUserPreferences } from '../hooks/useUserPreferences';
@@ -718,15 +719,17 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   return (
     <RendererProvider renderer={renderer}>
       <FluentProvider theme={currentTheme}>
-        <DragDropContext
-          onDragEnd={handleDragEnd}
-          onDragStart={handleDragStart}
-        >
-          <div className={styles.dashboard} ref={portalMountRef}>
-            <Salutation type={salutationType} size={salutationSize} userName={userName} />
-            {getOrderedCards()}
-          </div>
-        </DragDropContext>
+        <PortalProvider>
+          <DragDropContext
+            onDragEnd={handleDragEnd}
+            onDragStart={handleDragStart}
+          >
+            <div className={styles.dashboard} ref={portalMountRef}>
+              <Salutation type={salutationType} size={salutationSize} userName={userName} />
+              {getOrderedCards()}
+            </div>
+          </DragDropContext>
+        </PortalProvider>
       </FluentProvider>
     </RendererProvider>
   );

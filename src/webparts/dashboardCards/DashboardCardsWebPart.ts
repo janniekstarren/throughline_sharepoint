@@ -21,6 +21,7 @@ import { CardConfigDialog, ICardConfig, ICategoryConfig, DEFAULT_CATEGORY_ORDER 
 import { DEFAULT_CARD_ORDER } from './propertyPane/CardOrderEditor';
 import { getFluentTheme } from './utils/themeUtils';
 import { clearUserPreferences } from './services/UserPreferencesService';
+import { cleanupPortalContainer } from './services/PortalService';
 
 // Card definitions for default category assignment
 const CARD_DEFAULT_CATEGORIES: Record<string, string> = {
@@ -605,6 +606,8 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       document.body.removeChild(this._dialogContainer);
       this._dialogContainer = null;
     }
+    // Clean up portal container for Fluent UI popovers
+    cleanupPortalContainer();
   }
 
   protected get dataVersion(): Version {
