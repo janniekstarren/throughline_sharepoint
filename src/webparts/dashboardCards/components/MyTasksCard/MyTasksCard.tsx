@@ -14,6 +14,7 @@ import {
 } from '@fluentui/react-components';
 import {
   TaskListSquareLtr24Regular,
+  Clipboard24Regular,
   ArrowClockwiseRegular,
   ArrowExpand20Regular,
   TaskListLtr20Regular,
@@ -29,7 +30,7 @@ import {
   DEFAULT_MY_TASKS_SETTINGS,
 } from '../../hooks/useMyTasks';
 import { MyTasksData, TasksTrendData } from '../../models/MyTasks';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, DonutChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, EmptyState, TrendBarChart, DonutChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { StatItem, TopItem, DonutSegment, ChartCarousel } from '../shared/charts';
@@ -40,6 +41,7 @@ import {
   getAITasksCardSummary,
   getAllTasksInsights,
 } from '../../services/testData/aiDemoData';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Styles
@@ -80,6 +82,11 @@ interface MyTasksCardProps {
   settings?: IMyTasksSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback to cycle through card sizes (small → medium → large → small) */
+  onCycleSize?: () => void;
+  /** @deprecated Use size and onCycleSize instead */
   onToggleSize?: () => void;
 }
 
@@ -128,8 +135,12 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
   settings = DEFAULT_MY_TASKS_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -250,6 +261,35 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
     return trendData.trend;
   }, [trendData]);
 
+  // Get AI summary text for small card
+  const aiSummaryText = useMemo(() => {
+    if (!aiCardSummary) return undefined;
+    return aiCardSummary.summary;
+  }, [aiCardSummary]);
+
+  // Get AI insights array for small card
+  const aiInsightsList = useMemo(() => {
+    return aiInsights.map(insight => insight.title);
+  }, [aiInsights]);
+
+  // SMALL CARD VARIANT
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="myTasks"
+        title="My Tasks"
+        icon={<Clipboard24Regular />}
+        itemCount={data?.totalCount}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiSummaryText}
+        aiInsights={aiInsightsList}
+        onCycleSize={handleCycleSize || (() => {})}
+        isLoading={isLoading}
+        hasError={!!error}
+      />
+    );
+  }
+
   // Donut chart data - tasks by list
   const tasksByListData = useMemo((): DonutSegment[] => {
     if (!data || data.tasks.length === 0) return [];
@@ -269,13 +309,13 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
   }, [data]);
 
   // Expand button
-  const expandButton = onToggleSize ? (
+  const expandButton = handleCycleSize ? (
     <Tooltip content="Expand to detailed view" relationship="label">
       <Button
         appearance="subtle"
         size="small"
         icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
+        onClick={handleCycleSize}
         aria-label="Expand card"
       />
     </Tooltip>
@@ -398,8 +438,8 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
       )}
 
       {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
+      {handleCycleSize && (
+        <div className={styles.expandPrompt} onClick={handleCycleSize}>
           <ArrowExpand20Regular />
           <span>View all {data?.totalCount} tasks</span>
         </div>

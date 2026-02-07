@@ -22,6 +22,9 @@ export type { IMasterDetailCardProps } from './MasterDetailCard';
 export { SmallCard } from './SmallCard';
 export type { ISmallCardProps } from './SmallCard';
 
+export { CardSizeMenu } from './CardSizeMenu';
+export type { ICardSizeMenuProps } from './CardSizeMenu';
+
 // Chart components
 export { TrendBarChart, DonutChart, StatsGrid, TopItemsList, ChartCarousel } from './charts';
 export type {

@@ -29,7 +29,7 @@ import {
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 
 import { SiteActivityData, ActivityTrendData } from '../../models/SiteActivity';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
@@ -37,6 +37,7 @@ import { getTestSiteActivityData, getTestActivityTrendData } from '../../service
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Styles
@@ -76,6 +77,11 @@ export interface ISiteActivityCardProps {
   context: WebPartContext;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback to cycle through card sizes (small → medium → large → small) */
+  onCycleSize?: () => void;
+  /** @deprecated Use size and onCycleSize instead */
   onToggleSize?: () => void;
 }
 
@@ -126,8 +132,12 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
   context,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -241,14 +251,43 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
     }
   }, [trendData]);
 
+  // Get AI summary text for small card
+  const aiSummaryText = useMemo(() => {
+    if (!aiCardSummary) return undefined;
+    return aiCardSummary.summary;
+  }, [aiCardSummary]);
+
+  // Get AI insights array for small card
+  const aiInsightsList = useMemo(() => {
+    return aiInsights.map(insight => insight.title);
+  }, [aiInsights]);
+
+  // SMALL CARD VARIANT
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="siteActivity"
+        title="Site Activity"
+        icon={<History24Regular />}
+        itemCount={data?.activities?.length}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiSummaryText}
+        aiInsights={aiInsightsList}
+        onCycleSize={handleCycleSize || (() => {})}
+        isLoading={isLoading}
+        hasError={!!error}
+      />
+    );
+  }
+
   // Expand button
-  const expandButton = onToggleSize ? (
+  const expandButton = handleCycleSize ? (
     <Tooltip content="Expand to detailed view" relationship="label">
       <Button
         appearance="subtle"
         size="small"
         icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
+        onClick={handleCycleSize}
         aria-label="Expand card"
       />
     </Tooltip>
@@ -352,8 +391,8 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
       )}
 
       {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
+      {handleCycleSize && (
+        <div className={styles.expandPrompt} onClick={handleCycleSize}>
           <ArrowExpand20Regular />
           <span>View all {data?.totalCount} activities</span>
         </div>

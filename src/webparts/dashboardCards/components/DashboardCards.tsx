@@ -250,14 +250,6 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   void collapsedCards; // Suppress unused warning - kept for legacy support
   void setUserCollapsedCardIds; // Suppress unused warning
 
-  // Check if a card should render as large (considering collapsed state)
-  // Legacy function for backwards compatibility
-  const isCardLarge = React.useCallback((cardId: string): boolean => {
-    // Use the new cardSizes system - check if size is 'large'
-    const size = getCardSize(cardId);
-    return size === 'large';
-  }, [getCardSize]);
-
   // Get the current size of a card (for 3-tier sizing)
   const getCardSizeForRender = React.useCallback((cardId: string): CardSize => {
     return getCardSize(cardId);
@@ -387,7 +379,6 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   // Wraps each card with ErrorBoundary to prevent cascading failures
   const renderCardElement = (cardId: string): React.ReactNode => {
     const cardTitle = getCardTitle(cardId);
-    const isLarge = isCardLarge(cardId);
 
     // Helper to wrap card with error boundary
     const wrapWithErrorBoundary = (card: React.ReactNode): React.ReactNode => (
@@ -396,60 +387,84 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       </ErrorBoundary>
     );
 
+    // Get card size for this card
+    const cardSize = getCardSizeForRender(cardId);
+
     switch (cardId) {
       // Enhanced cards with charts, stats, and top items
-      // These cards use legacy toggle for now - pass handleCycleCardSize for consistent behavior
+      // All cards now support small/medium/large sizes
       case 'todaysAgenda':
+        if (cardSize === 'large') {
+          return wrapWithErrorBoundary(
+            <TodaysAgendaCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          );
+        }
         return wrapWithErrorBoundary(
-          isLarge
-            ? <TodaysAgendaCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
-            : <TodaysAgendaCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          <TodaysAgendaCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'email':
+        if (cardSize === 'large') {
+          return wrapWithErrorBoundary(
+            <EmailCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          );
+        }
         return wrapWithErrorBoundary(
-          isLarge
-            ? <EmailCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
-            : <EmailCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          <EmailCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'upcomingWeek':
+        if (cardSize === 'large') {
+          return wrapWithErrorBoundary(
+            <UpcomingWeekCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          );
+        }
         return wrapWithErrorBoundary(
-          isLarge
-            ? <UpcomingWeekCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
-            : <UpcomingWeekCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          <UpcomingWeekCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'myTasks':
+        if (cardSize === 'large') {
+          return wrapWithErrorBoundary(
+            <MyTasksCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          );
+        }
         return wrapWithErrorBoundary(
-          isLarge
-            ? <MyTasksCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
-            : <MyTasksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          <MyTasksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'recentFiles':
+        if (cardSize === 'large') {
+          return wrapWithErrorBoundary(
+            <RecentFilesCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          );
+        }
         return wrapWithErrorBoundary(
-          isLarge
-            ? <RecentFilesCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
-            : <RecentFilesCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          <RecentFilesCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'myTeam':
+        if (cardSize === 'large') {
+          return wrapWithErrorBoundary(
+            <MyTeamCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          );
+        }
         return wrapWithErrorBoundary(
-          isLarge
-            ? <MyTeamCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
-            : <MyTeamCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          <MyTeamCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'sharedWithMe':
+        if (cardSize === 'large') {
+          return wrapWithErrorBoundary(
+            <SharedWithMeCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          );
+        }
         return wrapWithErrorBoundary(
-          isLarge
-            ? <SharedWithMeCardLarge context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
-            : <SharedWithMeCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          <SharedWithMeCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'siteActivity':
-        // SiteActivityCardLarge not yet updated to new pattern - always use medium
+        // SiteActivityCardLarge not yet updated to new pattern - always use medium or small
         return wrapWithErrorBoundary(
-          <SiteActivityCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          <SiteActivityCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
         );
       case 'quickLinks':
-        // QuickLinksCardLarge has different props - use medium for now
+        // QuickLinksCardLarge has different props - use medium or small for now
         return wrapWithErrorBoundary(
-          <QuickLinksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} onToggleSize={() => handleCycleCardSize(cardId)} />
+          <QuickLinksCard context={context} dataMode={dataMode} aiDemoMode={dataMode === 'test' && aiDemoMode} size={cardSize} onCycleSize={() => handleCycleCardSize(cardId)} />
         );
       // Analytics cards
       case 'waitingOnYou': {

@@ -1,7 +1,8 @@
 // ============================================
-// EmailCard - Consolidated Email Card (Medium View)
-// Shows emails in tabs: Unread | Flagged | VIPs | Urgent
-// With sort, filter, and VIP icons
+// EmailCard - Consolidated Email Card with size variants
+// Small: Compact chip with AI popover
+// Medium: Shows emails in tabs with sort, filter, and VIP icons
+// Large: Full master-detail layout
 // ============================================
 
 import * as React from 'react';
@@ -52,12 +53,13 @@ import {
   EmailSortMode,
   DEFAULT_EMAIL_CARD_SETTINGS,
 } from '../../hooks/useEmailCard';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem, TrendDataPoint } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 // AI Demo Mode components
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
+import { CardSize } from '../../types/CardSize';
 
 // Local storage key for onboarding state
 const AI_ONBOARDING_KEY = 'dashboardCards_aiOnboardingDismissed';
@@ -156,6 +158,11 @@ interface EmailCardProps {
   dataMode?: DataMode;
   /** AI Demo Mode - show AI insights when true */
   aiDemoMode?: boolean;
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback to cycle through card sizes (small → medium → large → small) */
+  onCycleSize?: () => void;
+  /** @deprecated Use size and onCycleSize instead */
   onToggleSize?: () => void;
 }
 
@@ -191,8 +198,12 @@ export const EmailCard: React.FC<EmailCardProps> = ({
   settings = DEFAULT_EMAIL_CARD_SETTINGS,
   dataMode = 'test',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -233,6 +244,39 @@ export const EmailCard: React.FC<EmailCardProps> = ({
     aiCardSummary,
     aiInsights,
   } = useEmailCard(context, settings, dataMode, aiDemoMode);
+
+  // Get AI summary text for small card
+  const aiSummaryText = useMemo(() => {
+    if (!aiCardSummary) return undefined;
+    return aiCardSummary.summary;
+  }, [aiCardSummary]);
+
+  // Get AI insights array for small card (use title for short display)
+  const aiInsightsList = useMemo(() => {
+    return aiInsights ? aiInsights.map(insight => insight.title) : [];
+  }, [aiInsights]);
+
+  // ============================================
+  // SMALL CARD VARIANT
+  // Compact chip with title, count, and AI popover
+  // ============================================
+  if (size === 'small') {
+    const totalEmails = data ? data.stats.unreadCount + data.stats.activeFlagsCount : 0;
+    return (
+      <SmallCard
+        cardId="email"
+        title="Email"
+        icon={<Mail24Regular />}
+        itemCount={totalEmails}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiSummaryText}
+        aiInsights={aiInsightsList}
+        onCycleSize={handleCycleSize || (() => {})}
+        isLoading={isLoading}
+        hasError={!!error}
+      />
+    );
+  }
 
   // Check for overflow and scroll selected tab into view
   useEffect(() => {
@@ -452,13 +496,13 @@ export const EmailCard: React.FC<EmailCardProps> = ({
   }, [activeTab]);
 
   // Expand button
-  const expandButton = onToggleSize ? (
+  const expandButton = handleCycleSize ? (
     <Tooltip content="Expand to detailed view" relationship="label">
       <Button
         appearance="subtle"
         size="small"
         icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
+        onClick={handleCycleSize}
         aria-label="Expand card"
       />
     </Tooltip>
@@ -659,8 +703,8 @@ export const EmailCard: React.FC<EmailCardProps> = ({
       )}
 
       {/* Expand Prompt */}
-      {onToggleSize && totalCount > 0 && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
+      {handleCycleSize && totalCount > 0 && (
+        <div className={styles.expandPrompt} onClick={handleCycleSize}>
           <ArrowExpand20Regular />
           <span>View all {totalCount} {activeTab === 'vip' ? 'VIP ' : activeTab === 'urgent' ? 'urgent ' : ''}emails</span>
         </div>

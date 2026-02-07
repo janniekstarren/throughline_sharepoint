@@ -29,7 +29,7 @@ import {
   DEFAULT_UPCOMING_WEEK_SETTINGS,
 } from '../../hooks/useUpcomingWeek';
 import { UpcomingWeekData, WeekTrendData } from '../../models/UpcomingWeek';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { StatItem, TopItem } from '../shared/charts';
@@ -37,6 +37,7 @@ import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestUpcomingWeekData, getTestWeekTrendData } from '../../services/testData/upcomingWeek';
 import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Styles
@@ -77,6 +78,11 @@ interface UpcomingWeekCardProps {
   settings?: IUpcomingWeekSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback to cycle through card sizes (small → medium → large → small) */
+  onCycleSize?: () => void;
+  /** @deprecated Use size and onCycleSize instead */
   onToggleSize?: () => void;
 }
 
@@ -88,8 +94,12 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
   settings = DEFAULT_UPCOMING_WEEK_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -206,14 +216,43 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
     }
   }, [trendData]);
 
+  // Get AI summary text for small card
+  const aiSummaryText = useMemo(() => {
+    if (!aiCardSummary) return undefined;
+    return aiCardSummary.summary;
+  }, [aiCardSummary]);
+
+  // Get AI insights array for small card
+  const aiInsightsList = useMemo(() => {
+    return aiInsights.map(insight => insight.title);
+  }, [aiInsights]);
+
+  // SMALL CARD VARIANT
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="upcomingWeek"
+        title="Upcoming Week"
+        icon={<CalendarWeekNumbers24Regular />}
+        itemCount={data?.totalCount}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiSummaryText}
+        aiInsights={aiInsightsList}
+        onCycleSize={handleCycleSize || (() => {})}
+        isLoading={isLoading}
+        hasError={!!error}
+      />
+    );
+  }
+
   // Expand button
-  const expandButton = onToggleSize ? (
+  const expandButton = handleCycleSize ? (
     <Tooltip content="Expand to detailed view" relationship="label">
       <Button
         appearance="subtle"
         size="small"
         icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
+        onClick={handleCycleSize}
         aria-label="Expand card"
       />
     </Tooltip>
@@ -315,8 +354,8 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
       )}
 
       {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
+      {handleCycleSize && (
+        <div className={styles.expandPrompt} onClick={handleCycleSize}>
           <ArrowExpand20Regular />
           <span>View all {data?.totalCount} events</span>
         </div>

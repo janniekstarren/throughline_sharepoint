@@ -1,6 +1,8 @@
 // ============================================
-// TodaysAgendaCard - Medium Card (Summary View)
-// Shows today's calendar events with chart, stats, and top items
+// TodaysAgendaCard - Card with size variants
+// Small: Compact chip with AI popover
+// Medium: Summary view with chart, stats, and top items
+// Large: Full master-detail layout
 // ============================================
 
 import * as React from 'react';
@@ -29,7 +31,7 @@ import {
   DEFAULT_TODAYS_AGENDA_SETTINGS,
 } from '../../hooks/useTodaysAgenda';
 import { TodaysAgendaData, AgendaTrendData } from '../../models/TodaysAgenda';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { StatItem, TopItem } from '../shared/charts';
@@ -40,6 +42,7 @@ import {
   getAIAgendaCardSummary,
   getAllAgendaInsights,
 } from '../../services/testData/aiDemoData';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Styles
@@ -80,6 +83,11 @@ interface TodaysAgendaCardProps {
   settings?: ITodaysAgendaSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback to cycle through card sizes (small → medium → large → small) */
+  onCycleSize?: () => void;
+  /** @deprecated Use size and onCycleSize instead */
   onToggleSize?: () => void;
 }
 
@@ -91,8 +99,12 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
   settings = DEFAULT_TODAYS_AGENDA_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -153,6 +165,38 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
         }, 500);
       }
     : apiHook.refresh;
+
+  // Get AI summary text for small card
+  const aiSummaryText = useMemo(() => {
+    if (!aiCardSummary) return undefined;
+    return aiCardSummary.summary;
+  }, [aiCardSummary]);
+
+  // Get AI insights array for small card (use title for short display)
+  const aiInsightsList = useMemo(() => {
+    return aiInsights.map(insight => insight.title);
+  }, [aiInsights]);
+
+  // ============================================
+  // SMALL CARD VARIANT
+  // Compact chip with title, count, and AI popover
+  // ============================================
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="todaysAgenda"
+        title="Today's Agenda"
+        icon={<CalendarLtr24Regular />}
+        itemCount={data?.totalCount}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiSummaryText}
+        aiInsights={aiInsightsList}
+        onCycleSize={handleCycleSize || (() => {})}
+        isLoading={isLoading}
+        hasError={!!error}
+      />
+    );
+  }
 
   // Helper functions
   const formatTime = (date: Date): string => {
@@ -224,13 +268,13 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
   }, [trendData]);
 
   // Expand button
-  const expandButton = onToggleSize ? (
+  const expandButton = handleCycleSize ? (
     <Tooltip content="Expand to detailed view" relationship="label">
       <Button
         appearance="subtle"
         size="small"
         icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
+        onClick={handleCycleSize}
         aria-label="Expand card"
       />
     </Tooltip>
@@ -332,8 +376,8 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
       )}
 
       {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
+      {handleCycleSize && (
+        <div className={styles.expandPrompt} onClick={handleCycleSize}>
           <ArrowExpand20Regular />
           <span>View all {data?.totalCount} events</span>
         </div>

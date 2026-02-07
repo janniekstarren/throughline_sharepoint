@@ -16,6 +16,7 @@ import {
 } from '@fluentui/react-components';
 import {
   LinkMultiple24Regular,
+  Link24Regular,
   ArrowClockwise20Regular,
   ArrowExpand20Regular,
   Link20Regular,
@@ -39,9 +40,10 @@ import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
 import { QuickLinksService } from '../../services/QuickLinksService';
-import { BaseCard, CardHeader, EmptyState, DonutChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, EmptyState, DonutChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem, DonutSegment } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Types
@@ -60,7 +62,11 @@ export interface QuickLinksCardProps {
   settings?: IQuickLinksSettings;
   /** Card title */
   title?: string;
-  /** Callback to toggle size/expand */
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback to cycle through card sizes (small → medium → large → small) */
+  onCycleSize?: () => void;
+  /** @deprecated Use size and onCycleSize instead */
   onToggleSize?: () => void;
 }
 
@@ -116,8 +122,12 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
   aiDemoMode = false,
   settings = DEFAULT_QUICK_LINKS_SETTINGS,
   title = 'Quick Links',
-  onToggleSize,
+  size = 'medium',
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -289,14 +299,43 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
     }));
   }, [categoryData]);
 
+  // Get AI summary text for small card
+  const aiSummaryText = useMemo(() => {
+    if (!aiCardSummary) return undefined;
+    return aiCardSummary.summary;
+  }, [aiCardSummary]);
+
+  // Get AI insights array for small card
+  const aiInsightsList = useMemo(() => {
+    return aiInsights.map(insight => insight.title);
+  }, [aiInsights]);
+
+  // SMALL CARD VARIANT
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="quickLinks"
+        title="Quick Links"
+        icon={<Link24Regular />}
+        itemCount={data?.links?.length}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiSummaryText}
+        aiInsights={aiInsightsList}
+        onCycleSize={handleCycleSize || (() => {})}
+        isLoading={loading}
+        hasError={!!error}
+      />
+    );
+  }
+
   // Expand button
-  const expandButton = onToggleSize ? (
+  const expandButton = handleCycleSize ? (
     <Tooltip content="Expand to detailed view" relationship="label">
       <Button
         appearance="subtle"
         size="small"
         icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
+        onClick={handleCycleSize}
         aria-label="Expand card"
       />
     </Tooltip>
@@ -397,8 +436,8 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
       )}
 
       {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
+      {handleCycleSize && (
+        <div className={styles.expandPrompt} onClick={handleCycleSize}>
           <ArrowExpand20Regular />
           <span>View all {data?.totalCount} links</span>
         </div>
