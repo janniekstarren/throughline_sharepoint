@@ -6,6 +6,7 @@ import {
   RendererProvider,
   Theme,
   Spinner,
+  IdPrefixProvider,
 } from '@fluentui/react-components';
 import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import { PortalProvider } from '../contexts/PortalContext';
@@ -717,21 +718,23 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   };
 
   return (
-    <RendererProvider renderer={renderer}>
-      <FluentProvider theme={currentTheme}>
-        <PortalProvider>
-          <DragDropContext
-            onDragEnd={handleDragEnd}
-            onDragStart={handleDragStart}
-          >
-            <div className={styles.dashboard} ref={portalMountRef}>
-              <Salutation type={salutationType} size={salutationSize} userName={userName} />
-              {getOrderedCards()}
-            </div>
-          </DragDropContext>
-        </PortalProvider>
-      </FluentProvider>
-    </RendererProvider>
+    <IdPrefixProvider value="throughline-dashboard">
+      <RendererProvider renderer={renderer}>
+        <FluentProvider theme={currentTheme}>
+          <PortalProvider>
+            <DragDropContext
+              onDragEnd={handleDragEnd}
+              onDragStart={handleDragStart}
+            >
+              <div className={styles.dashboard} ref={portalMountRef}>
+                <Salutation type={salutationType} size={salutationSize} userName={userName} />
+                {getOrderedCards()}
+              </div>
+            </DragDropContext>
+          </PortalProvider>
+        </FluentProvider>
+      </RendererProvider>
+    </IdPrefixProvider>
   );
 };
 
