@@ -1,0 +1,344 @@
+// ============================================
+// Settings Panel Styles
+// CSS Module for SharePoint compatibility
+// ============================================
+
+// Colors
+$border-color: #e1e1e1;
+$bg-hover: #f5f5f5;
+$text-primary: #242424;
+$text-secondary: #616161;
+$accent-color: #0078d4;
+
+// ============================================
+// Panel Content
+// ============================================
+
+.settingsContent {
+  padding: 0;
+}
+
+.tabContent {
+  padding: 16px 0;
+}
+
+.tabDescription {
+  color: $text-secondary;
+  font-size: 13px;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+// ============================================
+// Panel Footer
+// ============================================
+
+.panelFooter {
+  display: flex;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid $border-color;
+  background: #fff;
+}
+
+// ============================================
+// Settings Button
+// ============================================
+
+.settingsButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: $text-secondary;
+  transition: all 150ms ease;
+
+  &:hover {
+    background: $bg-hover;
+    color: $text-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $accent-color;
+    outline-offset: 2px;
+  }
+}
+
+// ============================================
+// Category Manager
+// ============================================
+
+.categoryManager {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.categoryItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  transition: all 150ms ease;
+
+  &:hover {
+    background: $bg-hover;
+  }
+
+  &.dragging {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+  }
+}
+
+.categoryInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.categoryName {
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-primary;
+}
+
+.cardCount {
+  font-size: 12px;
+  color: $text-secondary;
+}
+
+// ============================================
+// Card Manager
+// ============================================
+
+.cardManager {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.categoryGroup {
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.categoryGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: $bg-hover;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-primary;
+  transition: background 150ms ease;
+
+  &:hover {
+    background: darken($bg-hover, 3%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $accent-color;
+    outline-offset: -2px;
+  }
+}
+
+.expandIcon {
+  display: flex;
+  align-items: center;
+  color: $text-secondary;
+}
+
+.categoryGroupName {
+  flex: 1;
+}
+
+.categoryGroupCount {
+  font-size: 12px;
+  font-weight: 400;
+  color: $text-secondary;
+}
+
+.cardsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  background: #fff;
+}
+
+.cardItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #fff;
+  border-radius: 4px;
+  transition: all 150ms ease;
+
+  &:hover {
+    background: $bg-hover;
+  }
+
+  &.dragging {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    z-index: 100;
+  }
+
+  &.hidden {
+    opacity: 0.5;
+  }
+}
+
+.cardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardName {
+  font-size: 13px;
+  color: $text-primary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sizeSelector {
+  display: flex;
+  gap: 4px;
+
+  // Override Fluent ChoiceGroup styles for compact size selector
+  :global(.ms-ChoiceField) {
+    margin: 0 !important;
+  }
+
+  :global(.ms-ChoiceField-wrapper) {
+    margin: 0 !important;
+  }
+
+  :global(.ms-ChoiceFieldLabel) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0 !important;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid $border-color;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+
+  :global(.ms-ChoiceField-field.is-checked + .ms-ChoiceFieldLabel) {
+    background: $accent-color;
+    color: #fff;
+    border-color: $accent-color;
+  }
+
+  // Hide the radio button circle
+  :global(.ms-ChoiceField-field) {
+    opacity: 0;
+    position: absolute;
+  }
+}
+
+// ============================================
+// Drag Handle
+// ============================================
+
+.dragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: grab;
+  color: $text-secondary;
+  flex-shrink: 0;
+  touch-action: none;
+
+  &:hover {
+    background: $bg-hover;
+    color: $text-primary;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $accent-color;
+    outline-offset: 2px;
+  }
+}
+
+// ============================================
+// Preferences Tab
+// ============================================
+
+.preferenceItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid $border-color;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.preferenceDescription {
+  font-size: 12px;
+  color: $text-secondary;
+  margin-left: 48px; // Align with toggle
+}
+
+.resetSection {
+  margin-top: 24px;
+  padding: 16px;
+  background: $bg-hover;
+  border-radius: 6px;
+}
+
+.resetDescription {
+  font-size: 13px;
+  color: $text-secondary;
+  margin: 8px 0 12px;
+}
+
+// ============================================
+// Reduced Motion Support
+// ============================================
+
+@media (prefers-reduced-motion: reduce) {
+  .categoryItem,
+  .cardItem,
+  .dragHandle,
+  .settingsButton {
+    transition: none !important;
+  }
+}
