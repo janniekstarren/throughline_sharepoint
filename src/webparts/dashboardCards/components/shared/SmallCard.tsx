@@ -1,25 +1,20 @@
 // ============================================
-// SmallCard - Compact card chip/pill variant
-// Shows title, AI icon with popover, expand button
+// SmallCard - Square card with metric/chart slider
+// Shows key metric on slide 1, mini chart on slide 2
 // ============================================
 
 import * as React from 'react';
+import { useState, useCallback } from 'react';
 import {
   makeStyles,
   tokens,
   Text,
-  Badge,
-  Button,
-  Tooltip,
-  Popover,
-  PopoverTrigger,
-  PopoverSurface,
+  mergeClasses,
 } from '@fluentui/react-components';
-import {
-  Sparkle20Regular,
-  Sparkle20Filled,
-  ChevronDown20Regular,
-} from '@fluentui/react-icons';
+import { CardSizeMenu } from './CardSizeMenu';
+import { TrendBarChart } from './charts';
+import { TrendDataPoint } from './charts/TrendBarChart';
+import { CardSize } from '../../types/CardSize';
 
 export interface ISmallCardProps {
   /** Card identifier */
@@ -28,39 +23,52 @@ export interface ISmallCardProps {
   title: string;
   /** Card icon element */
   icon: React.ReactElement;
-  /** Optional item count to show as badge */
+  /** Optional item count to show as badge (backwards compatible) */
   itemCount?: number;
   /** Whether AI demo mode is enabled */
   aiDemoMode?: boolean;
-  /** AI summary text for popover */
+  /** AI summary text for popover (backwards compatible, not used in new design) */
   aiSummary?: string;
-  /** AI insights list for popover */
+  /** AI insights list for popover (backwards compatible, not used in new design) */
   aiInsights?: string[];
-  /** Callback when expand/cycle size is clicked */
-  onCycleSize: () => void;
+  /** @deprecated Use onSizeChange instead */
+  onCycleSize?: () => void;
   /** Optional loading state */
   isLoading?: boolean;
   /** Optional error state */
   hasError?: boolean;
+
+  // NEW props for enhanced SmallCard
+  /** Primary metric value (e.g., 6, 12, "4h") */
+  metricValue?: string | number;
+  /** Metric label (e.g., "EVENTS", "TASKS", "UNREAD") */
+  metricLabel?: string;
+  /** Chart data for slide 2 */
+  chartData?: TrendDataPoint[];
+  /** Chart color scheme */
+  chartColor?: 'default' | 'brand' | 'success' | 'warning' | 'danger';
+  /** Current card size for menu */
+  currentSize?: CardSize;
+  /** Callback when size is changed via menu */
+  onSizeChange?: (size: CardSize) => void;
 }
 
 const useStyles = makeStyles({
+  // Square card container
   smallCard: {
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
+    flexDirection: 'column',
+    width: '100%',
+    aspectRatio: '1 / 1',
     backgroundColor: tokens.colorNeutralBackground1,
     border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
-    boxShadow: tokens.shadow2,
-    cursor: 'pointer',
+    borderRadius: tokens.borderRadiusLarge,
+    boxShadow: tokens.shadow4,
+    overflow: 'hidden',
     transitionDuration: tokens.durationNormal,
-    transitionProperty: 'background-color, box-shadow',
-    minHeight: '48px',
+    transitionProperty: 'box-shadow',
     ':hover': {
-      backgroundColor: tokens.colorNeutralBackground1Hover,
-      boxShadow: tokens.shadow4,
+      boxShadow: tokens.shadow8, // Fluent2 elevation on hover
     },
   },
   smallCardLoading: {
@@ -69,15 +77,17 @@ const useStyles = makeStyles({
   smallCardError: {
     border: `1px solid ${tokens.colorPaletteRedForeground1}`,
   },
-  content: {
+
+  // Header row
+  header: {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacingHorizontalS,
-    overflow: 'hidden',
-    flex: 1,
-    minWidth: 0,
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    flexShrink: 0,
   },
-  icon: {
+  headerIcon: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -85,62 +95,113 @@ const useStyles = makeStyles({
     fontSize: '20px',
     flexShrink: 0,
   },
-  title: {
+  headerTitle: {
+    flex: 1,
     fontWeight: tokens.fontWeightSemibold,
     fontSize: tokens.fontSizeBase300,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
-  badge: {
+  headerActions: {
     flexShrink: 0,
   },
-  actions: {
+
+  // Slide container
+  slideContainer: {
+    flex: 1,
+    position: 'relative',
+    overflow: 'hidden',
+    minHeight: 0,
+  },
+  slideTrack: {
     display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
-    flexShrink: 0,
-    marginLeft: tokens.spacingHorizontalS,
+    height: '100%',
+    transition: 'transform 0.3s ease-in-out',
   },
-  aiButton: {
-    color: tokens.colorBrandForeground1,
-  },
-  aiPopover: {
-    padding: tokens.spacingHorizontalM,
-    maxWidth: '300px',
-    minWidth: '200px',
-  },
-  aiPopoverHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
-    marginBottom: tokens.spacingVerticalS,
-    color: tokens.colorBrandForeground1,
-  },
-  aiPopoverTitle: {
-    fontWeight: tokens.fontWeightSemibold,
-    fontSize: tokens.fontSizeBase300,
-  },
-  aiPopoverSummary: {
-    fontSize: tokens.fontSizeBase200,
-    color: tokens.colorNeutralForeground1,
-    marginBottom: tokens.spacingVerticalS,
-  },
-  aiPopoverInsights: {
+  slide: {
+    flex: '0 0 100%',
+    width: '100%',
+    height: '100%',
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacingVerticalXS,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: tokens.spacingHorizontalM,
+    boxSizing: 'border-box',
   },
-  aiInsight: {
+
+  // Metric slide (slide 1)
+  metricValue: {
+    fontSize: '48px',
+    fontWeight: tokens.fontWeightBold,
+    color: tokens.colorBrandForeground1,
+    lineHeight: 1,
+  },
+  metricLabel: {
     fontSize: tokens.fontSizeBase200,
+    fontWeight: tokens.fontWeightSemibold,
     color: tokens.colorNeutralForeground2,
-    paddingLeft: tokens.spacingHorizontalS,
-    borderLeft: `2px solid ${tokens.colorBrandStroke1}`,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    marginTop: tokens.spacingVerticalXS,
   },
-  noInsights: {
-    fontSize: tokens.fontSizeBase200,
+
+  // Chart slide (slide 2)
+  chartSlide: {
+    padding: tokens.spacingHorizontalS,
+  },
+  chartWrapper: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Indicators
+  indicators: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXS,
+    padding: tokens.spacingVerticalXS,
+    flexShrink: 0,
+  },
+  indicator: {
+    width: '8px',
+    height: '8px',
+    borderRadius: tokens.borderRadiusCircular,
+    backgroundColor: tokens.colorNeutralStroke2,
+    cursor: 'pointer',
+    transition: 'background-color 0.2s ease, transform 0.2s ease',
+    border: 'none',
+    padding: 0,
+    ':hover': {
+      backgroundColor: tokens.colorNeutralStroke1,
+    },
+  },
+  indicatorActive: {
+    backgroundColor: tokens.colorBrandForeground1,
+    transform: 'scale(1.2)',
+    ':hover': {
+      backgroundColor: tokens.colorBrandForeground1,
+    },
+  },
+
+  // Click to resize text
+  resizeHint: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacingHorizontalXS,
+    padding: tokens.spacingVerticalXS,
     color: tokens.colorNeutralForeground3,
-    fontStyle: 'italic',
+    fontSize: tokens.fontSizeBase100,
+    cursor: 'pointer',
+    ':hover': {
+      color: tokens.colorBrandForeground1,
+    },
   },
 });
 
@@ -148,105 +209,143 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
   title,
   icon,
   itemCount,
-  aiDemoMode = false,
-  aiSummary,
-  aiInsights = [],
-  onCycleSize,
   isLoading = false,
   hasError = false,
+  metricValue,
+  metricLabel,
+  chartData,
+  chartColor = 'brand',
+  currentSize = 'small',
+  onSizeChange,
+  onCycleSize,
 }) => {
   const styles = useStyles();
+  const [activeSlide, setActiveSlide] = useState(0);
 
-  const handleCardClick = (e: React.MouseEvent): void => {
-    // Don't trigger if clicking on a button
-    if ((e.target as HTMLElement).closest('button')) {
-      return;
-    }
-    onCycleSize();
-  };
+  // Determine if we have chart data for slide 2
+  const hasChart = chartData && chartData.length > 0;
+  const slideCount = hasChart ? 2 : 1;
 
-  const handleKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
+  // Get display metric value (use metricValue if provided, fall back to itemCount)
+  const displayValue = metricValue !== undefined ? metricValue : itemCount;
+
+  // Handle size change (support both new and deprecated props)
+  const handleSizeChange = useCallback((size: CardSize) => {
+    if (onSizeChange) {
+      onSizeChange(size);
+    } else if (onCycleSize) {
+      // Backwards compatibility: just cycle
       onCycleSize();
     }
-  };
+  }, [onSizeChange, onCycleSize]);
+
+  // Handle indicator click
+  const handleIndicatorClick = useCallback((index: number) => {
+    setActiveSlide(index);
+  }, []);
+
+  // Handle keyboard navigation on indicators
+  const handleIndicatorKeyDown = useCallback((e: React.KeyboardEvent, index: number) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setActiveSlide(index);
+    }
+  }, []);
+
+  const cardClasses = mergeClasses(
+    styles.smallCard,
+    isLoading && styles.smallCardLoading,
+    hasError && styles.smallCardError
+  );
 
   return (
     <div
-      className={`${styles.smallCard} ${isLoading ? styles.smallCardLoading : ''} ${hasError ? styles.smallCardError : ''}`}
-      onClick={handleCardClick}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
-      aria-label={`${title} card. ${itemCount !== undefined ? `${itemCount} items.` : ''} Click to expand.`}
+      className={cardClasses}
+      aria-label={`${title} card. ${displayValue !== undefined ? `${displayValue} ${metricLabel || 'items'}.` : ''}`}
     >
-      <div className={styles.content}>
-        <span className={styles.icon}>{icon}</span>
-        <Text className={styles.title}>{title}</Text>
-        {itemCount !== undefined && itemCount > 0 && (
-          <Badge
-            appearance="filled"
-            color="brand"
-            size="small"
-            className={styles.badge}
-          >
-            {itemCount}
-          </Badge>
-        )}
+      {/* Header */}
+      <div className={styles.header}>
+        <span className={styles.headerIcon}>{icon}</span>
+        <Text className={styles.headerTitle}>{title}</Text>
+        <div className={styles.headerActions}>
+          {(onSizeChange || onCycleSize) && (
+            <CardSizeMenu
+              currentSize={currentSize}
+              onSizeChange={handleSizeChange}
+              buttonSize="small"
+            />
+          )}
+        </div>
       </div>
 
-      <div className={styles.actions}>
-        {aiDemoMode && (
-          <Popover positioning="above" withArrow>
-            <PopoverTrigger disableButtonEnhancement>
-              <Tooltip content="AI Insights" relationship="label">
-                <Button
-                  appearance="subtle"
-                  size="small"
-                  icon={<Sparkle20Regular />}
-                  className={styles.aiButton}
-                  aria-label="View AI insights"
-                  onClick={(e) => e.stopPropagation()}
+      {/* Slides */}
+      <div className={styles.slideContainer}>
+        <div
+          className={styles.slideTrack}
+          style={{ transform: `translateX(-${activeSlide * 100}%)` }}
+        >
+          {/* Slide 1: Metric */}
+          <div className={styles.slide}>
+            {displayValue !== undefined ? (
+              <>
+                <Text className={styles.metricValue}>{displayValue}</Text>
+                {metricLabel && (
+                  <Text className={styles.metricLabel}>{metricLabel}</Text>
+                )}
+              </>
+            ) : (
+              <Text className={styles.metricLabel}>No data</Text>
+            )}
+          </div>
+
+          {/* Slide 2: Chart (if data available) */}
+          {hasChart && (
+            <div className={mergeClasses(styles.slide, styles.chartSlide)}>
+              <div className={styles.chartWrapper}>
+                <TrendBarChart
+                  data={chartData}
+                  height={60}
+                  color={chartColor}
                 />
-              </Tooltip>
-            </PopoverTrigger>
-            <PopoverSurface className={styles.aiPopover}>
-              <div className={styles.aiPopoverHeader}>
-                <Sparkle20Filled />
-                <Text className={styles.aiPopoverTitle}>AI Insights</Text>
               </div>
-              {aiSummary && (
-                <Text className={styles.aiPopoverSummary}>{aiSummary}</Text>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Indicators (only show if multiple slides) */}
+      {slideCount > 1 && (
+        <div className={styles.indicators}>
+          {Array.from({ length: slideCount }).map((_, index) => (
+            <button
+              key={index}
+              className={mergeClasses(
+                styles.indicator,
+                activeSlide === index && styles.indicatorActive
               )}
-              {aiInsights.length > 0 ? (
-                <div className={styles.aiPopoverInsights}>
-                  {aiInsights.slice(0, 3).map((insight, index) => (
-                    <Text key={index} className={styles.aiInsight}>
-                      {insight}
-                    </Text>
-                  ))}
-                </div>
-              ) : !aiSummary ? (
-                <Text className={styles.noInsights}>
-                  No AI insights available
-                </Text>
-              ) : null}
-            </PopoverSurface>
-          </Popover>
-        )}
-        <Tooltip content="Expand" relationship="label">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<ChevronDown20Regular />}
-            onClick={(e) => {
-              e.stopPropagation();
-              onCycleSize();
-            }}
-            aria-label="Expand card"
-          />
-        </Tooltip>
+              onClick={() => handleIndicatorClick(index)}
+              onKeyDown={(e) => handleIndicatorKeyDown(e, index)}
+              aria-label={`Go to slide ${index + 1}`}
+              aria-current={activeSlide === index ? 'true' : undefined}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Resize hint */}
+      <div
+        className={styles.resizeHint}
+        onClick={() => handleSizeChange('medium')}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleSizeChange('medium');
+          }
+        }}
+      >
+        <span>Click to resize</span>
       </div>
     </div>
   );
