@@ -6,7 +6,9 @@
 // that occur with Fabric v8 Panel and Fluent v9 Drawer in SharePoint.
 
 import * as React from 'react';
-import { Settings24Regular, Dismiss24Regular } from '@fluentui/react-icons';
+// Use pure SVG icons to avoid React context conflicts (Error #310) in SharePoint
+// The @fluentui/react-icons use internal context hooks that conflict with SharePoint's React
+import { SettingsIcon, DismissIcon } from './icons';
 import { CardManager } from './CardManager';
 import { ICategoryConfig, ICardConfig } from '../../models/DashboardConfiguration';
 import { CardSize } from '../../types/CardSize';
@@ -126,7 +128,7 @@ export const SettingsPanel: React.FC<ISettingsPanelProps> = ({
             onClick={onDismiss}
             aria-label="Close settings"
           >
-            <Dismiss24Regular />
+            <DismissIcon />
           </button>
         </div>
 
@@ -244,7 +246,7 @@ export const SettingsButton: React.FC<ISettingsButtonProps> = ({
       aria-label={label}
       title={label}
     >
-      <Settings24Regular />
+      <SettingsIcon />
     </button>
   );
 };

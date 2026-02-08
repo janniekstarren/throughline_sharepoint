@@ -6,10 +6,8 @@
 // Uses pure HTML/CSS to avoid React Error #310 in SharePoint.
 
 import * as React from 'react';
-import {
-  ChevronDown16Regular,
-  ChevronRight16Regular,
-} from '@fluentui/react-icons';
+// Use pure SVG icons to avoid React context conflicts (Error #310) in SharePoint
+import { ChevronDownIcon, ChevronRightIcon } from './icons';
 import { ICategoryConfig, ICardConfig } from '../../models/DashboardConfiguration';
 import { CardSize } from '../../types/CardSize';
 import styles from './SettingsPanel.module.scss';
@@ -179,7 +177,7 @@ const CategoryCardGroup: React.FC<ICategoryCardGroupProps> = ({
         aria-expanded={isExpanded}
       >
         <span className={styles.expandIcon}>
-          {isExpanded ? <ChevronDown16Regular /> : <ChevronRight16Regular />}
+          {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
         </span>
         <span className={styles.categoryGroupName}>{category.displayName}</span>
         <span className={styles.categoryGroupCount}>
