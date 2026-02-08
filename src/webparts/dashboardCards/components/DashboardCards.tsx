@@ -35,9 +35,9 @@ import { WaitingOnOthersCardLarge } from './WaitingOnOthersCardLarge';
 import { ContextSwitchingCard, ContextSwitchingCardLarge } from './ContextSwitchingCard';
 import { Salutation, SalutationType, SalutationSize } from './Salutation';
 import { CategorySection, IOrderedCard } from './CategorySection';
-// Settings panel for end-user customization - TEMPORARILY DISABLED FOR DEBUGGING
-// import { SettingsButton, SettingsPanel } from './Settings';
-// import { ICategoryConfig as ISettingsCategoryConfig, ICardConfig } from '../models/DashboardConfiguration';
+// Settings panel for end-user customization
+import { SettingsButton, SettingsPanel } from './Settings/SettingsPanel';
+import { ICategoryConfig as ISettingsCategoryConfig, ICardConfig } from '../models/DashboardConfiguration';
 import { getFluentTheme, ThemeMode } from '../utils/themeUtils';
 import { CardSize } from '../types/CardSize';
 import styles from './DashboardCards.module.scss';
@@ -239,8 +239,8 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   // Animation state (can be toggled via settings panel in the future)
   const [animationsEnabled] = React.useState(true);
 
-  // Settings panel state - TEMPORARILY DISABLED FOR DEBUGGING
-  // const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+  // Settings panel state
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   // Helper to get card title (custom or default)
   const getCardTitle = (cardId: string): string => {
@@ -698,7 +698,6 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     return result;
   };
 
-  /* TEMPORARILY DISABLED FOR DEBUGGING - Settings Panel data and handlers
   // Settings panel data - convert current state to format expected by SettingsPanel
   const settingsCategories: ISettingsCategoryConfig[] = React.useMemo(() => {
     if (categoryOrder.length === 0) {
@@ -769,6 +768,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     console.log('Card reorder in category:', categoryId, newCardIds);
     handleCardReorder(newCardIds);
   }, [handleCardReorder]);
+
   const handleCardMoveToCategory = React.useCallback((_cardId: string, _targetCategoryId: string) => {
     console.log('Card move to category:', _cardId, _targetCategoryId);
   }, []);
@@ -781,40 +781,41 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     setUserCardOrder(defaultCardOrder);
     cardOrder.forEach(id => setCardSize(id, 'medium'));
   }, [defaultCardOrder, setUserCardOrder, cardOrder, setCardSize]);
-  */
 
   return (
     <IdPrefixProvider value="throughline-dashboard">
       <RendererProvider renderer={renderer}>
-        <FluentProvider theme={currentTheme}>
+        <FluentProvider theme={currentTheme} style={{ background: 'transparent' }}>
           <PortalProvider>
             <div className={styles.dashboard} ref={portalMountRef}>
               {/* Header with Salutation and Settings button */}
               <div className={styles.dashboardHeader}>
                 <Salutation type={salutationType} size={salutationSize} userName={userName} />
-                {/* TEMPORARILY DISABLED: <SettingsButton onClick={() => setIsSettingsOpen(true)} /> */}
+                <SettingsButton onClick={() => setIsSettingsOpen(true)} />
               </div>
 
               {/* Card grid */}
               {getOrderedCards()}
 
-              {/* Settings Panel - TEMPORARILY DISABLED FOR DEBUGGING */}
-              {/* <SettingsPanel
-                isOpen={isSettingsOpen}
-                onDismiss={() => setIsSettingsOpen(false)}
-                categories={settingsCategories}
-                cards={settingsCards}
-                hasUserOverrides={hasUserOverrides}
-                animationsEnabled={animationsEnabled}
-                onCategoryReorder={handleCategoryReorder}
-                onCategoryCollapsedChange={handleCategoryCollapsedChange}
-                onCardSizeChange={handleSetCardSize}
-                onCardVisibilityChange={handleCardVisibilityChange}
-                onCardReorderInCategory={handleCardReorderInCategory}
-                onCardMoveToCategory={handleCardMoveToCategory}
-                onAnimationsEnabledChange={handleAnimationsEnabledChange}
-                onResetToDefaults={handleResetToDefaults}
-              /> */}
+              {/* Settings Panel - CONDITIONALLY RENDERED to avoid React context conflicts */}
+              {isSettingsOpen && (
+                <SettingsPanel
+                  isOpen={isSettingsOpen}
+                  onDismiss={() => setIsSettingsOpen(false)}
+                  categories={settingsCategories}
+                  cards={settingsCards}
+                  hasUserOverrides={hasUserOverrides}
+                  animationsEnabled={animationsEnabled}
+                  onCategoryReorder={handleCategoryReorder}
+                  onCategoryCollapsedChange={handleCategoryCollapsedChange}
+                  onCardSizeChange={handleSetCardSize}
+                  onCardVisibilityChange={handleCardVisibilityChange}
+                  onCardReorderInCategory={handleCardReorderInCategory}
+                  onCardMoveToCategory={handleCardMoveToCategory}
+                  onAnimationsEnabledChange={handleAnimationsEnabledChange}
+                  onResetToDefaults={handleResetToDefaults}
+                />
+              )}
             </div>
           </PortalProvider>
         </FluentProvider>
