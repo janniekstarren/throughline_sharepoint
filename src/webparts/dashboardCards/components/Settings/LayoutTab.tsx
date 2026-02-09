@@ -79,6 +79,9 @@ interface LayoutTabProps {
   /** Current effective category navigation mode */
   navMode?: string;
   onNavModeChange?: (mode: string | undefined) => void;
+  /** Float the menu bar (sticky) or keep in flow */
+  floatMenu?: boolean;
+  onFloatMenuChange?: (float: boolean) => void;
 }
 
 // ============================================
@@ -96,6 +99,8 @@ export const LayoutTab: React.FC<LayoutTabProps> = ({
   onThemeModeChange,
   navMode,
   onNavModeChange,
+  floatMenu,
+  onFloatMenuChange,
 }) => {
   const classes = useStyles();
 
@@ -103,7 +108,6 @@ export const LayoutTab: React.FC<LayoutTabProps> = ({
   const [defaultView, setDefaultView] = React.useState('categories');
   const [animationsEnabled, setAnimationsEnabled] = React.useState(true);
   const [showFooter, setShowFooter] = React.useState(true);
-  const [stickyHeader, setStickyHeader] = React.useState(true);
 
   return (
     <div className={classes.container}>
@@ -253,13 +257,20 @@ export const LayoutTab: React.FC<LayoutTabProps> = ({
           />
         </div>
 
-        <div className={classes.settingRow}>
-          <Text className={classes.settingLabel}>Sticky header</Text>
-          <Switch
-            checked={stickyHeader}
-            onChange={(_ev, data) => setStickyHeader(data.checked)}
-          />
-        </div>
+        {onFloatMenuChange && (
+          <div className={classes.settingRow}>
+            <div className={classes.settingLabelGroup}>
+              <Text className={classes.settingLabel}>Float menu bar</Text>
+              <Text className={classes.settingDesc}>
+                Menu stays visible as you scroll. Off = menu stays at top.
+              </Text>
+            </div>
+            <Switch
+              checked={floatMenu ?? false}
+              onChange={(_ev, data) => onFloatMenuChange(data.checked)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

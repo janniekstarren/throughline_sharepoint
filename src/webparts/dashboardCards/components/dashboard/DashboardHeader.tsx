@@ -7,6 +7,7 @@
 import * as React from 'react';
 import {
   makeStyles,
+  mergeClasses,
   tokens,
   Button,
   Menu,
@@ -44,14 +45,49 @@ import { CardSize } from '../../types/CardSize';
 // ============================================
 
 const useStyles = makeStyles({
+  // Zero-height sentinel placed before the header to detect scroll position
+  sentinel: {
+    height: 0,
+    width: '100%',
+    visibility: 'hidden',
+  },
   header: {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacingHorizontalM,
     padding: `${tokens.spacingVerticalS} 0`,
+    zIndex: 10,
+    transitionProperty: 'background-color, box-shadow, border-color',
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveDecelerateMid,
+  },
+  // Floating (sticky) mode — position only, background is transparent until scrolled
+  headerFloating: {
     position: 'sticky',
     top: 0,
-    zIndex: 10,
+    paddingLeft: tokens.spacingHorizontalM,
+    paddingRight: tokens.spacingHorizontalM,
+    borderRadius: tokens.borderRadiusMedium,
+    // Use explicit rgba(0) to prevent white-flash during CSS transitions
+    backgroundColor: 'rgba(255, 255, 255, 0)',
+    borderBottom: '1px solid rgba(0, 0, 0, 0)',
+    boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)',
+  },
+  // Applied when sticky header is actually stuck (user has scrolled past natural position)
+  // Frosted glass effect with backdrop-filter blur, matching nav pill border radius
+  headerFloatingStuck: {
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    '@media (prefers-color-scheme: dark)': {
+      backgroundColor: 'rgba(32, 32, 32, 0.72)',
+    },
+    backdropFilter: 'saturate(180%) blur(16px)',
+    borderBottom: 'none',
+    borderRadius: tokens.borderRadiusCircular,
+    boxShadow: tokens.shadow4,
+  },
+  // Static mode — stays in flow, no shadow, inherits background
+  headerStatic: {
+    position: 'relative',
     backgroundColor: 'inherit',
   },
   spacer: {
@@ -191,6 +227,8 @@ interface DashboardHeaderProps {
   onToggleCategories?: () => void;
   /** Menu display mode: expanded (all buttons) | collapsed (hamburger) | hidden */
   menuMode?: string;
+  /** Float menu (sticky) or keep at top (static). Default: collapsed=float, expanded=static */
+  floatMenu?: boolean;
 }
 
 // ============================================
@@ -318,8 +356,44 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   isCategoriesVisible = true,
   onToggleCategories,
   menuMode = 'expanded',
+  floatMenu,
 }) => {
   const classes = useStyles();
+
+  // Determine floating behaviour:
+  // - collapsed mode defaults to floating (sticky)
+  // - expanded mode defaults to static (in-flow)
+  // - explicit floatMenu prop overrides the default
+  const isFloating = floatMenu !== undefined
+    ? floatMenu
+    : menuMode === 'collapsed';
+
+  // Track whether the sticky header is actually "stuck" (scrolled past its natural position)
+  const sentinelRef = React.useRef<HTMLDivElement>(null);
+  const [isStuck, setIsStuck] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isFloating || !sentinelRef.current) {
+      setIsStuck(false);
+      return;
+    }
+    const sentinel = sentinelRef.current;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // When sentinel is NOT intersecting, the header has left its natural position
+        setIsStuck(!entry.isIntersecting);
+      },
+      { threshold: 0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [isFloating]);
+
+  const headerClassName = mergeClasses(
+    classes.header,
+    isFloating ? classes.headerFloating : classes.headerStatic,
+    isFloating && isStuck ? classes.headerFloatingStuck : undefined,
+  );
 
   // Collapsed mode: track if inline menu is open
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -357,7 +431,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   // ---- COLLAPSED: Hamburger toggles inline to full menu bar ----
   if (menuMode === 'collapsed') {
     return (
-      <div className={classes.header}>
+      <>
+      {/* Sentinel: when this scrolls out of view, the sticky header shows its background */}
+      <div ref={sentinelRef} className={classes.sentinel} />
+      <div className={headerClassName}>
         <div className={classes.spacer} />
         <div className={classes.collapsedContainer}>
           {/* Search always visible */}
@@ -477,12 +554,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </Tooltip>
         </div>
       </div>
+      </>
     );
   }
 
   // ---- EXPANDED: All buttons visible individually (default) ----
   return (
-    <div className={classes.header}>
+    <>
+    {/* Sentinel: when this scrolls out of view, the sticky header shows its background */}
+    <div ref={sentinelRef} className={classes.sentinel} />
+    <div className={headerClassName}>
       <div className={classes.spacer} />
       <div className={classes.actions}>
         {/* Search icon — expands into pill-shaped search bar on click */}
@@ -588,6 +669,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         />
       </div>
     </div>
+    </>
   );
 };
 

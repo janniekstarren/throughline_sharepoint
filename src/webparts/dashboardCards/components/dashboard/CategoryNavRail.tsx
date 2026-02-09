@@ -50,8 +50,12 @@ const useStyles = makeStyles({
     borderRightColor: tokens.colorNeutralStroke2,
     borderBottomColor: tokens.colorNeutralStroke2,
     borderLeftColor: tokens.colorNeutralStroke2,
-    // Match category header background (colorNeutralBackground3)
-    backgroundColor: tokens.colorNeutralBackground3,
+    // Frosted glass effect — semi-transparent with backdrop blur
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    '@media (prefers-color-scheme: dark)': {
+      backgroundColor: 'rgba(32, 32, 32, 0.6)',
+    },
+    backdropFilter: 'saturate(180%) blur(16px)',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
     fontSize: tokens.fontSizeBase200,
@@ -65,7 +69,7 @@ const useStyles = makeStyles({
     transitionDuration: tokens.durationFaster,
     transitionTimingFunction: tokens.curveDecelerateMin,
     ':hover': {
-      backgroundColor: tokens.colorNeutralBackground3Hover,
+      backgroundColor: 'rgba(255, 255, 255, 0.75)',
       borderTopColor: tokens.colorNeutralStroke1Hover,
       borderRightColor: tokens.colorNeutralStroke1Hover,
       borderBottomColor: tokens.colorNeutralStroke1Hover,
@@ -73,7 +77,7 @@ const useStyles = makeStyles({
       color: tokens.colorNeutralForeground1,
     },
     ':active': {
-      backgroundColor: tokens.colorNeutralBackground3Pressed,
+      backgroundColor: 'rgba(255, 255, 255, 0.85)',
       color: tokens.colorNeutralForeground1,
       transform: 'scale(0.98)',
     },
@@ -84,6 +88,7 @@ const useStyles = makeStyles({
   },
   pillActive: {
     backgroundColor: tokens.colorBrandBackground2,
+    backdropFilter: 'saturate(180%) blur(16px)',
     borderTopColor: tokens.colorBrandStroke1,
     borderRightColor: tokens.colorBrandStroke1,
     borderBottomColor: tokens.colorBrandStroke1,

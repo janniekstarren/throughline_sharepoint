@@ -64,7 +64,7 @@ const useStyles = makeStyles({
     },
   },
 
-  // Pill-shaped bar — borderless at rest, subtle focus ring
+  // Pill-shaped bar — frosted glass effect with backdrop blur
   searchBar: {
     display: 'flex',
     alignItems: 'center',
@@ -73,7 +73,11 @@ const useStyles = makeStyles({
     width: '100%',
     paddingLeft: tokens.spacingHorizontalS,
     paddingRight: tokens.spacingHorizontalS,
-    backgroundColor: tokens.colorNeutralBackground3,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    '@media (prefers-color-scheme: dark)': {
+      backgroundColor: 'rgba(32, 32, 32, 0.6)',
+    },
+    backdropFilter: 'saturate(180%) blur(16px)',
     borderRadius: tokens.borderRadiusCircular,
     borderTopWidth: '0',
     borderRightWidth: '0',
@@ -84,7 +88,7 @@ const useStyles = makeStyles({
     transitionTimingFunction: tokens.curveDecelerateMin,
     boxShadow: tokens.shadow4,
     ':focus-within': {
-      backgroundColor: tokens.colorNeutralBackground3Hover,
+      backgroundColor: 'rgba(255, 255, 255, 0.75)',
       boxShadow: `${tokens.shadow4}, 0 0 0 1px ${tokens.colorNeutralStroke2}`,
     },
   },

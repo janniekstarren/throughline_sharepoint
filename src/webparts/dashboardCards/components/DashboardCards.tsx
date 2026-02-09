@@ -39,7 +39,7 @@ import { CategorySection, IOrderedCard } from './CategorySection';
 import { getFluentTheme, ThemeMode } from '../utils/themeUtils';
 import { CardSize } from '../types/CardSize';
 import { LicenseProvider, useLicense } from '../context/LicenseContext';
-import { CardStatus } from '../models/CardCatalog';
+import { CardCategory, CardRegistration, CardStatus } from '../models/CardCatalog';
 // TierSwitcher FAB removed — tier switching now in DashboardHeader menu bar
 import { renderCardFromRegistry } from '../utils/cardRenderer';
 import { resolveCard } from '../utils/cardUtils';
@@ -52,9 +52,11 @@ import { DashboardView } from './dashboard/ViewSwitcher';
 import { searchCards } from '../utils/cardSearch';
 import { CARD_REGISTRY } from '../config/cardRegistry';
 import { getTierDefaultSizes } from '../config/tierLayouts';
-import { FeatureFlagProvider } from '../context/FeatureFlagContext';
+import { FeatureFlagProvider, useFeatureFlags } from '../context/FeatureFlagContext';
+import { IntegrationProvider, useIntegrations } from '../context/IntegrationContext';
 import { CardCatalogPanel } from './dashboard/CardCatalogPanel';
 import { CommandCentre } from './Settings/CommandCentre';
+import { IntegrationsModal } from './integrations/IntegrationsModal';
 import styles from './DashboardCards.module.scss';
 
 export interface ICardVisibility {
@@ -268,12 +270,14 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = (props) => {
         <FluentProvider theme={currentTheme} style={{ background: 'transparent' }}>
           <FeatureFlagProvider flags={featureFlags || {}}>
           <LicenseProvider>
+          <IntegrationProvider>
             <DashboardCardsInner
               {...props}
               currentTheme={currentTheme}
               userThemeOverride={userThemeOverride}
               onUserThemeOverrideChange={setUserThemeOverride}
             />
+          </IntegrationProvider>
           </LicenseProvider>
           </FeatureFlagProvider>
         </FluentProvider>
@@ -485,9 +489,21 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
     }
   }, [effectiveMenuMode]);
 
-  // Registry-based card grouping (all 80 cards, categorized by tier)
+  // Integration state — MUST be before useCardRegistry (hooks above early returns)
+  const { connectedPlatformIds, connectedCategories } = useIntegrations();
+  const flags = useFeatureFlags();
+
+  // Integrations enabled = admin flag (showIntegrations) AND user preference
+  const effectiveIntegrationsEnabled = flags.showIntegrations && cardPrefs.integrationsEnabled;
+
+  // Registry-based card grouping (all 94 cards, categorized by tier + integration status)
   // NOW correctly uses LicenseContext because we're inside LicenseProvider
-  const cardRegistry = useCardRegistry(cardPrefs.hiddenCardIds, cardPrefs.pinnedCardIds);
+  const cardRegistry = useCardRegistry(
+    cardPrefs.hiddenCardIds,
+    cardPrefs.pinnedCardIds,
+    connectedPlatformIds,
+    connectedCategories,
+  );
 
   // Search state
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -498,6 +514,18 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
 
   // Command Centre state
   const [isCommandCentreOpen, setIsCommandCentreOpen] = React.useState(false);
+  const [commandCentreInitialTab, setCommandCentreInitialTab] = React.useState<string | undefined>(undefined);
+  const [commandCentreInitialPlatformId, setCommandCentreInitialPlatformId] = React.useState<string | undefined>(undefined);
+
+  // Open Command Centre to a specific tab, optionally with a platform deep link
+  const openCommandCentreTab = React.useCallback((tab: string, platformId?: string) => {
+    setCommandCentreInitialTab(tab);
+    setCommandCentreInitialPlatformId(platformId);
+    setIsCommandCentreOpen(true);
+  }, []);
+
+  // Integrations modal state
+  const [isIntegrationsModalOpen, setIsIntegrationsModalOpen] = React.useState(false);
 
   // Debounced search results
   const searchResults = React.useMemo(() => {
@@ -540,21 +568,32 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
       });
     }
 
+    // "Integrations" — shows all integration cards (connected or not) so users can discover them
+    // Only visible when admin showIntegrations flag AND user integrationsEnabled pref are both true
+    if (effectiveIntegrationsEnabled && cardRegistry.allIntegrationCards.length > 0) {
+      pills.push({
+        id: 'integrations',
+        label: 'Integrations',
+        count: cardRegistry.allIntegrationCards.length,
+        color: '#0E7C7B',
+      });
+    }
+
     if (cardRegistry.lockedCards.length > 0) {
       pills.push({ id: 'locked', label: 'Locked', count: cardRegistry.lockedCards.length });
     }
 
     return pills;
-  }, [cardRegistry]);
+  }, [cardRegistry, effectiveIntegrationsEnabled]);
 
   // Active category tracking (for nav rail highlighting)
   // Default to empty string — grouped category view, no specific pill highlighted
   const [activeCategory, setActiveCategory] = React.useState('');
   // Track whether user explicitly clicked a pill (vs scroll spy updating)
   const isUserClickRef = React.useRef(false);
-  // Track whether we're in overview mode (ref avoids re-creating observer)
+  // Track whether we're in a flat-grid mode (overview or integrations) — ref avoids re-creating observer
   const isOverviewRef = React.useRef(false);
-  isOverviewRef.current = activeCategory === 'overview';
+  isOverviewRef.current = activeCategory === 'overview' || activeCategory === 'integrations';
 
   // Scroll-spy: observe category sections and highlight the current one in the nav rail
   // IMPORTANT: deps do NOT include activeCategory to avoid re-creating observer on every
@@ -617,12 +656,12 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
     }
   }, [getScrollContainer]);
 
-  // Scroll to category on pill click, or switch to overview mode
+  // Scroll to category on pill click, or switch to overview/integrations mode
   const handleCategoryNavClick = React.useCallback((categoryId: string) => {
     const wasOverview = isOverviewRef.current;
     setActiveCategory(categoryId);
-    // "overview" doesn't scroll — it switches the entire grid to a flat layout
-    if (categoryId === 'overview') return;
+    // "overview" and "integrations" don't scroll — they switch the entire grid to a flat layout
+    if (categoryId === 'overview' || categoryId === 'integrations') return;
     // Temporarily disable scroll-spy to avoid conflicting updates during smooth scroll
     isUserClickRef.current = true;
 
@@ -887,6 +926,7 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
             waitingOnOthersSettings,
             contextSwitchingSettings,
             cardTitle,
+            onOpenIntegrations: (platformId: string) => openCommandCentreTab('integrations', platformId),
           };
           return wrapWithErrorBoundary(
             renderCardFromRegistry(
@@ -903,13 +943,14 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
   };
 
   // Helper: render a card registration as an IOrderedCard for CategorySection
-  const registryCardToOrdered = (card: { id: string; existingCardId?: string; status: string }): IOrderedCard => {
+  // Optional sizeOverride forces a specific card size (used by compact view)
+  const registryCardToOrdered = (card: { id: string; existingCardId?: string; status: string }, sizeOverride?: CardSize): IOrderedCard => {
     // Use existingCardId (legacy ID) for implemented cards, registry ID otherwise
     const renderableId = card.existingCardId || card.id;
     // Size key: legacy ID for implemented cards, registry ID for placeholders
     // This matches the keys used in tierLayouts.ts defaults
     const sizeKey = card.existingCardId || card.id;
-    const cardSize = getCardSizeForRender(sizeKey);
+    const cardSize = sizeOverride ?? getCardSizeForRender(sizeKey);
     return {
       id: card.id,
       size: cardSize,
@@ -1180,6 +1221,7 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
           isCategoriesVisible={isCategoriesVisible}
           onToggleCategories={() => setIsCategoriesVisible(prev => !prev)}
           menuMode={effectiveMenuMode}
+          floatMenu={cardPrefs.floatMenu}
         />
 
         {/* Category nav rail — visible when toggled on and menu is not hidden */}
@@ -1191,7 +1233,7 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
           />
         )}
 
-        {/* Card grid — search results, overview (flat), or category sections */}
+        {/* Card grid — search results, overview (flat), view modes, or category sections */}
         {searchQuery ? (
           <CategorySection
             key="search-results"
@@ -1226,6 +1268,105 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
             })()}
             animationsEnabled={animationsEnabled}
           />
+        ) : activeCategory === 'integrations' ? (
+          // Integrations: flat grid of all integration cards (connected + available)
+          <CategorySection
+            key="integrations"
+            categoryId="integrations"
+            categoryName={`Integration Cards (${cardRegistry.allIntegrationCards.length})`}
+            iconId="plug"
+            showTitle={true}
+            orderedCards={cardRegistry.allIntegrationCards
+              .map(card => registryCardToOrdered(card))
+              .filter(c => c.element !== null)}
+            animationsEnabled={animationsEnabled}
+          />
+        ) : currentView === 'needsAttention' ? (
+          // Needs Attention: Immediate Action cards first, then rest sorted by impact
+          <CategorySection
+            key="needs-attention"
+            categoryId="needs-attention"
+            categoryName="Needs Attention"
+            iconId="flash"
+            showTitle={true}
+            orderedCards={(() => {
+              const effectiveHideLocked = !showLockedCards || cardPrefs.hideLockedCards;
+              const effectiveHidePlaceholders = !showPlaceholderCards || cardPrefs.hidePlaceholderCards;
+              const lockedIds = new Set(cardRegistry.lockedCards.map(c => c.id));
+              const allCards: CardRegistration[] = effectiveHideLocked
+                ? [...cardRegistry.allAccessibleCards]
+                : [...cardRegistry.allAccessibleCards, ...cardRegistry.lockedCards];
+              return allCards
+                .filter(c => {
+                  if (effectiveHidePlaceholders && c.status === CardStatus.Placeholder) return false;
+                  if (effectiveHideLocked && lockedIds.has(c.id)) return false;
+                  return true;
+                })
+                // Sort: Immediate Action first, then by descending impact
+                .sort((a, b) => {
+                  const aIsImmediate = a.category === CardCategory.ImmediateAction ? 1 : 0;
+                  const bIsImmediate = b.category === CardCategory.ImmediateAction ? 1 : 0;
+                  if (aIsImmediate !== bIsImmediate) return bIsImmediate - aIsImmediate;
+                  return b.impactRating - a.impactRating;
+                })
+                .map(card => registryCardToOrdered(card))
+                .filter(c => c.element !== null);
+            })()}
+            animationsEnabled={animationsEnabled}
+          />
+        ) : currentView === 'highImpact' ? (
+          // High Impact: all cards sorted by impact rating descending
+          <CategorySection
+            key="high-impact"
+            categoryId="high-impact"
+            categoryName="High Impact"
+            iconId="heartPulse"
+            showTitle={true}
+            orderedCards={(() => {
+              const effectiveHideLocked = !showLockedCards || cardPrefs.hideLockedCards;
+              const effectiveHidePlaceholders = !showPlaceholderCards || cardPrefs.hidePlaceholderCards;
+              const lockedIds = new Set(cardRegistry.lockedCards.map(c => c.id));
+              const allCards: CardRegistration[] = effectiveHideLocked
+                ? [...cardRegistry.allAccessibleCards]
+                : [...cardRegistry.allAccessibleCards, ...cardRegistry.lockedCards];
+              return allCards
+                .filter(c => {
+                  if (effectiveHidePlaceholders && c.status === CardStatus.Placeholder) return false;
+                  if (effectiveHideLocked && lockedIds.has(c.id)) return false;
+                  return true;
+                })
+                .sort((a, b) => b.impactRating - a.impactRating)
+                .map(card => registryCardToOrdered(card))
+                .filter(c => c.element !== null);
+            })()}
+            animationsEnabled={animationsEnabled}
+          />
+        ) : currentView === 'compact' ? (
+          // Compact: same as categories view but all cards forced to small size
+          (() => {
+            const effectiveHideLocked = !showLockedCards || cardPrefs.hideLockedCards;
+            const effectiveHidePlaceholders = !showPlaceholderCards || cardPrefs.hidePlaceholderCards;
+            const lockedIds = new Set(cardRegistry.lockedCards.map(c => c.id));
+            const allCards: CardRegistration[] = effectiveHideLocked
+              ? [...cardRegistry.allAccessibleCards]
+              : [...cardRegistry.allAccessibleCards, ...cardRegistry.lockedCards];
+            const filtered = allCards.filter(c => {
+              if (effectiveHidePlaceholders && c.status === CardStatus.Placeholder) return false;
+              if (effectiveHideLocked && lockedIds.has(c.id)) return false;
+              return true;
+            });
+            return (
+              <CategorySection
+                key="compact"
+                categoryId="compact"
+                showTitle={false}
+                orderedCards={filtered
+                  .map(card => registryCardToOrdered(card, 'small'))
+                  .filter(c => c.element !== null)}
+                animationsEnabled={animationsEnabled}
+              />
+            );
+          })()
         ) : (
           getOrderedCards()
         )}
@@ -1246,7 +1387,9 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
         {/* Intelligence Command Centre */}
         <CommandCentre
           isOpen={isCommandCentreOpen}
-          onDismiss={() => setIsCommandCentreOpen(false)}
+          onDismiss={() => { setIsCommandCentreOpen(false); setCommandCentreInitialTab(undefined); setCommandCentreInitialPlatformId(undefined); }}
+          initialTab={commandCentreInitialTab}
+          initialPlatformId={commandCentreInitialPlatformId}
           permissions={{
             allowUserCustomisation: true,
             allowCardHiding: true,
@@ -1260,6 +1403,10 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
             showLockedCards: showLockedCards,
             showPlaceholderCards: showPlaceholderCards,
             showCategoryDescriptions: showCategoryDescriptions,
+            showIntegrations: true,
+            allowIntegrationConnect: true,
+            showComingSoonPlatforms: true,
+            showRequestedPlatforms: true,
             hasAnyUserFeature: true,
             ...featureFlags,
           }}
@@ -1280,6 +1427,8 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
             cardPrefs.setSalutationType(undefined);
             cardPrefs.setThemeMode(undefined);
             cardPrefs.setNavMode(undefined);
+            cardPrefs.setIntegrationsEnabled(true);
+            cardPrefs.setFloatMenu(undefined);
             setIsCategoriesVisible(true);
             if (onUserThemeOverrideChange) {
               onUserThemeOverrideChange(undefined);
@@ -1305,7 +1454,19 @@ const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
           onNavModeChange={(mode) => {
             cardPrefs.setNavMode(mode);
           }}
+          integrationsEnabled={cardPrefs.integrationsEnabled}
+          onIntegrationsEnabledChange={cardPrefs.setIntegrationsEnabled}
+          floatMenu={cardPrefs.floatMenu}
+          onFloatMenuChange={(float) => cardPrefs.setFloatMenu(float)}
+        />
 
+        {/* Integrations Modal */}
+        <IntegrationsModal
+          isOpen={isIntegrationsModalOpen}
+          onDismiss={() => setIsIntegrationsModalOpen(false)}
+          allowConnect={flags.allowIntegrationConnect}
+          showComingSoon={flags.showComingSoonPlatforms}
+          showRequested={flags.showRequestedPlatforms}
         />
       </div>
     </PortalProvider>

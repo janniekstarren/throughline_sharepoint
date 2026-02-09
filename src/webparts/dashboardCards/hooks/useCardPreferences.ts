@@ -22,6 +22,10 @@ interface ICardPreferences {
   themeMode?: string;
   /** User override for category nav mode (undefined = use admin default) */
   navMode?: string;
+  /** User preference: enable/disable integrations (default true) */
+  integrationsEnabled: boolean;
+  /** User preference: float menu (sticky) or fixed at top (default: collapsed=true, expanded=false) */
+  floatMenu?: boolean;
 }
 
 export interface IUseCardPreferencesResult {
@@ -36,6 +40,10 @@ export interface IUseCardPreferencesResult {
   themeMode?: string;
   /** User override for category nav mode (undefined = use admin default) */
   navMode?: string;
+  /** User preference: enable/disable integrations (default true) */
+  integrationsEnabled: boolean;
+  /** User preference: float menu (sticky) or fixed at top */
+  floatMenu?: boolean;
   isPinned: (cardId: string) => boolean;
   isHidden: (cardId: string) => boolean;
   isCategoryCollapsed: (categoryId: string) => boolean;
@@ -47,6 +55,8 @@ export interface IUseCardPreferencesResult {
   setSalutationType: (type: string | undefined) => void;
   setThemeMode: (mode: string | undefined) => void;
   setNavMode: (mode: string | undefined) => void;
+  setIntegrationsEnabled: (enabled: boolean) => void;
+  setFloatMenu: (float: boolean | undefined) => void;
   expandAllCategories: () => void;
   collapseAllCategories: (categoryIds: string[]) => void;
 }
@@ -88,6 +98,7 @@ function getDefaults(): ICardPreferences {
     collapsedCategories: [],
     hideLockedCards: false,
     hidePlaceholderCards: false,
+    integrationsEnabled: true,
   };
 }
 
@@ -198,6 +209,20 @@ export function useCardPreferences(userId: string): IUseCardPreferencesResult {
     [prefs, persist]
   );
 
+  const setIntegrationsEnabled = React.useCallback(
+    (enabled: boolean) => {
+      persist({ ...prefs, integrationsEnabled: enabled });
+    },
+    [prefs, persist]
+  );
+
+  const setFloatMenu = React.useCallback(
+    (float: boolean | undefined) => {
+      persist({ ...prefs, floatMenu: float });
+    },
+    [prefs, persist]
+  );
+
   const expandAllCategories = React.useCallback(() => {
     persist({ ...prefs, collapsedCategories: [] });
   }, [prefs, persist]);
@@ -218,6 +243,8 @@ export function useCardPreferences(userId: string): IUseCardPreferencesResult {
     salutationType: prefs.salutationType,
     themeMode: prefs.themeMode,
     navMode: prefs.navMode,
+    integrationsEnabled: prefs.integrationsEnabled,
+    floatMenu: prefs.floatMenu,
     isPinned,
     isHidden,
     isCategoryCollapsed,
@@ -229,6 +256,8 @@ export function useCardPreferences(userId: string): IUseCardPreferencesResult {
     setSalutationType,
     setThemeMode,
     setNavMode,
+    setIntegrationsEnabled,
+    setFloatMenu,
     expandAllCategories,
     collapseAllCategories,
   };

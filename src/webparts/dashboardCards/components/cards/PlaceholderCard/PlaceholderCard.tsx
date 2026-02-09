@@ -1,6 +1,7 @@
 // ============================================
 // Placeholder Card
 // Shows a preview of unbuilt cards with metadata
+// Integration cards show platform icons + descriptions
 // Supports mini, medium, and large sizes
 // ============================================
 
@@ -12,12 +13,17 @@ import {
   makeStyles,
   mergeClasses,
   Tooltip,
+  Popover,
+  PopoverTrigger,
+  PopoverSurface,
 } from '@fluentui/react-components';
 import {
   Sparkle20Regular,
   Database20Regular,
   Info20Regular,
   Clock20Regular,
+  PlugConnected20Regular,
+  Open16Regular,
 } from '@fluentui/react-icons';
 import {
   CardRegistration,
@@ -25,6 +31,10 @@ import {
   LicenseTierMeta,
   CardSize,
 } from '../../../models/CardCatalog';
+import { IntegrationCategoryMeta, PlatformRegistration } from '../../../models/Integration';
+import { getPlatformsByCategory } from '../../../config/integrationRegistry';
+import { getPlatformIconPath } from '../../../config/platformIcons';
+import { getEnrichmentDescription } from '../../../config/enrichmentDescriptions';
 
 // ============================================
 // Styles
@@ -241,6 +251,106 @@ const useStyles = makeStyles({
     color: tokens.colorPaletteYellowForeground2,
   },
 
+  // Integration platform section
+  integrationSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalS,
+    padding: tokens.spacingVerticalS,
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderRadius: tokens.borderRadiusMedium,
+  },
+  integrationHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXS,
+    color: tokens.colorNeutralForeground3,
+  },
+  integrationHeaderIcon: {
+    flexShrink: 0,
+  },
+  platformList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalXS,
+  },
+  platformRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
+    padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalS}`,
+    borderRadius: tokens.borderRadiusSmall,
+    backgroundColor: tokens.colorNeutralBackground1,
+    cursor: 'pointer',
+    transitionProperty: 'background-color',
+    transitionDuration: tokens.durationFaster,
+    ':hover': {
+      backgroundColor: tokens.colorNeutralBackground1Hover,
+    },
+  },
+  platformIconWrapper: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '24px',
+    height: '24px',
+    borderRadius: tokens.borderRadiusSmall,
+    flexShrink: 0,
+    overflow: 'hidden',
+  },
+  platformInitials: {
+    fontSize: tokens.fontSizeBase100,
+    fontWeight: tokens.fontWeightSemibold,
+    color: tokens.colorNeutralForegroundOnBrand,
+    width: '24px',
+    height: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: tokens.borderRadiusSmall,
+    backgroundColor: tokens.colorBrandBackground,
+  },
+  platformInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  platformName: {
+    fontSize: tokens.fontSizeBase200,
+    fontWeight: tokens.fontWeightSemibold,
+    color: tokens.colorNeutralForeground1,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  platformDescription: {
+    fontSize: tokens.fontSizeBase100,
+    color: tokens.colorNeutralForeground3,
+    lineHeight: '1.3',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical' as const,
+    overflow: 'hidden',
+  },
+  moreInfoLink: {
+    alignSelf: 'flex-start',
+  },
+  integrationDescription: {
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground2,
+    lineHeight: '1.4',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical' as const,
+    overflow: 'hidden',
+    cursor: 'default',
+  },
+  integrationDescriptionFull: {
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground2,
+    lineHeight: '1.4',
+    maxWidth: '320px',
+  },
+
   // Intelligence enrichment
   intelligenceRow: {
     display: 'flex',
@@ -285,6 +395,8 @@ interface PlaceholderCardProps {
   card: CardRegistration;
   size: CardSize;
   onRequestInfo?: (cardId: string) => void;
+  /** Opens the Command Centre integration tab for a specific platform */
+  onOpenIntegrations?: (platformId: string) => void;
 }
 
 // ============================================
@@ -294,10 +406,104 @@ export const PlaceholderCard: React.FC<PlaceholderCardProps> = ({
   card,
   size,
   onRequestInfo,
+  onOpenIntegrations,
 }) => {
   const styles = useStyles();
   const categoryMeta = CardCategoryMeta[card.category];
   const tierMeta = LicenseTierMeta[card.minimumTier];
+
+  // Get platforms that unlock this integration card
+  const integrationPlatforms: PlatformRegistration[] = React.useMemo(() => {
+    if (!card.isIntegrationCard || !card.requiredIntegrationCategory) return [];
+    return getPlatformsByCategory(card.requiredIntegrationCategory)
+      .filter(p => p.unlockedCardIds.includes(card.id));
+  }, [card]);
+
+  const integrationCategoryMeta = card.requiredIntegrationCategory
+    ? IntegrationCategoryMeta[card.requiredIntegrationCategory]
+    : null;
+
+  // Render a single platform row with icon
+  const renderPlatformIcon = (platform: PlatformRegistration) => {
+    const iconPath = getPlatformIconPath(platform.id);
+    if (iconPath) {
+      return (
+        <div className={styles.platformIconWrapper}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill={tokens.colorNeutralForeground1}>
+            <path d={iconPath} />
+          </svg>
+        </div>
+      );
+    }
+    // Initials fallback
+    const initials = platform.name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    return <div className={styles.platformInitials}>{initials}</div>;
+  };
+
+  // Build a short integration description for this card
+  const integrationSummary = React.useMemo(() => {
+    if (integrationPlatforms.length === 0) return '';
+    // Use enrichment description from first platform as summary
+    const desc = getEnrichmentDescription(integrationPlatforms[0].id, card.id);
+    if (desc && desc !== 'Adds additional third-party signals') return desc;
+    // Fallback: describe what category of platforms unlock this card
+    return integrationCategoryMeta
+      ? `Connect a ${integrationCategoryMeta.displayName} platform to unlock this card`
+      : '';
+  }, [integrationPlatforms, card.id, integrationCategoryMeta]);
+
+  // Render integration platforms section
+  const renderIntegrationPlatforms = (compact?: boolean) => {
+    if (integrationPlatforms.length === 0) return null;
+    return (
+      <div className={styles.integrationSection}>
+        <div className={styles.integrationHeader}>
+          <PlugConnected20Regular className={styles.integrationHeaderIcon} style={{ fontSize: '14px' }} />
+          <Text size={100} style={{ color: tokens.colorNeutralForeground3 }}>
+            Unlocked by {integrationCategoryMeta?.displayName} integrations
+          </Text>
+        </div>
+        {/* Short integration description with popover for full text */}
+        {integrationSummary && !compact && (
+          <Popover withArrow>
+            <PopoverTrigger disableButtonEnhancement>
+              <Text className={styles.integrationDescription}>
+                {integrationSummary}
+              </Text>
+            </PopoverTrigger>
+            <PopoverSurface>
+              <Text className={styles.integrationDescriptionFull}>
+                {integrationSummary}
+              </Text>
+            </PopoverSurface>
+          </Popover>
+        )}
+        <div className={styles.platformList}>
+          {integrationPlatforms.map(platform => (
+            <div
+              key={platform.id}
+              className={styles.platformRow}
+              onClick={onOpenIntegrations ? () => onOpenIntegrations(platform.id) : undefined}
+              role={onOpenIntegrations ? 'button' : undefined}
+              tabIndex={onOpenIntegrations ? 0 : undefined}
+              onKeyDown={onOpenIntegrations ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenIntegrations(platform.id); } } : undefined}
+            >
+              {renderPlatformIcon(platform)}
+              <div className={styles.platformInfo}>
+                <Text className={styles.platformName}>{platform.name}</Text>
+                {!compact && (
+                  <Text className={styles.platformDescription}>{platform.description}</Text>
+                )}
+              </div>
+              {onOpenIntegrations && (
+                <Open16Regular style={{ flexShrink: 0, color: tokens.colorNeutralForeground3 }} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   // Render impact dots
   const renderImpactDots = () => {
@@ -341,6 +547,11 @@ export const PlaceholderCard: React.FC<PlaceholderCardProps> = ({
             </div>
           </Tooltip>
         </div>
+        {card.isIntegrationCard && (
+          <div className={styles.content} style={{ paddingTop: 0 }}>
+            {renderIntegrationPlatforms(true)}
+          </div>
+        )}
         <div className={styles.footer}>
           <span className={styles.comingSoonBadge}>
             <Clock20Regular style={{ fontSize: '12px' }} />
@@ -388,14 +599,18 @@ export const PlaceholderCard: React.FC<PlaceholderCardProps> = ({
         <div className={styles.content}>
           <Text className={styles.description}>{card.description}</Text>
 
-          <div className={styles.skeletonArea}>
-            <div className={styles.skeletonContent}>
-              <div className={styles.skeletonIcon}>📊</div>
-              <Text className={styles.skeletonText}>
-                Visualisation preview
-              </Text>
+          {card.isIntegrationCard ? (
+            renderIntegrationPlatforms(false)
+          ) : (
+            <div className={styles.skeletonArea}>
+              <div className={styles.skeletonContent}>
+                <div className={styles.skeletonIcon}>📊</div>
+                <Text className={styles.skeletonText}>
+                  Visualisation preview
+                </Text>
+              </div>
             </div>
-          </div>
+          )}
 
           {card.intelligenceEnrichment && (
             <div className={styles.intelligenceRow}>
@@ -468,17 +683,21 @@ export const PlaceholderCard: React.FC<PlaceholderCardProps> = ({
           <strong>Key value:</strong> {card.keyValue}
         </Text>
 
-        <div className={styles.skeletonArea} style={{ minHeight: '200px' }}>
-          <div className={styles.skeletonContent}>
-            <div className={styles.skeletonIcon}>📊</div>
-            <Text className={styles.skeletonText}>
-              Full data visualisation will appear here
-            </Text>
-            <Text className={styles.skeletonText} style={{ opacity: 0.6 }}>
-              Charts, tables, and detailed insights
-            </Text>
+        {card.isIntegrationCard ? (
+          renderIntegrationPlatforms(false)
+        ) : (
+          <div className={styles.skeletonArea} style={{ minHeight: '200px' }}>
+            <div className={styles.skeletonContent}>
+              <div className={styles.skeletonIcon}>📊</div>
+              <Text className={styles.skeletonText}>
+                Full data visualisation will appear here
+              </Text>
+              <Text className={styles.skeletonText} style={{ opacity: 0.6 }}>
+                Charts, tables, and detailed insights
+              </Text>
+            </div>
           </div>
-        </div>
+        )}
 
         {card.intelligenceEnrichment && (
           <div className={styles.intelligenceRow}>

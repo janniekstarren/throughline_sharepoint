@@ -55,6 +55,8 @@ export interface CardRenderProps {
   contextSwitchingSettings: IContextSwitchingSettings;
   // Custom title
   cardTitle?: string;
+  /** Opens the Command Centre to a specific platform's detail page */
+  onOpenIntegrations?: (platformId: string) => void;
 }
 
 // ============================================
@@ -99,6 +101,7 @@ export function renderCardFromRegistry(
     <PlaceholderCard
       card={card}
       size={size}
+      onOpenIntegrations={card.isIntegrationCard ? props.onOpenIntegrations : undefined}
     />
   );
 }

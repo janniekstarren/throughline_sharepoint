@@ -24,6 +24,12 @@ export interface FeatureFlags {
   showPlaceholderCards: boolean;
   showCategoryDescriptions: boolean;
 
+  // Integration flags
+  showIntegrations: boolean;
+  allowIntegrationConnect: boolean;
+  showComingSoonPlatforms: boolean;
+  showRequestedPlatforms: boolean;
+
   // Derived
   hasAnyUserFeature: boolean;
 }
@@ -45,6 +51,10 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   showLockedCards: true,
   showPlaceholderCards: true,
   showCategoryDescriptions: true,
+  showIntegrations: true,
+  allowIntegrationConnect: true,
+  showComingSoonPlatforms: true,
+  showRequestedPlatforms: true,
   hasAnyUserFeature: true,
 };
 

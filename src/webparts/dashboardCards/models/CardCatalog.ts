@@ -4,6 +4,7 @@
 // ============================================
 
 import { tokens } from '@fluentui/react-components';
+import { IntegrationCategory } from './Integration';
 
 // ============================================
 // Card Category Enum (6 canonical categories)
@@ -197,6 +198,11 @@ export interface CardRegistration {
 
   // Tags for search/filter
   tags?: string[];
+
+  // Integration dependency (Mode 1 — Dedicated Cards)
+  requiredIntegrationIds?: string[];
+  requiredIntegrationCategory?: IntegrationCategory;
+  isIntegrationCard?: boolean;
 }
 
 // ============================================

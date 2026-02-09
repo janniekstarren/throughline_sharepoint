@@ -27,6 +27,7 @@ import { CardsCanvasTab } from './CardsCanvasTab';
 import { CategoriesTab } from './CategoriesTab';
 import { AlertsThresholdsTab } from './AlertsThresholdsTab';
 import { LayoutTab } from './LayoutTab';
+import { IntegrationsTab } from './IntegrationsTab';
 import { FeatureFlags } from '../../context/FeatureFlagContext';
 import { LicenseTier } from '../../models/CardCatalog';
 
@@ -124,6 +125,16 @@ interface CommandCentreProps {
   /** Current effective category nav mode */
   navMode?: string;
   onNavModeChange?: (mode: string | undefined) => void;
+  /** User preference: integrations enabled/disabled */
+  integrationsEnabled?: boolean;
+  onIntegrationsEnabledChange?: (enabled: boolean) => void;
+  /** User preference: float menu (sticky) */
+  floatMenu?: boolean;
+  onFloatMenuChange?: (float: boolean) => void;
+  /** Optional initial tab to open (e.g., 'integrations') */
+  initialTab?: string;
+  /** Optional platform ID to deep-link to in the integrations tab */
+  initialPlatformId?: string;
 }
 
 // ============================================
@@ -150,9 +161,22 @@ export const CommandCentre: React.FC<CommandCentreProps> = ({
   onThemeModeChange,
   navMode,
   onNavModeChange,
+  integrationsEnabled,
+  onIntegrationsEnabledChange,
+  floatMenu,
+  onFloatMenuChange,
+  initialTab,
+  initialPlatformId,
 }) => {
   const classes = useStyles();
-  const [activeTab, setActiveTab] = React.useState('cards');
+  const [activeTab, setActiveTab] = React.useState(initialTab || 'cards');
+
+  // Sync active tab when initialTab changes while opening
+  React.useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
 
   if (!isOpen) return null;
 
@@ -209,6 +233,9 @@ export const CommandCentre: React.FC<CommandCentreProps> = ({
             <Tab value="categories">Categories</Tab>
             <Tab value="alerts">Alerts &amp; Thresholds</Tab>
             <Tab value="layout">Layout</Tab>
+            {permissions.showIntegrations && (
+              <Tab value="integrations">Integrations</Tab>
+            )}
           </TabList>
         </div>
 
@@ -242,6 +269,15 @@ export const CommandCentre: React.FC<CommandCentreProps> = ({
               onThemeModeChange={onThemeModeChange}
               navMode={navMode}
               onNavModeChange={onNavModeChange}
+              floatMenu={floatMenu}
+              onFloatMenuChange={onFloatMenuChange}
+            />
+          )}
+          {activeTab === 'integrations' && onIntegrationsEnabledChange && (
+            <IntegrationsTab
+              integrationsEnabled={integrationsEnabled ?? true}
+              onIntegrationsEnabledChange={onIntegrationsEnabledChange}
+              initialPlatformId={initialPlatformId}
             />
           )}
         </div>
