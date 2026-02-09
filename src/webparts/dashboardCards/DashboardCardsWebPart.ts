@@ -5,21 +5,20 @@ import {
   type IPropertyPaneConfiguration,
   PropertyPaneDropdown,
   PropertyPaneToggle,
+  PropertyPaneSlider,
+  PropertyPaneTextField,
   IPropertyPaneGroup,
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 
-import { FluentProvider } from '@fluentui/react-components';
 import * as strings from 'DashboardCardsWebPartStrings';
 import DashboardCards from './components/DashboardCards';
 import { IDashboardCardsProps, ICardVisibility } from './components/DashboardCards';
 import { SalutationType, SalutationSize } from './components/Salutation';
 import { PropertyPaneCardOrder } from './propertyPane/PropertyPaneCardOrder';
-import { PropertyPaneConfigureButton } from './propertyPane/PropertyPaneConfigureButton';
 import { PropertyPaneResetButtons } from './propertyPane/PropertyPaneResetButtons';
-import { CardConfigDialog, ICardConfig, ICategoryConfig, DEFAULT_CATEGORY_ORDER } from './propertyPane/CardConfigDialog';
+import { ICategoryConfig } from './propertyPane/CardConfigDialog';
 import { DEFAULT_CARD_ORDER } from './propertyPane/CardOrderEditor';
-import { getFluentTheme } from './utils/themeUtils';
 import { clearUserPreferences } from './services/UserPreferencesService';
 import { cleanupPortalContainer } from './services/PortalService';
 
@@ -120,15 +119,64 @@ export interface IDashboardCardsWebPartProps {
   contextSwitchingSettings: IContextSwitchingSettings;
   // Collapsed card IDs (large cards shown as medium)
   collapsedCardIds: string[];
+  // Demo mode: show tier switcher FAB for license tier demos
+  isDemoMode: boolean;
+
+  // === ADMIN: DEFAULT LAYOUT ===
+  defaultView: string;              // 'categories' | 'needs-attention' | 'high-impact' | 'compact'
+  defaultCardSize: string;          // 'small' | 'medium' | 'large'
+  columnsOverride: number;          // 0 = auto
+  showLockedCards: boolean;
+  showPlaceholderCards: boolean;
+  showCategoryDescriptions: boolean;
+  dashboardTitle: string;
+  showDashboardTitle: boolean;
+
+  // === ADMIN: USER CUSTOMISATION FEATURE FLAGS ===
+  allowUserCustomisation: boolean;
+  allowCardHiding: boolean;
+  allowCardPinning: boolean;
+  allowCardRenaming: boolean;
+  allowCategoryReorder: boolean;
+  allowCategoryHiding: boolean;
+  allowCategoryRenaming: boolean;
+  allowViewSwitching: boolean;
 }
 
 export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashboardCardsWebPartProps> {
-  private _dialogContainer: HTMLDivElement | null = null;
-  private _isDialogOpen: boolean = false;
-
   protected async onInit(): Promise<void> {
     await super.onInit();
+    this._migrateFromLegacyCategories();
     this._injectPropertyPaneStyles();
+  }
+
+  /**
+   * Migration: Clear legacy category configuration from persisted properties.
+   *
+   * Previously, the dashboard used 6 admin-configured categories
+   * ('calendar', 'email', 'tasks', 'files', 'people', 'navigation').
+   * The new registry-based layout (80 cards, 6 canonical categories) activates
+   * only when categoryOrder is empty. If old values are persisted in the
+   * SharePoint property bag, clear them so the new layout activates.
+   */
+  private _migrateFromLegacyCategories(): void {
+    const legacyCategoryIds = ['calendar', 'email', 'tasks', 'files', 'people', 'navigation'];
+
+    if (this.properties.categoryOrder && this.properties.categoryOrder.length > 0) {
+      // Check if the stored categoryOrder matches the old legacy defaults
+      const isLegacy = this.properties.categoryOrder.every(
+        (catId: string) => legacyCategoryIds.includes(catId) || catId === 'available'
+      );
+
+      if (isLegacy) {
+        console.log('[Throughline] Migrating from legacy category config to registry-based layout');
+        this.properties.categoryOrder = [];
+        this.properties.categoryConfig = {};
+        this.properties.cardCategoryAssignment = {};
+        this.properties.categoryIcons = {};
+        // Note: categoryNames is preserved in case admin renamed categories deliberately
+      }
+    }
   }
 
   private _injectPropertyPaneStyles(): void {
@@ -252,23 +300,31 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     // Get custom card titles (default to empty object if not set)
     const cardTitles = this.properties.cardTitles || {};
 
-    // Get category configuration - use defaults if not set
-    const categoryOrder = this.properties.categoryOrder && this.properties.categoryOrder.length > 0
+    // Get category configuration
+    // IMPORTANT: Only pass non-empty admin category config when EXPLICITLY set by admin.
+    // Empty defaults trigger the new 80-card registry-based category layout.
+    // The legacy admin-configured layout only activates when admin has customised categories.
+    const hasAdminCategoryConfig = this.properties.categoryOrder && this.properties.categoryOrder.length > 0;
+    const categoryOrder = hasAdminCategoryConfig
       ? this.properties.categoryOrder
-      : [...DEFAULT_CATEGORY_ORDER];
+      : [];
     const categoryNames = this.properties.categoryNames || {};
-    const categoryConfig = this.properties.categoryConfig && Object.keys(this.properties.categoryConfig).length > 0
+    const categoryConfig = hasAdminCategoryConfig && this.properties.categoryConfig && Object.keys(this.properties.categoryConfig).length > 0
       ? this.properties.categoryConfig
-      : this._getDefaultCategoryConfig();
-    // Get card category assignment, ensuring new cards have default assignments
-    let cardCategoryAssignment = this.properties.cardCategoryAssignment || {};
-    // Add default category assignments for any missing cards
-    const missingAssignments = DEFAULT_CARD_ORDER.filter(cardId => !cardCategoryAssignment[cardId]);
-    if (missingAssignments.length > 0) {
-      cardCategoryAssignment = { ...cardCategoryAssignment };
-      missingAssignments.forEach(cardId => {
-        cardCategoryAssignment[cardId] = CARD_DEFAULT_CATEGORIES[cardId] || 'available';
-      });
+      : {};
+    // Only fill card category assignment when admin has configured categories
+    let cardCategoryAssignment = hasAdminCategoryConfig
+      ? (this.properties.cardCategoryAssignment || {})
+      : {};
+    if (hasAdminCategoryConfig) {
+      // Add default category assignments for any missing cards
+      const missingAssignments = DEFAULT_CARD_ORDER.filter(cardId => !cardCategoryAssignment[cardId]);
+      if (missingAssignments.length > 0) {
+        cardCategoryAssignment = { ...cardCategoryAssignment };
+        missingAssignments.forEach(cardId => {
+          cardCategoryAssignment[cardId] = CARD_DEFAULT_CATEGORIES[cardId] || 'available';
+        });
+      }
     }
     const categoryIcons = this.properties.categoryIcons || {};
 
@@ -320,6 +376,28 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
         onCollapsedCardsChange: (cardIds: string[]) => {
           this.properties.collapsedCardIds = cardIds;
         },
+        // Demo mode for tier switcher
+        isDemoMode: this.properties.isDemoMode || false,
+        // Admin feature flags
+        featureFlags: {
+          allowUserCustomisation: this.properties.allowUserCustomisation !== false,
+          allowCardHiding: this.properties.allowCardHiding !== false,
+          allowCardPinning: this.properties.allowCardPinning !== false,
+          allowCardRenaming: this.properties.allowCardRenaming !== false,
+          allowCategoryReorder: this.properties.allowCategoryReorder !== false,
+          allowCategoryHiding: this.properties.allowCategoryHiding !== false,
+          allowCategoryRenaming: this.properties.allowCategoryRenaming !== false,
+          allowViewSwitching: this.properties.allowViewSwitching !== false,
+          isDemoMode: this.properties.isDemoMode || false,
+          showLockedCards: this.properties.showLockedCards !== false,
+          showPlaceholderCards: this.properties.showPlaceholderCards !== false,
+          showCategoryDescriptions: this.properties.showCategoryDescriptions !== false,
+        },
+        // Admin layout defaults
+        defaultView: this.properties.defaultView || 'categories',
+        showLockedCards: this.properties.showLockedCards !== false,
+        showPlaceholderCards: this.properties.showPlaceholderCards !== false,
+        showCategoryDescriptions: this.properties.showCategoryDescriptions !== false,
         // Card order change callback for drag-and-drop in dashboard
         onCardOrderChange: (newOrder: string[]) => {
           this.properties.cardOrder = newOrder;
@@ -335,277 +413,11 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     ReactDom.render(element, this.domElement);
   }
 
-  // Minimum width for large tablets/desktops (768px)
-  private static readonly MIN_DESKTOP_WIDTH = 768;
+  // Legacy CardConfigDialog and default category methods removed — now using registry-based layout
 
-  // Get default card category assignment
-  private _getDefaultCardCategoryAssignment(): Record<string, string> {
-    const assignment: Record<string, string> = {};
-    DEFAULT_CARD_ORDER.forEach(cardId => {
-      assignment[cardId] = CARD_DEFAULT_CATEGORIES[cardId] || 'available';
-    });
-    return assignment;
-  }
-
-  // Get default category config
-  private _getDefaultCategoryConfig(): Record<string, ICategoryConfig> {
-    const config: Record<string, ICategoryConfig> = {};
-    [...DEFAULT_CATEGORY_ORDER, 'available'].forEach(catId => {
-      config[catId] = { id: catId, visible: true, showTitle: true };
-    });
-    return config;
-  }
-
-  private _openCardConfigDialog(): void {
-    console.log('Opening card config dialog...');
-
-    // Check if screen is large enough
-    if (window.innerWidth < DashboardCardsWebPart.MIN_DESKTOP_WIDTH) {
-      console.log('Screen too small for dialog');
-      return;
-    }
-
-    if (this._isDialogOpen) {
-      console.log('Dialog already open, returning');
-      return;
-    }
-
-    // Create dialog container if it doesn't exist
-    if (!this._dialogContainer) {
-      console.log('Creating dialog container...');
-      this._dialogContainer = document.createElement('div');
-      this._dialogContainer.id = 'card-config-dialog-container';
-      // Set high z-index to appear above SharePoint UI
-      this._dialogContainer.style.position = 'relative';
-      this._dialogContainer.style.zIndex = '1000000';
-      document.body.appendChild(this._dialogContainer);
-
-      // Inject global styles for the dialog portal
-      const styleId = 'card-config-dialog-styles';
-      if (!document.getElementById(styleId)) {
-        const styleEl = document.createElement('style');
-        styleEl.id = styleId;
-        styleEl.textContent = `
-          .fui-DialogSurface {
-            z-index: 1000001 !important;
-            border-radius: 16px !important;
-          }
-          .fui-DialogBody {
-            border-radius: 16px !important;
-            overflow: hidden !important;
-          }
-          .fui-Dialog__backdrop {
-            z-index: 1000000 !important;
-          }
-          [data-portal-node] {
-            z-index: 1000000 !important;
-          }
-          .fui-PopoverSurface {
-            border-radius: 12px !important;
-          }
-        `;
-        document.head.appendChild(styleEl);
-      }
-    }
-
-    this._isDialogOpen = true;
-    console.log('Rendering dialog...');
-    this._renderDialog();
-    console.log('Dialog rendered');
-  }
-
-  private _closeCardConfigDialog(): void {
-    this._isDialogOpen = false;
-    this._renderDialog();
-  }
-
-  private _handleDialogSave(config: ICardConfig): void {
-    // Map cardId to property name for visibility
-    const propMap: Record<string, keyof IDashboardCardsWebPartProps> = {
-      todaysAgenda: 'showTodaysAgenda',
-      email: 'showEmail',
-      myTasks: 'showMyTasks',
-      recentFiles: 'showRecentFiles',
-      upcomingWeek: 'showUpcomingWeek',
-      myTeam: 'showMyTeam',
-      sharedWithMe: 'showSharedWithMe',
-      quickLinks: 'showQuickLinks',
-      siteActivity: 'showSiteActivity',
-      waitingOnYou: 'showWaitingOnYou',
-      waitingOnOthers: 'showWaitingOnOthers',
-      contextSwitching: 'showContextSwitching',
-    };
-
-    // Update card order
-    this.properties.cardOrder = config.cardOrder;
-
-    // Update card visibility
-    Object.entries(config.cardVisibility).forEach(([cardId, visible]) => {
-      const propName = propMap[cardId];
-      if (propName) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this.properties as any)[propName] = visible;
-      }
-    });
-
-    // Update custom card titles
-    this.properties.cardTitles = config.cardTitles;
-
-    // Update custom category names
-    this.properties.categoryNames = config.categoryNames;
-
-    // Update category order
-    this.properties.categoryOrder = config.categoryOrder;
-
-    // Update category config
-    this.properties.categoryConfig = config.categoryConfig;
-
-    // Update card category assignment
-    this.properties.cardCategoryAssignment = config.cardCategoryAssignment;
-
-    // Update custom category icons
-    this.properties.categoryIcons = config.categoryIcons || {};
-
-    // Close dialog and re-render
-    this._closeCardConfigDialog();
-    this.render();
-
-    // Refresh the property pane to show updated values
-    this.context.propertyPane.refresh();
-  }
-
-  private _renderDialog(): void {
-    if (!this._dialogContainer) return;
-
-    // Build current visibility map
-    const cardVisibility: Record<string, boolean> = {
-      todaysAgenda: this.properties.showTodaysAgenda !== false,
-      email: this.properties.showEmail !== false,
-      myTasks: this.properties.showMyTasks !== false,
-      recentFiles: this.properties.showRecentFiles !== false,
-      upcomingWeek: this.properties.showUpcomingWeek !== false,
-      myTeam: this.properties.showMyTeam !== false,
-      sharedWithMe: this.properties.showSharedWithMe !== false,
-      quickLinks: this.properties.showQuickLinks !== false,
-      siteActivity: this.properties.showSiteActivity !== false,
-      waitingOnYou: this.properties.showWaitingOnYou !== false,
-      waitingOnOthers: this.properties.showWaitingOnOthers !== false,
-    };
-
-    // Get card order and ensure new cards are included
-    let cardOrder = this.properties.cardOrder && this.properties.cardOrder.length > 0
-      ? this.properties.cardOrder
-      : DEFAULT_CARD_ORDER;
-    // Ensure any new cards from DEFAULT_CARD_ORDER are added to the end
-    const missingCards = DEFAULT_CARD_ORDER.filter(cardId => !cardOrder.includes(cardId));
-    if (missingCards.length > 0) {
-      cardOrder = [...cardOrder, ...missingCards];
-    }
-
-    const cardTitles = this.properties.cardTitles || {};
-    const categoryNames = this.properties.categoryNames || {};
-    const categoryOrder = this.properties.categoryOrder && this.properties.categoryOrder.length > 0
-      ? this.properties.categoryOrder
-      : [...DEFAULT_CATEGORY_ORDER];
-    const categoryConfig = this.properties.categoryConfig || this._getDefaultCategoryConfig();
-    // Get card category assignment, ensuring new cards have default assignments
-    let cardCategoryAssignment = this.properties.cardCategoryAssignment || this._getDefaultCardCategoryAssignment();
-    const missingAssignments = DEFAULT_CARD_ORDER.filter(cardId => !cardCategoryAssignment[cardId]);
-    if (missingAssignments.length > 0) {
-      cardCategoryAssignment = { ...cardCategoryAssignment };
-      missingAssignments.forEach(cardId => {
-        cardCategoryAssignment[cardId] = CARD_DEFAULT_CATEGORIES[cardId] || 'available';
-      });
-    }
-
-    // Get Fluent theme from SharePoint context
-    const theme = getFluentTheme(this.context);
-
-    // Get Waiting On You settings with defaults
-    const waitingOnYouSettings: IWaitingOnYouSettings = this.properties.waitingOnYouSettings || {
-      staleDays: 2,
-      includeEmail: true,
-      includeTeamsChats: true,
-      includeChannels: false,
-      includeMentions: true,
-      showChart: true,
-    };
-
-    // Get Waiting On Others settings with defaults
-    const waitingOnOthersSettings: IWaitingOnOthersSettings = this.properties.waitingOnOthersSettings || {
-      minWaitHours: 24,
-      includeEmail: true,
-      includeTeamsChats: true,
-      includeMentions: true,
-      showChart: true,
-    };
-
-    // Get Context Switching settings with defaults
-    const contextSwitchingSettings: IContextSwitchingSettings = this.properties.contextSwitchingSettings || {
-      trackEmail: true,
-      trackTeamsChat: true,
-      trackTeamsChannel: true,
-      trackMeetings: true,
-      trackFiles: true,
-      focusGoal: 25,
-      showFocusScore: true,
-      showHourlyChart: true,
-      showDistribution: true,
-    };
-
-    // Create the dialog with proper FluentProvider wrapping
-    const cardConfigDialog = React.createElement(CardConfigDialog, {
-      open: this._isDialogOpen,
-      onClose: () => this._closeCardConfigDialog(),
-      cardOrder,
-      cardVisibility,
-      cardTitles,
-      categoryNames,
-      categoryOrder,
-      categoryConfig,
-      cardCategoryAssignment,
-      categoryIcons: this.properties.categoryIcons || {},
-      onSave: (config: ICardConfig) => this._handleDialogSave(config),
-      waitingOnYouSettings,
-      onWaitingOnYouSettingsChanged: (settings: IWaitingOnYouSettings) => {
-        this.properties.waitingOnYouSettings = settings;
-        this.render();
-      },
-      waitingOnOthersSettings,
-      onWaitingOnOthersSettingsChanged: (settings: IWaitingOnOthersSettings) => {
-        this.properties.waitingOnOthersSettings = settings;
-        this.render();
-      },
-      contextSwitchingSettings,
-      onContextSwitchingSettingsChanged: (settings: IContextSwitchingSettings) => {
-        this.properties.contextSwitchingSettings = settings;
-        this.render();
-      },
-      // Collapsed card IDs (large cards shown as medium) for persistence
-      collapsedCardIds: this.properties.collapsedCardIds || [],
-      onCollapsedCardIdsChange: (cardIds: string[]) => {
-        this.properties.collapsedCardIds = cardIds;
-        this.render();
-      },
-    });
-
-    const dialogElement = React.createElement(
-      FluentProvider,
-      { theme },
-      cardConfigDialog
-    );
-
-    ReactDom.render(dialogElement, this._dialogContainer);
-  }
 
   protected onDispose(): void {
     ReactDom.unmountComponentAtNode(this.domElement);
-    // Clean up dialog container
-    if (this._dialogContainer) {
-      ReactDom.unmountComponentAtNode(this._dialogContainer);
-      document.body.removeChild(this._dialogContainer);
-      this._dialogContainer = null;
-    }
     // Clean up portal container for Fluent UI popovers
     cleanupPortalContainer();
   }
@@ -688,10 +500,10 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     };
 
     const categoryNames = this.properties.categoryNames || {};
-    const categoryOrder = this.properties.categoryOrder && this.properties.categoryOrder.length > 0
-      ? this.properties.categoryOrder
-      : [...DEFAULT_CATEGORY_ORDER];
-    const categoryConfig = this.properties.categoryConfig || this._getDefaultCategoryConfig();
+    // Only use admin-configured categories — empty triggers registry-based layout
+    const hasAdminCategories = this.properties.categoryOrder && this.properties.categoryOrder.length > 0;
+    const categoryOrder = hasAdminCategories ? this.properties.categoryOrder : [];
+    const categoryConfig = hasAdminCategories ? (this.properties.categoryConfig || {}) : {};
 
     // Get card order and ensure new cards are included
     let cardOrder = this.properties.cardOrder && this.properties.cardOrder.length > 0
@@ -702,21 +514,12 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
       cardOrder = [...cardOrder, ...missingCards];
     }
 
-    // Get card category assignment, ensuring new cards have default assignments
-    let cardCategoryAssignment = this.properties.cardCategoryAssignment || this._getDefaultCardCategoryAssignment();
-    const missingAssignments = DEFAULT_CARD_ORDER.filter(cardId => !cardCategoryAssignment[cardId]);
-    if (missingAssignments.length > 0) {
-      cardCategoryAssignment = { ...cardCategoryAssignment };
-      missingAssignments.forEach(cardId => {
-        cardCategoryAssignment[cardId] = CARD_DEFAULT_CATEGORIES[cardId] || 'available';
-      });
-    }
+    // Only use admin-configured card-to-category assignment
+    const cardCategoryAssignment = hasAdminCategories
+      ? (this.properties.cardCategoryAssignment || {})
+      : {};
 
     return [
-      PropertyPaneConfigureButton('configureCards', {
-        text: strings.ConfigureCardsButton,
-        onClick: () => this._openCardConfigDialog(),
-      }),
       PropertyPaneCardOrder('cardOrder', {
         label: strings.CardOrderLabel,
         cardOrder,
@@ -749,7 +552,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
         },
         onCategoryConfigChanged: (categoryId: string, config: Partial<ICategoryConfig>) => {
           if (!this.properties.categoryConfig) {
-            this.properties.categoryConfig = this._getDefaultCategoryConfig();
+            this.properties.categoryConfig = {};
           }
           this.properties.categoryConfig[categoryId] = {
             ...this.properties.categoryConfig[categoryId],
@@ -758,14 +561,14 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
         },
         onCardCategoryChanged: (cardId: string, categoryId: string) => {
           if (!this.properties.cardCategoryAssignment) {
-            this.properties.cardCategoryAssignment = this._getDefaultCardCategoryAssignment();
+            this.properties.cardCategoryAssignment = {};
           }
           this.properties.cardCategoryAssignment[cardId] = categoryId;
           this.render();
         },
         onCategoryAdded: (categoryId: string, name: string) => {
           if (!this.properties.categoryOrder) {
-            this.properties.categoryOrder = [...DEFAULT_CATEGORY_ORDER];
+            this.properties.categoryOrder = [];
           }
           this.properties.categoryOrder.push(categoryId);
 
@@ -775,7 +578,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
           this.properties.categoryNames[categoryId] = name;
 
           if (!this.properties.categoryConfig) {
-            this.properties.categoryConfig = this._getDefaultCategoryConfig();
+            this.properties.categoryConfig = {};
           }
           this.properties.categoryConfig[categoryId] = { id: categoryId, visible: true, showTitle: true };
 
@@ -878,11 +681,11 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
     // Reset custom card titles
     this.properties.cardTitles = {};
 
-    // Reset category configuration
-    this.properties.categoryOrder = [...DEFAULT_CATEGORY_ORDER];
+    // Reset category configuration — clear to empty so registry-based layout activates
+    this.properties.categoryOrder = [];
     this.properties.categoryNames = {};
-    this.properties.categoryConfig = this._getDefaultCategoryConfig();
-    this.properties.cardCategoryAssignment = this._getDefaultCardCategoryAssignment();
+    this.properties.categoryConfig = {};
+    this.properties.cardCategoryAssignment = {};
     this.properties.categoryIcons = {};
 
     // Reset collapsed cards
@@ -973,6 +776,138 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
               groupName: strings.CardsGroupName,
               isCollapsed: true,
               groupFields: this.getCardConfigFields(),
+            },
+            {
+              groupName: 'Dashboard Display',
+              isCollapsed: true,
+              groupFields: [
+                PropertyPaneTextField('dashboardTitle', {
+                  label: 'Dashboard title',
+                  value: this.properties.dashboardTitle || 'Throughline',
+                }),
+                PropertyPaneToggle('showDashboardTitle', {
+                  label: 'Show dashboard title',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.showDashboardTitle !== false,
+                }),
+                PropertyPaneDropdown('defaultView', {
+                  label: 'Default dashboard view',
+                  options: [
+                    { key: 'categories', text: 'Categories (grouped)' },
+                    { key: 'needs-attention', text: 'Needs Attention' },
+                    { key: 'high-impact', text: 'High Impact (9-10)' },
+                    { key: 'compact', text: 'Compact (dense grid)' },
+                  ],
+                  selectedKey: this.properties.defaultView || 'categories',
+                }),
+                PropertyPaneDropdown('defaultCardSize', {
+                  label: 'Default card size',
+                  options: [
+                    { key: 'small', text: 'Small (grid)' },
+                    { key: 'medium', text: 'Medium' },
+                    { key: 'large', text: 'Large' },
+                  ],
+                  selectedKey: this.properties.defaultCardSize || 'small',
+                }),
+                PropertyPaneSlider('columnsOverride', {
+                  label: 'Grid columns (0 = auto)',
+                  min: 0,
+                  max: 6,
+                  value: this.properties.columnsOverride || 0,
+                }),
+                PropertyPaneToggle('showLockedCards', {
+                  label: 'Show locked/upgrade cards',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.showLockedCards !== false,
+                }),
+                PropertyPaneToggle('showPlaceholderCards', {
+                  label: 'Show in-development cards',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.showPlaceholderCards !== false,
+                }),
+                PropertyPaneToggle('showCategoryDescriptions', {
+                  label: 'Show category descriptions',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.showCategoryDescriptions !== false,
+                }),
+              ],
+            },
+            {
+              groupName: 'User Customisation Permissions',
+              isCollapsed: true,
+              groupFields: [
+                PropertyPaneToggle('allowUserCustomisation', {
+                  label: 'Enable user settings panel',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.allowUserCustomisation !== false,
+                }),
+                PropertyPaneToggle('allowCardHiding', {
+                  label: 'Allow users to hide cards',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.allowCardHiding !== false,
+                  disabled: this.properties.allowUserCustomisation === false,
+                }),
+                PropertyPaneToggle('allowCardPinning', {
+                  label: 'Allow users to pin/reorder cards',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.allowCardPinning !== false,
+                  disabled: this.properties.allowUserCustomisation === false,
+                }),
+                PropertyPaneToggle('allowCardRenaming', {
+                  label: 'Allow users to rename cards',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.allowCardRenaming !== false,
+                  disabled: this.properties.allowUserCustomisation === false,
+                }),
+                PropertyPaneToggle('allowCategoryReorder', {
+                  label: 'Allow users to reorder categories',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.allowCategoryReorder !== false,
+                  disabled: this.properties.allowUserCustomisation === false,
+                }),
+                PropertyPaneToggle('allowCategoryHiding', {
+                  label: 'Allow users to hide categories',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.allowCategoryHiding !== false,
+                  disabled: this.properties.allowUserCustomisation === false,
+                }),
+                PropertyPaneToggle('allowCategoryRenaming', {
+                  label: 'Allow users to rename categories',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.allowCategoryRenaming !== false,
+                  disabled: this.properties.allowUserCustomisation === false,
+                }),
+                PropertyPaneToggle('allowViewSwitching', {
+                  label: 'Allow users to switch views',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.allowViewSwitching !== false,
+                  disabled: this.properties.allowUserCustomisation === false,
+                }),
+              ],
+            },
+            {
+              groupName: 'Demo & POC',
+              isCollapsed: true,
+              groupFields: [
+                PropertyPaneToggle('isDemoMode', {
+                  label: 'Demo mode (show tier switcher)',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.isDemoMode || false,
+                }),
+              ],
             },
             {
               groupName: 'Reset & Maintenance',

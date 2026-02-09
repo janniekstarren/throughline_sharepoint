@@ -360,77 +360,79 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner */}
-      {aiDemoMode && aiCardSummary && (
-        <AIInsightBanner
-          summary={aiCardSummary}
-          insights={aiInsights}
-          onLearnMore={handleAiLearnMore}
+      <div className={cardStyles.cardContent}>
+        {/* AI Insight Banner */}
+        {aiDemoMode && aiCardSummary && (
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            onLearnMore={handleAiLearnMore}
+          />
+        )}
+
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showAiOnboarding}
+          onClose={() => setShowAiOnboarding(false)}
         />
-      )}
 
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showAiOnboarding}
-        onClose={() => setShowAiOnboarding(false)}
-      />
+        {/* Charts Carousel */}
+        {data && data.totalCount > 0 && (
+          <div className={styles.chartContainer}>
+            <ChartCarousel showArrows={true} showIndicators={true}>
+              {/* Trend Chart - Completion over 7 days */}
+              {trendData && (
+                <TrendBarChart
+                  data={trendData.dataPoints}
+                  title="Completed (7 days)"
+                  trend={chartTrend}
+                  trendLabels={{
+                    improving: 'Improving',
+                    worsening: 'Slowing',
+                    stable: 'Steady',
+                  }}
+                  color="brand"
+                  footerText={`Avg: ${trendData.averageCompletedPerDay} tasks/day`}
+                />
+              )}
+              {/* Donut Chart - Tasks by List */}
+              {tasksByListData.length > 0 && (
+                <DonutChart
+                  data={tasksByListData}
+                  title="Tasks by List"
+                  size={100}
+                  thickness={18}
+                  centerValue={data.totalCount}
+                  centerText="total"
+                  showLegend={true}
+                />
+              )}
+            </ChartCarousel>
+          </div>
+        )}
 
-      {/* Charts Carousel */}
-      {data && data.totalCount > 0 && (
-        <div className={styles.chartContainer}>
-          <ChartCarousel showArrows={true} showIndicators={true}>
-            {/* Trend Chart - Completion over 7 days */}
-            {trendData && (
-              <TrendBarChart
-                data={trendData.dataPoints}
-                title="Completed (7 days)"
-                trend={chartTrend}
-                trendLabels={{
-                  improving: 'Improving',
-                  worsening: 'Slowing',
-                  stable: 'Steady',
-                }}
-                color="brand"
-                footerText={`Avg: ${trendData.averageCompletedPerDay} tasks/day`}
-              />
-            )}
-            {/* Donut Chart - Tasks by List */}
-            {tasksByListData.length > 0 && (
-              <DonutChart
-                data={tasksByListData}
-                title="Tasks by List"
-                size={100}
-                thickness={18}
-                centerValue={data.totalCount}
-                centerText="total"
-                showLegend={true}
-              />
-            )}
-          </ChartCarousel>
-        </div>
-      )}
+        {/* Statistics Grid */}
+        {data && (
+          <StatsGrid stats={statsData} />
+        )}
 
-      {/* Statistics Grid */}
-      {data && (
-        <StatsGrid stats={statsData} />
-      )}
+        {/* Top Overdue Tasks - Limited to 1 item to fit in medium card */}
+        {topItems.length > 0 && (
+          <TopItemsList
+            header="Most Overdue"
+            items={topItems}
+            maxItems={1}
+          />
+        )}
 
-      {/* Top Overdue Tasks - Limited to 1 item to fit in medium card */}
-      {topItems.length > 0 && (
-        <TopItemsList
-          header="Most Overdue"
-          items={topItems}
-          maxItems={1}
-        />
-      )}
-
-      {/* Expand Prompt */}
-      {handleCycleSize && (
-        <div className={styles.expandPrompt} onClick={handleCycleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalCount} tasks</span>
-        </div>
-      )}
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalCount} tasks</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>

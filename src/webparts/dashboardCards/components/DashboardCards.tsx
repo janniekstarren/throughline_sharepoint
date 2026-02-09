@@ -35,11 +35,26 @@ import { WaitingOnOthersCardLarge } from './WaitingOnOthersCardLarge';
 import { ContextSwitchingCard, ContextSwitchingCardLarge } from './ContextSwitchingCard';
 import { Salutation, SalutationType, SalutationSize } from './Salutation';
 import { CategorySection, IOrderedCard } from './CategorySection';
-// Settings panel for end-user customization
-import { SettingsButton, SettingsPanel } from './Settings/SettingsPanel';
-import { ICategoryConfig as ISettingsCategoryConfig, ICardConfig } from '../models/DashboardConfiguration';
+// Legacy SettingsPanel removed — replaced by Command Centre
 import { getFluentTheme, ThemeMode } from '../utils/themeUtils';
 import { CardSize } from '../types/CardSize';
+import { LicenseProvider, useLicense } from '../context/LicenseContext';
+import { CardStatus } from '../models/CardCatalog';
+// TierSwitcher FAB removed — tier switching now in DashboardHeader menu bar
+import { renderCardFromRegistry } from '../utils/cardRenderer';
+import { resolveCard } from '../utils/cardUtils';
+import { useCardRegistry } from '../hooks/useCardRegistry';
+import { useCardPreferences } from '../hooks/useCardPreferences';
+import { DashboardFooter } from './dashboard/DashboardFooter';
+import { DashboardHeader } from './dashboard/DashboardHeader';
+import { CategoryNavRail, INavPill } from './dashboard/CategoryNavRail';
+import { DashboardView } from './dashboard/ViewSwitcher';
+import { searchCards } from '../utils/cardSearch';
+import { CARD_REGISTRY } from '../config/cardRegistry';
+import { getTierDefaultSizes } from '../config/tierLayouts';
+import { FeatureFlagProvider } from '../context/FeatureFlagContext';
+import { CardCatalogPanel } from './dashboard/CardCatalogPanel';
+import { CommandCentre } from './Settings/CommandCentre';
 import styles from './DashboardCards.module.scss';
 
 export interface ICardVisibility {
@@ -144,6 +159,28 @@ export interface IDashboardCardsProps {
   onCollapsedCardsChange?: (cardIds: string[]) => void;
   // Callback when card order changes via drag-and-drop
   onCardOrderChange?: (newOrder: string[]) => void;
+  // Demo mode: show tier switcher FAB
+  isDemoMode?: boolean;
+  // Admin feature flags
+  featureFlags?: {
+    allowUserCustomisation: boolean;
+    allowCardHiding: boolean;
+    allowCardPinning: boolean;
+    allowCardRenaming: boolean;
+    allowCategoryReorder: boolean;
+    allowCategoryHiding: boolean;
+    allowCategoryRenaming: boolean;
+    allowViewSwitching: boolean;
+    isDemoMode: boolean;
+    showLockedCards: boolean;
+    showPlaceholderCards: boolean;
+    showCategoryDescriptions: boolean;
+  };
+  // Admin layout defaults
+  defaultView?: string;
+  showLockedCards?: boolean;
+  showPlaceholderCards?: boolean;
+  showCategoryDescriptions?: boolean;
 }
 
 // Default card titles
@@ -197,11 +234,70 @@ const DEFAULT_CONTEXT_SWITCHING_SETTINGS: IContextSwitchingSettings = {
   showDistribution: true,
 };
 
-export const DashboardCards: React.FC<IDashboardCardsProps> = ({
+export const DashboardCards: React.FC<IDashboardCardsProps> = (props) => {
+  const { context, themeMode: adminThemeMode, featureFlags } = props;
+
+  // Allow user override of theme mode (stored in localStorage via useCardPreferences)
+  const [userThemeOverride, setUserThemeOverride] = React.useState<ThemeMode | undefined>(undefined);
+
+  // Effective theme: user override wins, then admin default
+  const effectiveThemeMode: ThemeMode = userThemeOverride || adminThemeMode;
+
+  // Get theme from SharePoint (converts SP theme to Fluent UI v9, respecting theme mode)
+  const [currentTheme, setCurrentTheme] = React.useState<Theme | null>(null);
+
+  React.useEffect(() => {
+    const theme = getFluentTheme(context, effectiveThemeMode);
+    setCurrentTheme(theme);
+  }, [context, effectiveThemeMode]);
+
+  // Wait for theme to be ready
+  if (!currentTheme) {
+    return (
+      <div className={styles.dashboard}>
+        <Spinner label="Loading..." />
+      </div>
+    );
+  }
+
+  // Render provider stack FIRST, then inner component.
+  // LicenseProvider must wrap DashboardCardsInner so useLicense() works correctly.
+  return (
+    <IdPrefixProvider value="throughline-dashboard">
+      <RendererProvider renderer={renderer}>
+        <FluentProvider theme={currentTheme} style={{ background: 'transparent' }}>
+          <FeatureFlagProvider flags={featureFlags || {}}>
+          <LicenseProvider>
+            <DashboardCardsInner
+              {...props}
+              currentTheme={currentTheme}
+              userThemeOverride={userThemeOverride}
+              onUserThemeOverrideChange={setUserThemeOverride}
+            />
+          </LicenseProvider>
+          </FeatureFlagProvider>
+        </FluentProvider>
+      </RendererProvider>
+    </IdPrefixProvider>
+  );
+};
+
+// ============================================
+// Inner component — runs INSIDE LicenseProvider
+// All hooks that depend on LicenseContext live here
+// ============================================
+
+interface IDashboardCardsInnerProps extends IDashboardCardsProps {
+  currentTheme: Theme;
+  userThemeOverride?: ThemeMode;
+  onUserThemeOverrideChange?: (mode: ThemeMode | undefined) => void;
+}
+
+const DashboardCardsInner: React.FC<IDashboardCardsInnerProps> = ({
   context,
-  salutationType,
+  salutationType: adminSalutationType,
   salutationSize,
-  themeMode,
+  currentTheme,
   cardVisibility,
   cardOrder: defaultCardOrder,
   cardTitles,
@@ -218,9 +314,26 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   collapsedCardIds: defaultCollapsedCardIds = [],
   onCollapsedCardsChange,
   onCardOrderChange,
+  isDemoMode = false,
+  featureFlags,
+  showLockedCards = true,
+  showPlaceholderCards = true,
+  showCategoryDescriptions = true,
+  themeMode: adminThemeMode,
+  userThemeOverride,
+  onUserThemeOverrideChange,
 }) => {
   // Get current user ID for per-user preferences
   const userId = context.pageContext?.user?.loginName || '';
+
+  // License state — NOW correctly inside LicenseProvider!
+  const licenseState = useLicense();
+
+  // Compute tier-appropriate default card sizes (large for hero cards, small for placeholders)
+  const tierDefaultSizes = React.useMemo(
+    () => getTierDefaultSizes(licenseState.currentTier),
+    [licenseState.currentTier]
+  );
 
   // Use user preferences hook for per-user card order, collapsed state, and card sizes
   const {
@@ -229,18 +342,18 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     setCardOrder: setUserCardOrder,
     setCollapsedCardIds: setUserCollapsedCardIds,
     setCardSize,
+    setAllCardSizes,
     getCardSize,
+    resetToDefaults,
   } = useUserPreferences({
     userId,
     defaultCardOrder,
     defaultCollapsedCardIds,
+    defaultCardSizes: tierDefaultSizes,
   });
 
-  // Animation state (can be toggled via settings panel in the future)
+  // Animation state (can be toggled via Command Centre in the future)
   const [animationsEnabled] = React.useState(true);
-
-  // Settings panel state
-  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   // Helper to get card title (custom or default)
   const getCardTitle = (cardId: string): string => {
@@ -315,20 +428,14 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     }
   }, [cardOrder, isCardVisible, setUserCardOrder, onCardOrderChange]);
 
-  // Get theme from SharePoint (converts SP theme to Fluent UI v9, respecting theme mode)
-  const [currentTheme, setCurrentTheme] = React.useState<Theme | null>(null);
+  // User display name
   const [userName, setUserName] = React.useState<string>('');
 
   React.useEffect(() => {
-    // Get the Fluent UI theme derived from SharePoint's theme, respecting theme mode
-    const theme = getFluentTheme(context, themeMode);
-    setCurrentTheme(theme);
-
-    // Get current user's display name
     if (context.pageContext?.user?.displayName) {
       setUserName(context.pageContext.user.displayName);
     }
-  }, [context, themeMode]);
+  }, [context]);
 
   // Create a ref for the portal mount node
   const portalMountRef = React.useRef<HTMLDivElement>(null);
@@ -348,98 +455,212 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       });
   }, [context]);
 
-  // Settings panel data - convert current state to format expected by SettingsPanel
-  const settingsCategories: ISettingsCategoryConfig[] = React.useMemo(() => {
-    if (categoryOrder.length === 0) {
-      // No categories - create a default "All Cards" category
-      return [{
-        categoryId: 'all',
-        displayName: 'All Cards',
-        icon: 'GridDots',
-        order: 0,
-        visible: true,
-        collapsed: false,
-        userEditable: true,
-        cardIds: cardOrder.filter(id => isCardVisible(id)),
-      }];
+  // Card catalog preferences (pinned, hidden, category collapse)
+  const cardPrefs = useCardPreferences(userId);
+
+  // Sync user theme override from localStorage on mount
+  React.useEffect(() => {
+    if (cardPrefs.themeMode && onUserThemeOverrideChange) {
+      onUserThemeOverrideChange(cardPrefs.themeMode as ThemeMode);
+    }
+  }, [cardPrefs.themeMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Effective salutation type: user override wins, then admin default
+  const effectiveSalutationType = (cardPrefs.salutationType || adminSalutationType) as SalutationType;
+
+  // Effective theme mode for display (user override wins)
+  const effectiveThemeMode: ThemeMode = (cardPrefs.themeMode || adminThemeMode) as ThemeMode;
+
+  // Effective menu mode: user override wins, default is 'expanded'
+  const effectiveMenuMode = cardPrefs.navMode || 'expanded';
+
+  // Category nav rail visibility — independent toggle
+  const [isCategoriesVisible, setIsCategoriesVisible] = React.useState(true);
+
+  // Re-sync when menu mode changes (e.g. user changes setting in Command Centre)
+  React.useEffect(() => {
+    // When menu is hidden, also hide categories
+    if (effectiveMenuMode === 'hidden') {
+      setIsCategoriesVisible(false);
+    }
+  }, [effectiveMenuMode]);
+
+  // Registry-based card grouping (all 80 cards, categorized by tier)
+  // NOW correctly uses LicenseContext because we're inside LicenseProvider
+  const cardRegistry = useCardRegistry(cardPrefs.hiddenCardIds, cardPrefs.pinnedCardIds);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [currentView, setCurrentView] = React.useState<DashboardView>('categories');
+
+  // Catalog panel state
+  const [isCatalogOpen, setIsCatalogOpen] = React.useState(false);
+
+  // Command Centre state
+  const [isCommandCentreOpen, setIsCommandCentreOpen] = React.useState(false);
+
+  // Debounced search results
+  const searchResults = React.useMemo(() => {
+    if (!searchQuery || searchQuery.trim().length === 0) return [];
+    return searchCards(searchQuery, CARD_REGISTRY);
+  }, [searchQuery]);
+
+  // Search handlers
+  const handleSearch = React.useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
+
+  const handleClearSearch = React.useCallback(() => {
+    setSearchQuery('');
+  }, []);
+
+  // View change
+  const handleViewChange = React.useCallback((view: DashboardView) => {
+    setCurrentView(view);
+  }, []);
+
+  // Nav rail pills — "Overview" is always first, then categories, then locked
+  const navPills: INavPill[] = React.useMemo(() => {
+    const pills: INavPill[] = [];
+
+    // "Overview" — flat grid of all accessible cards (no category grouping)
+    pills.push({ id: 'overview', label: 'Overview', count: cardRegistry.totalCards });
+
+    if (cardRegistry.pinnedCards.length > 0) {
+      pills.push({ id: 'pinned', label: 'Pinned', count: cardRegistry.pinnedCards.length });
     }
 
-    return categoryOrder.map((catId, index) => {
-      const catConfig = categoryConfig[catId];
-      return {
-        categoryId: catId,
-        displayName: categoryNames[catId] || catId,
-        icon: categoryIcons[catId] || 'GridDots',
-        order: index,
-        visible: catConfig?.visible !== false,
-        collapsed: false,
-        userEditable: true,
-        cardIds: cardOrder.filter(id => cardCategoryAssignment[id] === catId && isCardVisible(id)),
-      };
-    });
-  }, [categoryOrder, categoryConfig, categoryNames, categoryIcons, cardOrder, cardCategoryAssignment, isCardVisible]);
+    for (const group of cardRegistry.categorizedCards) {
+      if (group.cards.length === 0) continue;
+      pills.push({
+        id: group.category.id,
+        label: group.category.displayName,
+        count: group.cards.length,
+        color: group.category.color,
+      });
+    }
 
-  const settingsCards: Record<string, ICardConfig> = React.useMemo(() => {
-    const cards: Record<string, ICardConfig> = {};
-    cardOrder.forEach((cardId, index) => {
-      const size = getCardSizeForRender(cardId);
-      cards[cardId] = {
-        cardId,
-        size,
-        columnSpan: size === 'large' ? 2 : 1,
-        visible: isCardVisible(cardId),
-        orderInCategory: index,
-      };
-    });
-    return cards;
-  }, [cardOrder, isCardVisible, getCardSizeForRender]);
+    if (cardRegistry.lockedCards.length > 0) {
+      pills.push({ id: 'locked', label: 'Locked', count: cardRegistry.lockedCards.length });
+    }
 
-  // Check if user has any custom preferences
-  const hasUserOverrides = React.useMemo(() => {
-    const orderChanged = JSON.stringify(cardOrder) !== JSON.stringify(defaultCardOrder);
-    const sizesChanged = cardOrder.some(id => getCardSizeForRender(id) !== 'medium');
-    return orderChanged || sizesChanged;
-  }, [cardOrder, defaultCardOrder, getCardSizeForRender]);
+    return pills;
+  }, [cardRegistry]);
 
-  // Settings panel handlers
-  const handleCategoryReorder = React.useCallback((categoryIds: string[]) => {
-    console.log('Category reorder requested:', categoryIds);
-  }, []);
+  // Active category tracking (for nav rail highlighting)
+  // Default to empty string — grouped category view, no specific pill highlighted
+  const [activeCategory, setActiveCategory] = React.useState('');
+  // Track whether user explicitly clicked a pill (vs scroll spy updating)
+  const isUserClickRef = React.useRef(false);
+  // Track whether we're in overview mode (ref avoids re-creating observer)
+  const isOverviewRef = React.useRef(false);
+  isOverviewRef.current = activeCategory === 'overview';
 
-  const handleCategoryCollapsedChange = React.useCallback((categoryId: string, collapsed: boolean) => {
-    console.log('Category collapsed change:', categoryId, collapsed);
-  }, []);
+  // Scroll-spy: observe category sections and highlight the current one in the nav rail
+  // IMPORTANT: deps do NOT include activeCategory to avoid re-creating observer on every
+  // highlight change, which causes scroll position instability ("jump back up").
+  React.useEffect(() => {
+    if (searchQuery) return;
 
-  const handleCardVisibilityChange = React.useCallback((cardId: string, visible: boolean) => {
-    console.log('Card visibility change requested (admin-only):', cardId, visible);
-  }, []);
+    const sections = document.querySelectorAll('[data-category-id]');
+    if (sections.length === 0) return;
 
-  const handleCardReorderInCategory = React.useCallback((categoryId: string, newCardIds: string[]) => {
-    console.log('Card reorder in category:', categoryId, newCardIds);
-    handleCardReorder(newCardIds);
-  }, [handleCardReorder]);
-
-  const handleCardMoveToCategory = React.useCallback((cardId: string, targetCategoryId: string) => {
-    console.log('Card move to category:', cardId, targetCategoryId);
-  }, []);
-
-  const handleAnimationsEnabledChange = React.useCallback((enabled: boolean) => {
-    console.log('Animations enabled change:', enabled);
-  }, []);
-
-  const handleResetToDefaults = React.useCallback(() => {
-    setUserCardOrder(defaultCardOrder);
-    cardOrder.forEach(id => setCardSize(id, 'medium'));
-  }, [defaultCardOrder, setUserCardOrder, cardOrder, setCardSize]);
-
-  // Wait for theme to be ready
-  if (!currentTheme) {
-    return (
-      <div className={styles.dashboard}>
-        <Spinner label="Loading..." />
-      </div>
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Skip updates if in overview mode or user just clicked a pill
+        if (isOverviewRef.current || isUserClickRef.current) return;
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const catId = (entry.target as HTMLElement).getAttribute('data-category-id');
+            if (catId) setActiveCategory(catId);
+            break;
+          }
+        }
+      },
+      { rootMargin: '-10% 0px -70% 0px', threshold: 0 }
     );
-  }
+
+    sections.forEach(section => observer.observe(section));
+    return () => observer.disconnect();
+  }, [searchQuery, cardRegistry]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Find the actual scrolling container — SharePoint uses a nested div, not window.
+  // Falls back to documentElement for local workbench / non-SP contexts.
+  const getScrollContainer = React.useCallback((): Element | Window => {
+    // SharePoint modern page scroll containers (ordered by specificity)
+    const selectors = [
+      '[data-automation-id="contentScrollRegion"]',
+      '[data-automation-id="workbenchPageContent"]',
+      '.SPCanvas-canvas',
+    ];
+    for (const sel of selectors) {
+      const el = document.querySelector(sel);
+      if (el && el.scrollHeight > el.clientHeight) return el;
+    }
+    return window;
+  }, []);
+
+  // Scroll a target element into view within the correct scroll container
+  const scrollToElement = React.useCallback((el: Element) => {
+    const container = getScrollContainer();
+    const rect = el.getBoundingClientRect();
+    const offset = 80; // Account for sticky header + nav rail
+
+    if (container === window) {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      window.scrollTo({ top: Math.max(0, scrollTop + rect.top - offset), behavior: 'smooth' });
+    } else {
+      const containerEl = container as Element;
+      const containerRect = containerEl.getBoundingClientRect();
+      const targetY = containerEl.scrollTop + (rect.top - containerRect.top) - offset;
+      containerEl.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+    }
+  }, [getScrollContainer]);
+
+  // Scroll to category on pill click, or switch to overview mode
+  const handleCategoryNavClick = React.useCallback((categoryId: string) => {
+    const wasOverview = isOverviewRef.current;
+    setActiveCategory(categoryId);
+    // "overview" doesn't scroll — it switches the entire grid to a flat layout
+    if (categoryId === 'overview') return;
+    // Temporarily disable scroll-spy to avoid conflicting updates during smooth scroll
+    isUserClickRef.current = true;
+
+    // Helper: find the target section and scroll to it
+    const doScroll = (): void => {
+      const el = document.querySelector(`[data-category-id="${categoryId}"]`);
+      if (el) {
+        scrollToElement(el);
+      }
+    };
+
+    if (wasOverview) {
+      // Switching from overview → categorized: DOM hasn't re-rendered yet.
+      // Defer scroll until React has committed the new layout.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          doScroll();
+        });
+      });
+    } else {
+      doScroll();
+    }
+
+    // Re-enable scroll-spy after scroll animation settles
+    setTimeout(() => { isUserClickRef.current = false; }, 800);
+  }, [scrollToElement]);
+
+  // Expand/collapse all
+  const handleExpandAll = React.useCallback(() => {
+    cardPrefs.expandAllCategories();
+  }, [cardPrefs]);
+
+  const handleCollapseAll = React.useCallback(() => {
+    const allIds = cardRegistry.categorizedCards
+      .map(g => g.category.id)
+      .filter(id => id !== undefined);
+    cardPrefs.collapseAllCategories(allIds);
+  }, [cardPrefs, cardRegistry]);
 
   // Card size is now handled by CategorySection (large = full width, medium = masonry)
   // CARD_SIZES is still used by isLargeCard() to determine layout
@@ -651,9 +872,50 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
           />
         );
       }
-      default:
+      default: {
+        // Registry-based fallback: render placeholder or locked cards for IDs not in the switch-case
+        const registryCard = resolveCard(cardId);
+        if (registryCard) {
+          const renderProps = {
+            context,
+            graphClient: graphClient || null,
+            dataMode,
+            aiDemoMode: dataMode === 'test' && aiDemoMode,
+            size: cardSize,
+            onSizeChange: (size: CardSize) => handleSetCardSize(cardId, size),
+            waitingOnYouSettings,
+            waitingOnOthersSettings,
+            contextSwitchingSettings,
+            cardTitle,
+          };
+          return wrapWithErrorBoundary(
+            renderCardFromRegistry(
+              registryCard,
+              renderProps,
+              licenseState.currentTier,
+              licenseState.isCardAccessible(registryCard.id),
+            ) as React.ReactElement
+          );
+        }
         return null;
+      }
     }
+  };
+
+  // Helper: render a card registration as an IOrderedCard for CategorySection
+  const registryCardToOrdered = (card: { id: string; existingCardId?: string; status: string }): IOrderedCard => {
+    // Use existingCardId (legacy ID) for implemented cards, registry ID otherwise
+    const renderableId = card.existingCardId || card.id;
+    // Size key: legacy ID for implemented cards, registry ID for placeholders
+    // This matches the keys used in tierLayouts.ts defaults
+    const sizeKey = card.existingCardId || card.id;
+    const cardSize = getCardSizeForRender(sizeKey);
+    return {
+      id: card.id,
+      size: cardSize,
+      isLarge: cardSize === 'large',
+      element: renderCardElement(renderableId),
+    };
   };
 
   // Get cards grouped by category using CategorySection with masonry layout
@@ -661,7 +923,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   const getOrderedCards = (): React.ReactNode[] => {
     const result: React.ReactNode[] = [];
 
-    // Check for valid category configuration:
+    // Check for valid admin category configuration:
     // - Must have categories defined
     // - Must have category config
     // - Must have at least one card assigned to a valid category
@@ -669,34 +931,142 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       Object.keys(categoryConfig).length > 0 &&
       Object.values(cardCategoryAssignment).some(catId => categoryOrder.includes(catId));
 
-    if (!hasValidCategoryConfig) {
-      // No valid category config - render all cards in a single CategorySection
-      // Maintain user's card order
-      const orderedCards: IOrderedCard[] = cardOrder
-        .filter(id => isCardVisible(id))
-        .map(id => {
-          const cardSize = getCardSizeForRender(id);
-          return {
-            id,
-            size: cardSize,
-            isLarge: cardSize === 'large', // Legacy support
-            // Make EmailCard taller when in AI mode (more space for insights)
-            isTall: dataMode === 'test' && aiDemoMode && cardSize === 'large' && id === 'email',
-            element: renderCardElement(id)
-          };
-        });
+    console.log('[Throughline] Layout decision:', {
+      hasValidCategoryConfig,
+      categoryOrderLength: categoryOrder.length,
+      categoryConfigKeys: Object.keys(categoryConfig).length,
+      cardCategoryAssignmentKeys: Object.keys(cardCategoryAssignment).length,
+      registryCards: cardRegistry.totalCards,
+      tier: licenseState.currentTier,
+    });
 
-      return [
-        <CategorySection
-          key="all"
-          categoryId="all"
-          showTitle={false}
-          orderedCards={orderedCards}
-          onReorder={handleCardReorder}
-          animationsEnabled={animationsEnabled}
-        />
-      ];
+    if (!hasValidCategoryConfig) {
+      // ============================================
+      // REGISTRY-BASED CATEGORY LAYOUT
+      // Uses the 80-card registry grouped by 6 canonical categories
+      // ============================================
+
+      // Effective "hide locked" = admin disabled OR user chose to hide
+      const effectiveHideLockedCards = !showLockedCards || cardPrefs.hideLockedCards;
+      // Effective "hide placeholders" = admin disabled OR user chose to hide
+      const effectiveHidePlaceholders = !showPlaceholderCards || cardPrefs.hidePlaceholderCards;
+
+      // Build locked card ID set from the registry (already computed by useCardRegistry)
+      const lockedCardIds = new Set(cardRegistry.lockedCards.map(c => c.id));
+
+      // Card filter: removes locked and/or placeholder cards based on settings
+      const shouldShowCard = (c: { id: string; status?: string }): boolean => {
+        if (effectiveHideLockedCards && lockedCardIds.has(c.id)) return false;
+        if (effectiveHidePlaceholders && c.status === CardStatus.Placeholder) return false;
+        return true;
+      };
+
+      // Pinned section (filter locked/placeholder cards if hiding)
+      const pinnedToShow = cardRegistry.pinnedCards.filter(shouldShowCard);
+
+      if (pinnedToShow.length > 0) {
+        const pinnedOrdered: IOrderedCard[] = pinnedToShow
+          .map(card => registryCardToOrdered(card))
+          .filter(c => c.element !== null);
+
+        if (pinnedOrdered.length > 0) {
+          result.push(
+            <CategorySection
+              key="pinned"
+              categoryId="pinned"
+              categoryName="Pinned"
+              iconId="star"
+              orderedCards={pinnedOrdered}
+              collapsed={cardPrefs.isCategoryCollapsed('pinned')}
+              onToggleCollapsed={() => cardPrefs.toggleCategoryCollapse('pinned')}
+              animationsEnabled={animationsEnabled}
+            />
+          );
+        }
+      }
+
+      // Category sections (6 canonical categories)
+      for (const group of cardRegistry.categorizedCards) {
+        if (group.cards.length === 0) continue;
+
+        const catMeta = group.category;
+        const catId = catMeta.id;
+
+        // Map Fluent icon name to the icon ID used by getIconById
+        const iconMap: Record<string, string> = {
+          FlashRegular: 'flash',
+          PulseRegular: 'heartPulse',
+          BookRegular: 'book',
+          PeopleRegular: 'people',
+          PersonBoardRegular: 'person',
+          ShieldRegular: 'shield',
+        };
+        const iconId = iconMap[catMeta.icon] || 'grid';
+
+        // Filter locked/placeholder cards from the group based on settings
+        const cardsToShow = group.cards.filter(shouldShowCard);
+
+        const orderedCards: IOrderedCard[] = cardsToShow
+          .map(card => registryCardToOrdered(card))
+          .filter(c => c.element !== null);
+
+        if (orderedCards.length === 0) continue;
+
+        const summaryParts: string[] = [];
+        if (group.accessibleCount > 0) summaryParts.push(`${group.accessibleCount} accessible`);
+        if (group.lockedCount > 0 && !effectiveHideLockedCards) summaryParts.push(`${group.lockedCount} locked`);
+        const collapsedSummary = summaryParts.join(' · ');
+
+        result.push(
+          <CategorySection
+            key={catId}
+            categoryId={catId}
+            categoryName={catMeta.displayName}
+            iconId={iconId}
+            categoryColor={catMeta.color}
+            description={showCategoryDescriptions ? catMeta.description : undefined}
+            orderedCards={orderedCards}
+            collapsed={cardPrefs.isCategoryCollapsed(catId)}
+            onToggleCollapsed={() => cardPrefs.toggleCategoryCollapse(catId)}
+            collapsedSummary={collapsedSummary}
+            animationsEnabled={animationsEnabled}
+          />
+        );
+      }
+
+      // Locked section at bottom (collapsed by default) — hidden by admin or user preference
+      if (!effectiveHideLockedCards && cardRegistry.lockedCards.length > 0) {
+        const lockedOrdered: IOrderedCard[] = cardRegistry.lockedCards
+          .map(card => registryCardToOrdered(card))
+          .filter(c => c.element !== null);
+
+        if (lockedOrdered.length > 0) {
+          // Locked section defaults to collapsed (inverse of normal categories).
+          // If 'locked' is in collapsedCategories, treat as EXPANDED (toggled open).
+          const isLockedCollapsed = !cardPrefs.isCategoryCollapsed('locked');
+          result.push(
+            <CategorySection
+              key="locked"
+              categoryId="locked"
+              categoryName={`Locked (${cardRegistry.lockedCards.length})`}
+              iconId="lock"
+              orderedCards={lockedOrdered}
+              collapsed={isLockedCollapsed}
+              onToggleCollapsed={() => cardPrefs.toggleCategoryCollapse('locked')}
+              collapsedSummary={`${cardRegistry.lockedCards.length} cards · Upgrade to unlock`}
+              animationsEnabled={animationsEnabled}
+            />
+          );
+        }
+      }
+
+      return result;
     }
+
+    // ============================================
+    // ADMIN-CONFIGURED CATEGORY LAYOUT (legacy path)
+    // Uses admin property pane category configuration
+    // ============================================
 
     // Track which cards have been rendered
     const renderedCards = new Set<string>();
@@ -724,15 +1094,13 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
         return {
           id,
           size: cardSize,
-          isLarge: cardSize === 'large', // Legacy support
-          // Make card taller when in AI mode (more space for insights)
+          isLarge: cardSize === 'large',
           isTall: dataMode === 'test' && aiDemoMode && cardSize === 'large',
           element: renderCardElement(id)
         };
       });
 
       const categoryName = categoryNames[categoryId] || categoryId;
-      // Use custom icon if set, otherwise fall back to default icon for system categories
       const iconId = categoryIcons[categoryId] || DEFAULT_CATEGORY_ICONS[categoryId];
 
       result.push(
@@ -760,8 +1128,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
         return {
           id,
           size: cardSize,
-          isLarge: cardSize === 'large', // Legacy support
-          // Make card taller when in AI mode (more space for insights)
+          isLarge: cardSize === 'large',
           isTall: dataMode === 'test' && aiDemoMode && cardSize === 'large',
           element: renderCardElement(id)
         };
@@ -783,44 +1150,165 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
   };
 
   return (
-    <IdPrefixProvider value="throughline-dashboard">
-      <RendererProvider renderer={renderer}>
-        <FluentProvider theme={currentTheme} style={{ background: 'transparent' }}>
-          <PortalProvider>
-            <div className={styles.dashboard} ref={portalMountRef}>
-              {/* Header with Salutation and Settings button */}
-              <div className={styles.dashboardHeader}>
-                <Salutation type={salutationType} size={salutationSize} userName={userName} />
-                <SettingsButton onClick={() => setIsSettingsOpen(true)} />
-              </div>
+    <PortalProvider>
+      <div className={styles.dashboard} ref={portalMountRef}>
+        {/* Header with Salutation */}
+        <div className={styles.dashboardHeader}>
+          <Salutation type={effectiveSalutationType} size={salutationSize} userName={userName} />
+        </div>
 
-              {/* Card grid */}
-              {getOrderedCards()}
+        {/* Dashboard search, view switcher, and overflow menu */}
+        <DashboardHeader
+          searchQuery={searchQuery}
+          onSearch={handleSearch}
+          onClearSearch={handleClearSearch}
+          searchResultCount={searchResults.length}
+          totalCardCount={cardRegistry.totalCards}
+          currentView={currentView}
+          onViewChange={handleViewChange}
+          onExpandAll={handleExpandAll}
+          onCollapseAll={handleCollapseAll}
+          onOpenCatalog={() => setIsCatalogOpen(true)}
+          onOpenCommandCentre={() => setIsCommandCentreOpen(true)}
+          showCustomiseButton={featureFlags?.allowUserCustomisation !== false}
+          isDemoMode={isDemoMode}
+          currentTier={licenseState.currentTier}
+          onTierChange={licenseState.setTier}
+          accessibleCount={cardRegistry.totalAccessible}
+          lockedCount={cardRegistry.totalLocked}
+          onSetAllCardSizes={setAllCardSizes}
+          isCategoriesVisible={isCategoriesVisible}
+          onToggleCategories={() => setIsCategoriesVisible(prev => !prev)}
+          menuMode={effectiveMenuMode}
+        />
 
-              {/* Settings Panel - CONDITIONALLY RENDERED to avoid React context conflicts */}
-              {isSettingsOpen && (
-                <SettingsPanel
-                  isOpen={isSettingsOpen}
-                  onDismiss={() => setIsSettingsOpen(false)}
-                  categories={settingsCategories}
-                  cards={settingsCards}
-                  hasUserOverrides={hasUserOverrides}
-                  animationsEnabled={animationsEnabled}
-                  onCategoryReorder={handleCategoryReorder}
-                  onCategoryCollapsedChange={handleCategoryCollapsedChange}
-                  onCardSizeChange={handleSetCardSize}
-                  onCardVisibilityChange={handleCardVisibilityChange}
-                  onCardReorderInCategory={handleCardReorderInCategory}
-                  onCardMoveToCategory={handleCardMoveToCategory}
-                  onAnimationsEnabledChange={handleAnimationsEnabledChange}
-                  onResetToDefaults={handleResetToDefaults}
-                />
-              )}
-            </div>
-          </PortalProvider>
-        </FluentProvider>
-      </RendererProvider>
-    </IdPrefixProvider>
+        {/* Category nav rail — visible when toggled on and menu is not hidden */}
+        {!searchQuery && effectiveMenuMode !== 'hidden' && isCategoriesVisible && (
+          <CategoryNavRail
+            pills={navPills}
+            activeCategory={activeCategory}
+            onCategoryClick={handleCategoryNavClick}
+          />
+        )}
+
+        {/* Card grid — search results, overview (flat), or category sections */}
+        {searchQuery ? (
+          <CategorySection
+            key="search-results"
+            categoryId="search-results"
+            categoryName={`Search Results (${searchResults.length})`}
+            showTitle={true}
+            orderedCards={searchResults.map(result => registryCardToOrdered(result.card))}
+            animationsEnabled={animationsEnabled}
+          />
+        ) : activeCategory === 'overview' ? (
+          // Overview: flat grid of ALL cards — no category grouping
+          <CategorySection
+            key="overview"
+            categoryId="overview"
+            showTitle={false}
+            orderedCards={(() => {
+              const hideLockedInOverview = !showLockedCards || cardPrefs.hideLockedCards;
+              const hidePlaceholdersInOverview = !showPlaceholderCards || cardPrefs.hidePlaceholderCards;
+              const lockedIds = new Set(cardRegistry.lockedCards.map(c => c.id));
+              // Combine all accessible cards (sorted by impact) + optionally locked cards
+              const allCards = hideLockedInOverview
+                ? cardRegistry.allAccessibleCards
+                : [...cardRegistry.allAccessibleCards, ...cardRegistry.lockedCards];
+              return allCards
+                .filter(c => {
+                  if (hidePlaceholdersInOverview && c.status === CardStatus.Placeholder) return false;
+                  if (hideLockedInOverview && lockedIds.has(c.id)) return false;
+                  return true;
+                })
+                .map(card => registryCardToOrdered(card))
+                .filter(c => c.element !== null);
+            })()}
+            animationsEnabled={animationsEnabled}
+          />
+        ) : (
+          getOrderedCards()
+        )}
+
+        {/* Dashboard Footer - card stats */}
+        <DashboardFooter pinnedCount={cardRegistry.pinnedCards.length} />
+
+        {/* Card Catalog Panel */}
+        <CardCatalogPanel
+          isOpen={isCatalogOpen}
+          onDismiss={() => setIsCatalogOpen(false)}
+          pinnedCardIds={cardPrefs.pinnedCardIds}
+          hiddenCardIds={cardPrefs.hiddenCardIds}
+          onTogglePin={cardPrefs.togglePin}
+          onToggleHide={cardPrefs.toggleHide}
+        />
+
+        {/* Intelligence Command Centre */}
+        <CommandCentre
+          isOpen={isCommandCentreOpen}
+          onDismiss={() => setIsCommandCentreOpen(false)}
+          permissions={{
+            allowUserCustomisation: true,
+            allowCardHiding: true,
+            allowCardPinning: true,
+            allowCardRenaming: true,
+            allowCategoryReorder: true,
+            allowCategoryHiding: true,
+            allowCategoryRenaming: true,
+            allowViewSwitching: true,
+            isDemoMode: isDemoMode,
+            showLockedCards: showLockedCards,
+            showPlaceholderCards: showPlaceholderCards,
+            showCategoryDescriptions: showCategoryDescriptions,
+            hasAnyUserFeature: true,
+            ...featureFlags,
+          }}
+          pinnedCardIds={cardPrefs.pinnedCardIds}
+          hiddenCardIds={cardPrefs.hiddenCardIds}
+          onTogglePin={cardPrefs.togglePin}
+          onToggleHide={cardPrefs.toggleHide}
+          onResetAll={() => {
+            // Reset card sizes to tier-appropriate defaults
+            resetToDefaults();
+            // Reset category collapse state
+            cardPrefs.expandAllCategories();
+            // Reset locked cards visibility
+            cardPrefs.setHideLockedCards(false);
+            // Reset placeholder cards visibility
+            cardPrefs.setHidePlaceholderCards(false);
+            // Reset greeting and theme to admin defaults
+            cardPrefs.setSalutationType(undefined);
+            cardPrefs.setThemeMode(undefined);
+            cardPrefs.setNavMode(undefined);
+            setIsCategoriesVisible(true);
+            if (onUserThemeOverrideChange) {
+              onUserThemeOverrideChange(undefined);
+            }
+          }}
+          currentTier={licenseState.currentTier}
+          hideLockedCards={cardPrefs.hideLockedCards}
+          onHideLockedCardsChange={cardPrefs.setHideLockedCards}
+          hidePlaceholderCards={cardPrefs.hidePlaceholderCards}
+          onHidePlaceholderCardsChange={cardPrefs.setHidePlaceholderCards}
+          salutationType={effectiveSalutationType}
+          onSalutationTypeChange={(type) => {
+            cardPrefs.setSalutationType(type);
+          }}
+          themeMode={effectiveThemeMode}
+          onThemeModeChange={(mode) => {
+            cardPrefs.setThemeMode(mode);
+            if (onUserThemeOverrideChange) {
+              onUserThemeOverrideChange(mode as ThemeMode | undefined);
+            }
+          }}
+          navMode={effectiveMenuMode}
+          onNavModeChange={(mode) => {
+            cardPrefs.setNavMode(mode);
+          }}
+
+        />
+      </div>
+    </PortalProvider>
   );
 };
 

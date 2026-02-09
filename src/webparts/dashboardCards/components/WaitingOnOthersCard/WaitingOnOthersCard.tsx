@@ -374,108 +374,110 @@ export const WaitingOnOthersCard: React.FC<WaitingOnOthersCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner (AI Demo Mode only) */}
-      {aiDemoMode && aiCardSummary && aiInsights && aiInsights.length > 0 && (
-        <div style={{ padding: `0 ${tokens.spacingHorizontalL}`, marginBottom: tokens.spacingVerticalS }}>
-          <AIInsightBanner
-            summary={aiCardSummary}
-            insights={aiInsights}
-            defaultExpanded={false}
-            onLearnMore={() => setShowOnboarding(true)}
-          />
-        </div>
-      )}
-
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showOnboarding}
-        onClose={handleOnboardingClose}
-        onDontShowAgain={handleDontShowAgain}
-      />
-
-      {/* Trend Chart */}
-      {settings.showChart && trendData && data && data.totalItems > 0 && (
-        <div className={summaryStyles.chartContainer}>
-          <WaitingTrendChart data={trendData} />
-        </div>
-      )}
-
-      {/* Statistics Grid */}
-      {data && (
-        <div className={summaryStyles.statsGrid}>
-          <div className={summaryStyles.statItem}>
-            <div className={summaryStyles.statLabel}>
-              <Person20Regular className={summaryStyles.statIcon} />
-              People
-            </div>
-            <Text className={summaryStyles.statValue}>{data.totalPeopleOwing}</Text>
+      <div className={styles.cardContent}>
+        {/* AI Insight Banner (AI Demo Mode only) */}
+        {aiDemoMode && aiCardSummary && aiInsights && aiInsights.length > 0 && (
+          <div style={{ padding: `0 ${tokens.spacingHorizontalL}`, marginBottom: tokens.spacingVerticalS }}>
+            <AIInsightBanner
+              summary={aiCardSummary}
+              insights={aiInsights}
+              defaultExpanded={false}
+              onLearnMore={() => setShowOnboarding(true)}
+            />
           </div>
-          <div className={summaryStyles.statItem}>
-            <div className={summaryStyles.statLabel}>
-              <DocumentMultiple20Regular className={summaryStyles.statIcon} />
-              Items
-            </div>
-            <Text className={summaryStyles.statValue}>{data.totalItems}</Text>
-          </div>
-          <div className={summaryStyles.statItem}>
-            <div className={summaryStyles.statLabel}>
-              <Timer20Regular className={summaryStyles.statIcon} />
-              Longest Wait
-            </div>
-            <Text className={getStatValueClass(data.oldestWaitDays * 24)}>
-              {data.oldestWaitDays}d
-            </Text>
-          </div>
-          <div className={summaryStyles.statItem}>
-            <div className={summaryStyles.statLabel}>
-              <AlertUrgent20Regular className={summaryStyles.statIcon} />
-              Overdue
-            </div>
-            <Text className={summaryStyles.statValue}>
-              {data.byPerson.filter(p => p.longestWaitHours >= 168).length}
-            </Text>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Top People Waiting */}
-      {topPeople.length > 0 && (
-        <div className={summaryStyles.topPeopleSection}>
-          <Text className={summaryStyles.sectionLabel}>Longest Waiting</Text>
-          <div className={summaryStyles.topPeopleList}>
-            {topPeople.map((group) => (
-              <div key={group.person.id || group.person.email} className={summaryStyles.personRow}>
-                {group.person.isVip && (
-                  <Crown20Filled className={summaryStyles.vipIcon} />
-                )}
-                <Avatar
-                  name={group.person.displayName}
-                  image={group.person.photoUrl ? { src: group.person.photoUrl } : undefined}
-                  size={24}
-                />
-                <span className={summaryStyles.personInfo}>
-                  <span className={summaryStyles.personName}>{group.person.displayName}</span>
-                </span>
-                <Badge
-                  appearance="tint"
-                  color={group.longestWaitHours >= 168 ? 'danger' : group.longestWaitHours >= 72 ? 'warning' : 'informative'}
-                  size="small"
-                >
-                  {formatWait(group.longestWaitHours)} · {group.itemCount} item{group.itemCount > 1 ? 's' : ''}
-                </Badge>
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showOnboarding}
+          onClose={handleOnboardingClose}
+          onDontShowAgain={handleDontShowAgain}
+        />
+
+        {/* Trend Chart */}
+        {settings.showChart && trendData && data && data.totalItems > 0 && (
+          <div className={summaryStyles.chartContainer}>
+            <WaitingTrendChart data={trendData} />
+          </div>
+        )}
+
+        {/* Statistics Grid */}
+        {data && (
+          <div className={summaryStyles.statsGrid}>
+            <div className={summaryStyles.statItem}>
+              <div className={summaryStyles.statLabel}>
+                <Person20Regular className={summaryStyles.statIcon} />
+                People
               </div>
-            ))}
+              <Text className={summaryStyles.statValue}>{data.totalPeopleOwing}</Text>
+            </div>
+            <div className={summaryStyles.statItem}>
+              <div className={summaryStyles.statLabel}>
+                <DocumentMultiple20Regular className={summaryStyles.statIcon} />
+                Items
+              </div>
+              <Text className={summaryStyles.statValue}>{data.totalItems}</Text>
+            </div>
+            <div className={summaryStyles.statItem}>
+              <div className={summaryStyles.statLabel}>
+                <Timer20Regular className={summaryStyles.statIcon} />
+                Longest Wait
+              </div>
+              <Text className={getStatValueClass(data.oldestWaitDays * 24)}>
+                {data.oldestWaitDays}d
+              </Text>
+            </div>
+            <div className={summaryStyles.statItem}>
+              <div className={summaryStyles.statLabel}>
+                <AlertUrgent20Regular className={summaryStyles.statIcon} />
+                Overdue
+              </div>
+              <Text className={summaryStyles.statValue}>
+                {data.byPerson.filter(p => p.longestWaitHours >= 168).length}
+              </Text>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Expand Prompt */}
-      {handleCycleSize && (
-        <div className={summaryStyles.expandPrompt} onClick={handleCycleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalItems} pending responses</span>
-        </div>
-      )}
+        {/* Top People Waiting */}
+        {topPeople.length > 0 && (
+          <div className={summaryStyles.topPeopleSection}>
+            <Text className={summaryStyles.sectionLabel}>Longest Waiting</Text>
+            <div className={summaryStyles.topPeopleList}>
+              {topPeople.map((group) => (
+                <div key={group.person.id || group.person.email} className={summaryStyles.personRow}>
+                  {group.person.isVip && (
+                    <Crown20Filled className={summaryStyles.vipIcon} />
+                  )}
+                  <Avatar
+                    name={group.person.displayName}
+                    image={group.person.photoUrl ? { src: group.person.photoUrl } : undefined}
+                    size={24}
+                  />
+                  <span className={summaryStyles.personInfo}>
+                    <span className={summaryStyles.personName}>{group.person.displayName}</span>
+                  </span>
+                  <Badge
+                    appearance="tint"
+                    color={group.longestWaitHours >= 168 ? 'danger' : group.longestWaitHours >= 72 ? 'warning' : 'informative'}
+                    size="small"
+                  >
+                    {formatWait(group.longestWaitHours)} · {group.itemCount} item{group.itemCount > 1 ? 's' : ''}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={summaryStyles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalItems} pending responses</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={styles.cardFooter}>

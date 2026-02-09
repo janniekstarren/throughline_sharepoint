@@ -31,9 +31,14 @@ import {
 // ============================================
 const useStyles = makeStyles({
   // Base card container
+  // Height is controlled by the grid cell via CategorySection.module.scss
+  // (.cardWrapper > * { height: 100%; max-height: none !important; })
   card: {
     display: 'flex',
     flexDirection: 'column',
+    width: '100%',
+    height: '100%',      // Fill the grid cell
+    minHeight: 0,        // Allow shrinking to fit grid cell
     backgroundColor: tokens.colorNeutralBackground1,
     borderRadius: tokens.borderRadiusLarge,
     boxShadow: tokens.shadow4,
@@ -44,25 +49,6 @@ const useStyles = makeStyles({
     ':hover': {
       boxShadow: tokens.shadow8,
     },
-  },
-
-  // Size variants
-  cardMini: {
-    height: '120px',
-    minHeight: '120px',
-    maxHeight: '120px',
-  },
-
-  cardMedium: {
-    height: '480px',
-    minHeight: '480px',
-    maxHeight: '480px',
-  },
-
-  cardLarge: {
-    height: '720px',
-    minHeight: '720px',
-    maxHeight: '720px',
   },
 
   // Header
@@ -333,7 +319,7 @@ export const PlaceholderCard: React.FC<PlaceholderCardProps> = ({
   // Mini card (compact)
   if (size === 'small') {
     return (
-      <div className={mergeClasses(styles.card, styles.cardMini)}>
+      <div className={styles.card}>
         <div className={mergeClasses(styles.header, styles.headerMini)}>
           <div
             className={mergeClasses(styles.categoryIcon, styles.categoryIconMini)}
@@ -375,7 +361,7 @@ export const PlaceholderCard: React.FC<PlaceholderCardProps> = ({
   // Medium card
   if (size === 'medium') {
     return (
-      <div className={mergeClasses(styles.card, styles.cardMedium)}>
+      <div className={styles.card}>
         <div className={styles.header}>
           <div
             className={styles.categoryIcon}
@@ -451,7 +437,7 @@ export const PlaceholderCard: React.FC<PlaceholderCardProps> = ({
 
   // Large card
   return (
-    <div className={mergeClasses(styles.card, styles.cardLarge)}>
+    <div className={styles.card}>
       <div className={styles.header}>
         <div
           className={styles.categoryIcon}

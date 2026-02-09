@@ -54,18 +54,20 @@ export const ListItemEnter = createPresenceComponent({
 // ============================================
 
 export const useCardStyles = makeStyles({
-  // Base card container - Dynamic height based on content
+  // Base card container — fills grid cell via CategorySection .cardWrapper > *
+  // Grid cell controls height: small=1 row, medium=2 rows, large=2 rows × 2 cols
+  // Header stays fixed; only cardContent scrolls
   card: {
     display: 'flex',
     flexDirection: 'column',
-    width: '100%', // Fill the masonry column width
-    minHeight: '280px', // Minimum height for visual consistency
-    height: 'auto', // Dynamic height based on content
-    maxHeight: '600px', // Prevent cards from becoming too tall
+    width: '100%',
+    height: '100%',         // Fill the grid cell
+    minHeight: 0,           // Allow shrinking to fit grid cell
     backgroundColor: cardTokens.colors.cardBackground,
     borderRadius: cardTokens.borderRadius.card,
     boxShadow: cardTokens.shadow.rest,
-    overflow: 'hidden',
+    overflowX: 'hidden',
+    overflowY: 'hidden',    // Card itself does NOT scroll — cardContent does
     transitionProperty: 'box-shadow, transform',
     transitionDuration: cardTokens.transition.normal,
     transitionTimingFunction: cardTokens.transition.easing,
@@ -74,44 +76,21 @@ export const useCardStyles = makeStyles({
     },
   },
 
-  // Large card variant (full width, taller)
-  cardLarge: {
-    minHeight: '400px',
-    maxHeight: '600px',
-  },
+  // Large card variant — no extra height constraints (grid cell controls)
+  cardLarge: {},
 
-  // Height variants for masonry layout - now using auto with constraints
-  cardCompact: {
-    height: 'auto',
-    minHeight: '200px',
-    maxHeight: '320px',
-  },
+  // Height variants — kept for backward compatibility but grid cell controls actual height
+  cardCompact: {},
 
-  cardStandard: {
-    height: 'auto',
-    minHeight: '280px',
-    maxHeight: '480px',
-  },
+  cardStandard: {},
 
-  cardTall: {
-    height: 'auto',
-    minHeight: '320px',
-    maxHeight: '600px',
-  },
+  cardTall: {},
 
   // Auto height for dynamic content
-  cardAuto: {
-    height: 'auto',
-    minHeight: cardTokens.size.cardMinHeight,
-    maxHeight: cardTokens.size.cardMaxHeight,
-  },
+  cardAuto: {},
 
-  // Empty state card (more square/compact for visual balance)
-  cardEmpty: {
-    height: cardTokens.size.cardEmptyHeight,
-    minHeight: cardTokens.size.cardEmptyHeight,
-    maxHeight: cardTokens.size.cardEmptyHeight,
-  },
+  // Empty state card — no fixed height, fills grid cell
+  cardEmpty: {},
 
   // Clean header - NO gray background, NO border
   cardHeader: {
@@ -180,12 +159,18 @@ export const useCardStyles = makeStyles({
     color: tokens.colorPaletteGreenForeground2,
   },
 
-  // Content area with custom scrollbar
+  // Content area — fills remaining space below header, scrolls independently
+  // Header stays fixed at top; only this area scrolls
   cardContent: {
     flex: 1,
     padding: `0 ${cardTokens.spacing.cardPaddingLarge} ${cardTokens.spacing.cardPaddingLarge}`,
-    overflowY: 'auto',
     minHeight: 0,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    // Firefox scrollbar
+    scrollbarWidth: 'thin' as const,
+    scrollbarColor: `${cardTokens.colors.borderSubtle} transparent`,
+    // Webkit scrollbar (Chrome/Edge/Safari)
     '::-webkit-scrollbar': {
       width: '6px',
     },

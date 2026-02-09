@@ -543,158 +543,160 @@ export const EmailCard: React.FC<EmailCardProps> = ({
         actions={headerActions}
       />
 
-      {/* Tab Section with Sort/Filter */}
-      <div className={styles.tabSection}>
-        <div className={mergeClasses(styles.tabListWrapper, hasOverflow && styles.tabListWrapperOverflow)}>
-          <div ref={tabScrollerRef} className={styles.tabListScroller}>
-            <TabList
-              selectedValue={activeTab}
-              onTabSelect={(_, d) => setActiveTab(d.value as EmailTabType)}
-              size="small"
+      <div className={cardStyles.cardContent}>
+        {/* Tab Section with Sort/Filter */}
+        <div className={styles.tabSection}>
+          <div className={mergeClasses(styles.tabListWrapper, hasOverflow && styles.tabListWrapperOverflow)}>
+            <div ref={tabScrollerRef} className={styles.tabListScroller}>
+              <TabList
+                selectedValue={activeTab}
+                onTabSelect={(_, d) => setActiveTab(d.value as EmailTabType)}
+                size="small"
+              >
+                <Tab value="unread">
+                  Unread ({data?.stats.unreadCount ?? 0})
+                </Tab>
+                <Tab value="flagged">
+                  Flagged ({data?.stats.activeFlagsCount ?? 0})
+                </Tab>
+                <Tab value="vip" icon={<Crown20Filled className={styles.vipIcon} />}>
+                  VIPs ({data?.stats.vipTotalCount ?? 0})
+                </Tab>
+                <Tab value="urgent" icon={<AlertUrgent20Regular style={{ color: tokens.colorPaletteRedForeground1 }} />}>
+                  Urgent ({data?.stats.urgentCount ?? 0})
+                </Tab>
+              </TabList>
+            </div>
+          </div>
+
+          <div className={styles.tabToolbar}>
+            {/* Sort Menu */}
+            <Menu
+              checkedValues={checkedSortValues}
+              onCheckedValueChange={(_, menuData) => {
+                if (menuData.checkedItems.length > 0) {
+                  handleSortChange(menuData.checkedItems[0] as EmailSortMode);
+                }
+              }}
             >
-              <Tab value="unread">
-                Unread ({data?.stats.unreadCount ?? 0})
-              </Tab>
-              <Tab value="flagged">
-                Flagged ({data?.stats.activeFlagsCount ?? 0})
-              </Tab>
-              <Tab value="vip" icon={<Crown20Filled className={styles.vipIcon} />}>
-                VIPs ({data?.stats.vipTotalCount ?? 0})
-              </Tab>
-              <Tab value="urgent" icon={<AlertUrgent20Regular style={{ color: tokens.colorPaletteRedForeground1 }} />}>
-                Urgent ({data?.stats.urgentCount ?? 0})
-              </Tab>
-            </TabList>
+              <MenuTrigger disableButtonEnhancement>
+                <Tooltip content={`Sort: ${sortLabels[sortMode]}`} relationship="label">
+                  <Button appearance="subtle" size="small" icon={<ArrowSort20Regular />} />
+                </Tooltip>
+              </MenuTrigger>
+              <MenuPopover>
+                <MenuList>
+                  <MenuGroup>
+                    <MenuGroupHeader>Sort by</MenuGroupHeader>
+                    <MenuItemRadio name="sort" value="priority">Priority (VIP first)</MenuItemRadio>
+                    <MenuItemRadio name="sort" value="sender">Sender A-Z</MenuItemRadio>
+                    <MenuItemRadio name="sort" value="oldest">Oldest first</MenuItemRadio>
+                    <MenuItemRadio name="sort" value="newest">Newest first</MenuItemRadio>
+                  </MenuGroup>
+                </MenuList>
+              </MenuPopover>
+            </Menu>
+
+            {/* Filter Menu */}
+            <Menu
+              checkedValues={checkedFilterValues}
+              onCheckedValueChange={(_, menuData) => {
+                handleFilterChange(menuData.checkedItems);
+              }}
+            >
+              <MenuTrigger disableButtonEnhancement>
+                <Tooltip content={activeFilterCount > 0 ? `${activeFilterCount} filter(s) active` : 'Filter'} relationship="label">
+                  <Button
+                    appearance="subtle"
+                    size="small"
+                    icon={<Filter20Regular />}
+                    className={activeFilterCount > 0 ? styles.filterActive : undefined}
+                  />
+                </Tooltip>
+              </MenuTrigger>
+              <MenuPopover>
+                <MenuList>
+                  <MenuGroup>
+                    <MenuGroupHeader>Filter by</MenuGroupHeader>
+                    <MenuItemCheckbox name="filter" value="vip">VIP contacts</MenuItemCheckbox>
+                    <MenuItemCheckbox name="filter" value="flagged">Flagged</MenuItemCheckbox>
+                    <MenuItemCheckbox name="filter" value="unread">Unread</MenuItemCheckbox>
+                    <MenuItemCheckbox name="filter" value="hasAttachments">Has attachments</MenuItemCheckbox>
+                    <MenuItemCheckbox name="filter" value="highPriority">High priority</MenuItemCheckbox>
+                  </MenuGroup>
+                  {activeFilterCount > 0 && (
+                    <>
+                      <MenuDivider />
+                      <MenuItem icon={<Dismiss20Regular />} onClick={() => handleFilterChange([])}>
+                        Clear all filters
+                      </MenuItem>
+                    </>
+                  )}
+                </MenuList>
+              </MenuPopover>
+            </Menu>
           </div>
         </div>
 
-        <div className={styles.tabToolbar}>
-          {/* Sort Menu */}
-          <Menu
-            checkedValues={checkedSortValues}
-            onCheckedValueChange={(_, menuData) => {
-              if (menuData.checkedItems.length > 0) {
-                handleSortChange(menuData.checkedItems[0] as EmailSortMode);
-              }
-            }}
-          >
-            <MenuTrigger disableButtonEnhancement>
-              <Tooltip content={`Sort: ${sortLabels[sortMode]}`} relationship="label">
-                <Button appearance="subtle" size="small" icon={<ArrowSort20Regular />} />
-              </Tooltip>
-            </MenuTrigger>
-            <MenuPopover>
-              <MenuList>
-                <MenuGroup>
-                  <MenuGroupHeader>Sort by</MenuGroupHeader>
-                  <MenuItemRadio name="sort" value="priority">Priority (VIP first)</MenuItemRadio>
-                  <MenuItemRadio name="sort" value="sender">Sender A-Z</MenuItemRadio>
-                  <MenuItemRadio name="sort" value="oldest">Oldest first</MenuItemRadio>
-                  <MenuItemRadio name="sort" value="newest">Newest first</MenuItemRadio>
-                </MenuGroup>
-              </MenuList>
-            </MenuPopover>
-          </Menu>
+        {/* AI Insight Banner (AI Demo Mode only) */}
+        {aiDemoMode && aiCardSummary && aiInsights && aiInsights.length > 0 && (
+          <div style={{ padding: `0 ${tokens.spacingHorizontalL}`, marginBottom: tokens.spacingVerticalS }}>
+            <AIInsightBanner
+              summary={aiCardSummary}
+              insights={aiInsights}
+              defaultExpanded={false}
+              onLearnMore={() => setShowOnboarding(true)}
+            />
+          </div>
+        )}
 
-          {/* Filter Menu */}
-          <Menu
-            checkedValues={checkedFilterValues}
-            onCheckedValueChange={(_, menuData) => {
-              handleFilterChange(menuData.checkedItems);
-            }}
-          >
-            <MenuTrigger disableButtonEnhancement>
-              <Tooltip content={activeFilterCount > 0 ? `${activeFilterCount} filter(s) active` : 'Filter'} relationship="label">
-                <Button
-                  appearance="subtle"
-                  size="small"
-                  icon={<Filter20Regular />}
-                  className={activeFilterCount > 0 ? styles.filterActive : undefined}
-                />
-              </Tooltip>
-            </MenuTrigger>
-            <MenuPopover>
-              <MenuList>
-                <MenuGroup>
-                  <MenuGroupHeader>Filter by</MenuGroupHeader>
-                  <MenuItemCheckbox name="filter" value="vip">VIP contacts</MenuItemCheckbox>
-                  <MenuItemCheckbox name="filter" value="flagged">Flagged</MenuItemCheckbox>
-                  <MenuItemCheckbox name="filter" value="unread">Unread</MenuItemCheckbox>
-                  <MenuItemCheckbox name="filter" value="hasAttachments">Has attachments</MenuItemCheckbox>
-                  <MenuItemCheckbox name="filter" value="highPriority">High priority</MenuItemCheckbox>
-                </MenuGroup>
-                {activeFilterCount > 0 && (
-                  <>
-                    <MenuDivider />
-                    <MenuItem icon={<Dismiss20Regular />} onClick={() => handleFilterChange([])}>
-                      Clear all filters
-                    </MenuItem>
-                  </>
-                )}
-              </MenuList>
-            </MenuPopover>
-          </Menu>
-        </div>
-      </div>
-
-      {/* AI Insight Banner (AI Demo Mode only) */}
-      {aiDemoMode && aiCardSummary && aiInsights && aiInsights.length > 0 && (
-        <div style={{ padding: `0 ${tokens.spacingHorizontalL}`, marginBottom: tokens.spacingVerticalS }}>
-          <AIInsightBanner
-            summary={aiCardSummary}
-            insights={aiInsights}
-            defaultExpanded={false}
-            onLearnMore={() => setShowOnboarding(true)}
-          />
-        </div>
-      )}
-
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showOnboarding}
-        onClose={handleOnboardingClose}
-        onDontShowAgain={handleDontShowAgain}
-      />
-
-      {/* Trend Chart */}
-      {chartData.length > 0 && (
-        <div className={styles.chartContainer}>
-          <TrendBarChart
-            data={chartData}
-            title={chartTitle}
-            trend={chartTrend}
-            trendLabels={{
-              improving: activeTab === 'unread' ? 'Fewer' : 'Better',
-              worsening: activeTab === 'unread' ? 'More' : 'Worse',
-              stable: 'Steady',
-            }}
-            color={activeTab === 'vip' ? 'warning' : 'brand'}
-            footerText={chartFooter}
-          />
-        </div>
-      )}
-
-      {/* Statistics Grid */}
-      {data && <StatsGrid stats={statsData} />}
-
-      {/* Top Items - Limited to 1 item to fit in medium card */}
-      {topItems.length > 0 && (
-        <TopItemsList
-          header={activeTab === 'unread' ? 'Priority Email' :
-                  activeTab === 'flagged' ? 'Oldest Flag' :
-                  activeTab === 'vip' ? 'VIP Email' : 'Urgent Email'}
-          items={topItems}
-          maxItems={1}
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showOnboarding}
+          onClose={handleOnboardingClose}
+          onDontShowAgain={handleDontShowAgain}
         />
-      )}
 
-      {/* Expand Prompt */}
-      {handleCycleSize && totalCount > 0 && (
-        <div className={styles.expandPrompt} onClick={handleCycleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {totalCount} {activeTab === 'vip' ? 'VIP ' : activeTab === 'urgent' ? 'urgent ' : ''}emails</span>
-        </div>
-      )}
+        {/* Trend Chart */}
+        {chartData.length > 0 && (
+          <div className={styles.chartContainer}>
+            <TrendBarChart
+              data={chartData}
+              title={chartTitle}
+              trend={chartTrend}
+              trendLabels={{
+                improving: activeTab === 'unread' ? 'Fewer' : 'Better',
+                worsening: activeTab === 'unread' ? 'More' : 'Worse',
+                stable: 'Steady',
+              }}
+              color={activeTab === 'vip' ? 'warning' : 'brand'}
+              footerText={chartFooter}
+            />
+          </div>
+        )}
+
+        {/* Statistics Grid */}
+        {data && <StatsGrid stats={statsData} />}
+
+        {/* Top Items - Limited to 1 item to fit in medium card */}
+        {topItems.length > 0 && (
+          <TopItemsList
+            header={activeTab === 'unread' ? 'Priority Email' :
+                    activeTab === 'flagged' ? 'Oldest Flag' :
+                    activeTab === 'vip' ? 'VIP Email' : 'Urgent Email'}
+            items={topItems}
+            maxItems={1}
+          />
+        )}
+
+        {/* Expand Prompt */}
+        {handleCycleSize && totalCount > 0 && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {totalCount} {activeTab === 'vip' ? 'VIP ' : activeTab === 'urgent' ? 'urgent ' : ''}emails</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>

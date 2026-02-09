@@ -308,63 +308,65 @@ export const MyTeamCard: React.FC<MyTeamCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner */}
-      {aiDemoMode && aiCardSummary && (
-        <AIInsightBanner
-          summary={aiCardSummary}
-          insights={aiInsights}
-          onLearnMore={handleAiLearnMore}
-        />
-      )}
-
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showAiOnboarding}
-        onClose={() => setShowAiOnboarding(false)}
-      />
-
-      {/* Presence Donut Chart */}
-      {presenceData && data && data.totalCount > 0 && (
-        <div className={styles.chartContainer}>
-          <DonutChart
-            data={chartData}
-            title="Team Presence"
-            size={120}
-            thickness={20}
-            centerValue={data.availableCount}
-            centerText="Available"
-            showLegend={true}
-            colors={[
-              PRESENCE_COLORS.available,
-              PRESENCE_COLORS.busy,
-              PRESENCE_COLORS.away,
-              PRESENCE_COLORS.offline,
-            ]}
+      <div className={cardStyles.cardContent}>
+        {/* AI Insight Banner */}
+        {aiDemoMode && aiCardSummary && (
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            onLearnMore={handleAiLearnMore}
           />
-        </div>
-      )}
+        )}
 
-      {/* Statistics Grid */}
-      {data && (
-        <StatsGrid stats={statsData} />
-      )}
-
-      {/* Top Available Members - Limited to 1 item to fit in medium card */}
-      {topItems.length > 0 && (
-        <TopItemsList
-          header="Available Now"
-          items={topItems}
-          maxItems={1}
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showAiOnboarding}
+          onClose={() => setShowAiOnboarding(false)}
         />
-      )}
 
-      {/* Expand Prompt */}
-      {handleCycleSize && (
-        <div className={styles.expandPrompt} onClick={handleCycleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalCount} team members</span>
-        </div>
-      )}
+        {/* Presence Donut Chart */}
+        {presenceData && data && data.totalCount > 0 && (
+          <div className={styles.chartContainer}>
+            <DonutChart
+              data={chartData}
+              title="Team Presence"
+              size={120}
+              thickness={20}
+              centerValue={data.availableCount}
+              centerText="Available"
+              showLegend={true}
+              colors={[
+                PRESENCE_COLORS.available,
+                PRESENCE_COLORS.busy,
+                PRESENCE_COLORS.away,
+                PRESENCE_COLORS.offline,
+              ]}
+            />
+          </div>
+        )}
+
+        {/* Statistics Grid */}
+        {data && (
+          <StatsGrid stats={statsData} />
+        )}
+
+        {/* Top Available Members - Limited to 1 item to fit in medium card */}
+        {topItems.length > 0 && (
+          <TopItemsList
+            header="Available Now"
+            items={topItems}
+            maxItems={1}
+          />
+        )}
+
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalCount} team members</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>

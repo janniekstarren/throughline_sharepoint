@@ -28,29 +28,16 @@ import {
 // ============================================
 const useStyles = makeStyles({
   // Wrapper that contains both the card and overlay
+  // Height is controlled by the grid cell via CategorySection.module.scss
+  // (.cardWrapper > * { height: 100%; max-height: none !important; })
   wrapper: {
     position: 'relative',
     display: 'flex',
     flexDirection: 'column',
-  },
-
-  // Size variants for wrapper
-  wrapperMini: {
-    height: '120px',
-    minHeight: '120px',
-    maxHeight: '120px',
-  },
-
-  wrapperMedium: {
-    height: '480px',
-    minHeight: '480px',
-    maxHeight: '480px',
-  },
-
-  wrapperLarge: {
-    height: '720px',
-    minHeight: '720px',
-    maxHeight: '720px',
+    width: '100%',
+    height: '100%',      // Fill the grid cell
+    minHeight: 0,        // Allow shrinking to fit grid cell
+    overflow: 'hidden',
   },
 
   // Blurred card content behind overlay
@@ -243,7 +230,7 @@ export const LockedCard: React.FC<LockedCardProps> = ({
   // Mini card (compact overlay)
   if (size === 'small') {
     return (
-      <div className={mergeClasses(styles.wrapper, styles.wrapperMini)}>
+      <div className={styles.wrapper}>
         {/* Blurred background */}
         <div className={styles.blurredContent}>
           <div className={styles.skeletonHeader}>
@@ -274,7 +261,7 @@ export const LockedCard: React.FC<LockedCardProps> = ({
   // Medium card
   if (size === 'medium') {
     return (
-      <div className={mergeClasses(styles.wrapper, styles.wrapperMedium)}>
+      <div className={styles.wrapper}>
         {/* Blurred background */}
         <div className={styles.blurredContent}>
           <div className={styles.skeletonHeader}>
@@ -321,7 +308,7 @@ export const LockedCard: React.FC<LockedCardProps> = ({
 
   // Large card
   return (
-    <div className={mergeClasses(styles.wrapper, styles.wrapperLarge)}>
+    <div className={styles.wrapper}>
       {/* Blurred background */}
       <div className={styles.blurredContent}>
         <div className={styles.skeletonHeader}>

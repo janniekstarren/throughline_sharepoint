@@ -42,6 +42,12 @@ export interface ICategorySectionProps {
   onToggleCollapsed?: () => void;
   onReorder?: (cardIds: string[]) => void;
   animationsEnabled?: boolean;
+  /** Optional category accent color (from CardCategoryMeta.color) */
+  categoryColor?: string;
+  /** Optional description shown in the header */
+  description?: string;
+  /** Optional summary text when collapsed (e.g., "12 cards · 3 with data") */
+  collapsedSummary?: string;
 }
 
 // Size priority for sorting (larger cards first for better packing)
@@ -64,6 +70,9 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
   collapsed = false,
   onToggleCollapsed,
   animationsEnabled = true,
+  categoryColor,
+  description,
+  collapsedSummary,
 }) => {
   // Helper to determine card size
   const getCardSize = (card: IOrderedCard): CardSize => {
@@ -82,6 +91,41 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
       const sizeB = getCardSize(b);
       return SIZE_PRIORITY[sizeA] - SIZE_PRIORITY[sizeB];
     });
+  }, [orderedCards]);
+
+  // Track previous card sizes to detect changes and trigger animation
+  const prevSizesRef = React.useRef<Map<string, CardSize>>(new Map());
+  const [animatingCards, setAnimatingCards] = React.useState<Set<string>>(new Set());
+
+  React.useEffect(() => {
+    const newAnimating = new Set<string>();
+    const prevSizes = prevSizesRef.current;
+
+    orderedCards.forEach(card => {
+      const currentSize = getCardSize(card);
+      const prevSize = prevSizes.get(card.id);
+      if (prevSize !== undefined && prevSize !== currentSize) {
+        newAnimating.add(card.id);
+      }
+    });
+
+    // Update the ref with current sizes
+    const nextSizes = new Map<string, CardSize>();
+    orderedCards.forEach(card => {
+      nextSizes.set(card.id, getCardSize(card));
+    });
+    prevSizesRef.current = nextSizes;
+
+    if (newAnimating.size > 0) {
+      setAnimatingCards(newAnimating);
+      // Remove animation class after animation completes (300ms)
+      const timer = setTimeout(() => {
+        setAnimatingCards(new Set());
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+
+    return undefined;
   }, [orderedCards]);
 
   // Don't render empty sections - MUST be AFTER all hooks (React rules of hooks)
@@ -114,10 +158,21 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
           type="button"
         >
           {iconId && (
-            <span className={styles.categoryIcon}>{getIconById(iconId)}</span>
+            <span
+              className={styles.categoryIcon}
+              style={categoryColor ? { color: categoryColor } : undefined}
+            >
+              {getIconById(iconId)}
+            </span>
           )}
           <h3 className={styles.categoryTitle}>{categoryName}</h3>
+          {description && !collapsed && (
+            <span className={styles.cardCount}>{description}</span>
+          )}
           <span className={styles.cardCount}>({orderedCards.length})</span>
+          {collapsedSummary && (
+            <span className={styles.cardCount}>{collapsedSummary}</span>
+          )}
           {onToggleCollapsed && (
             <span className={styles.chevron}>
               {collapsed ? <ChevronRight20Regular /> : <ChevronDown20Regular />}
@@ -133,7 +188,11 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
             {sortedCards.map(card => (
               <div
                 key={card.id}
-                className={mergeClasses(styles.cardWrapper, getCardClassName(card))}
+                className={mergeClasses(
+                  styles.cardWrapper,
+                  getCardClassName(card),
+                  animatingCards.has(card.id) && styles.cardSizeChanging
+                )}
               >
                 {card.element}
               </div>

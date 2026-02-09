@@ -16,6 +16,7 @@ import {
   ICardSizeState,
 } from '../services/UserPreferencesService';
 import { CardSize, DEFAULT_CARD_SIZE, getNextCardSize } from '../types/CardSize';
+import { CARD_REGISTRY } from '../config/cardRegistry';
 
 export interface IUseUserPreferencesOptions {
   /** Current user's login name or email */
@@ -49,6 +50,8 @@ export interface IUseUserPreferencesResult {
   cycleCardSize: (cardId: string) => void;
   /** Get a card's current size */
   getCardSize: (cardId: string) => CardSize;
+  /** Set all card sizes at once */
+  setAllCardSizes: (size: CardSize) => void;
   /** Reset to default (webpart) preferences */
   resetToDefaults: () => void;
   /** Whether localStorage is available */
@@ -165,6 +168,25 @@ export function useUserPreferences(
     [cardSizes]
   );
 
+  // Set all visible card sizes at once (covers every card in the registry)
+  const setAllCardSizes = React.useCallback(
+    (size: CardSize) => {
+      if (!isStorageAvailable || !userId) return;
+      const newSizes: ICardSizeState = {};
+      // Apply to EVERY card in the registry using the correct size key
+      // (existingCardId for implemented cards, id for placeholders)
+      for (const card of CARD_REGISTRY) {
+        const sizeKey = card.existingCardId || card.id;
+        newSizes[sizeKey] = size;
+      }
+      const newPrefs = { ...userPrefs, cardSizes: newSizes };
+      setUserPrefs(newPrefs);
+      setHasUserPreferences(true);
+      saveUserPreferences(userId, { cardSizes: newSizes }, instanceId);
+    },
+    [userId, instanceId, userPrefs, isStorageAvailable]
+  );
+
   // Reset to defaults
   const resetToDefaults = React.useCallback(() => {
     setUserPrefs({});
@@ -183,6 +205,7 @@ export function useUserPreferences(
     setCardOrder,
     setCollapsedCardIds,
     setCardSize,
+    setAllCardSizes,
     cycleCardSize,
     getCardSize,
     resetToDefaults,

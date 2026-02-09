@@ -264,108 +264,110 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner (AI Demo Mode only) */}
-      {aiDemoMode && aiCardSummary && aiInsights && aiInsights.length > 0 && (
-        <div style={{ padding: `0 ${tokens.spacingHorizontalL}`, marginBottom: tokens.spacingVerticalS }}>
-          <AIInsightBanner
-            summary={aiCardSummary}
-            insights={aiInsights}
-            defaultExpanded={false}
-            onLearnMore={() => setShowOnboarding(true)}
-          />
-        </div>
-      )}
-
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showOnboarding}
-        onClose={handleOnboardingClose}
-        onDontShowAgain={handleDontShowAgain}
-      />
-
-      {/* Trend Chart - positioned higher (after AI banner) */}
-      {showChart && trendData && data && data.totalItems > 0 && (
-        <div className={styles.chartContainer}>
-          <WaitingDebtChart trend={trendData} />
-        </div>
-      )}
-
-      {/* Statistics Grid */}
-      {data && (
-        <div className={styles.statsGrid}>
-          <div className={styles.statItem}>
-            <div className={styles.statLabel}>
-              <Person20Regular className={styles.statIcon} />
-              People
-            </div>
-            <Text className={styles.statValue}>{data.totalPeopleWaiting}</Text>
+      <div className={cardStyles.cardContent}>
+        {/* AI Insight Banner (AI Demo Mode only) */}
+        {aiDemoMode && aiCardSummary && aiInsights && aiInsights.length > 0 && (
+          <div style={{ padding: `0 ${tokens.spacingHorizontalL}`, marginBottom: tokens.spacingVerticalS }}>
+            <AIInsightBanner
+              summary={aiCardSummary}
+              insights={aiInsights}
+              defaultExpanded={false}
+              onLearnMore={() => setShowOnboarding(true)}
+            />
           </div>
-          <div className={styles.statItem}>
-            <div className={styles.statLabel}>
-              <DocumentMultiple20Regular className={styles.statIcon} />
-              Items
-            </div>
-            <Text className={styles.statValue}>{data.totalItems}</Text>
-          </div>
-          <div className={styles.statItem}>
-            <div className={styles.statLabel}>
-              <Timer20Regular className={styles.statIcon} />
-              Avg Wait
-            </div>
-            <Text className={getStatValueClass(avgWaitHours)}>
-              {formatWait(avgWaitHours)}
-            </Text>
-          </div>
-          <div className={styles.statItem}>
-            <div className={styles.statLabel}>
-              <AlertUrgent20Regular className={styles.statIcon} />
-              Critical
-            </div>
-            <Text className={data.criticalCount > 0 ? styles.statValueDanger : styles.statValue}>
-              {data.criticalCount}
-            </Text>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Top People Waiting On You */}
-      {topPeople.length > 0 && (
-        <div className={styles.topPeopleSection}>
-          <Text className={styles.sectionLabel}>Longest Waiting</Text>
-          <div className={styles.topPeopleList}>
-            {topPeople.map((group) => (
-              <div key={group.person.id || group.person.email} className={styles.personRow}>
-                {group.person.relationship === 'manager' && (
-                  <Crown20Filled className={styles.vipIcon} />
-                )}
-                <Avatar
-                  name={group.person.displayName}
-                  image={group.person.photoUrl ? { src: group.person.photoUrl } : undefined}
-                  size={24}
-                />
-                <span className={styles.personInfo}>
-                  <span className={styles.personName}>{group.person.displayName}</span>
-                </span>
-                <Badge
-                  appearance="tint"
-                  color={group.totalWaitHours >= 168 ? 'danger' : group.totalWaitHours >= 72 ? 'warning' : 'informative'}
-                  size="small"
-                >
-                  {formatWait(group.totalWaitHours)} · {group.itemCount} item{group.itemCount > 1 ? 's' : ''}
-                </Badge>
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showOnboarding}
+          onClose={handleOnboardingClose}
+          onDontShowAgain={handleDontShowAgain}
+        />
+
+        {/* Trend Chart - positioned higher (after AI banner) */}
+        {showChart && trendData && data && data.totalItems > 0 && (
+          <div className={styles.chartContainer}>
+            <WaitingDebtChart trend={trendData} />
+          </div>
+        )}
+
+        {/* Statistics Grid */}
+        {data && (
+          <div className={styles.statsGrid}>
+            <div className={styles.statItem}>
+              <div className={styles.statLabel}>
+                <Person20Regular className={styles.statIcon} />
+                People
               </div>
-            ))}
+              <Text className={styles.statValue}>{data.totalPeopleWaiting}</Text>
+            </div>
+            <div className={styles.statItem}>
+              <div className={styles.statLabel}>
+                <DocumentMultiple20Regular className={styles.statIcon} />
+                Items
+              </div>
+              <Text className={styles.statValue}>{data.totalItems}</Text>
+            </div>
+            <div className={styles.statItem}>
+              <div className={styles.statLabel}>
+                <Timer20Regular className={styles.statIcon} />
+                Avg Wait
+              </div>
+              <Text className={getStatValueClass(avgWaitHours)}>
+                {formatWait(avgWaitHours)}
+              </Text>
+            </div>
+            <div className={styles.statItem}>
+              <div className={styles.statLabel}>
+                <AlertUrgent20Regular className={styles.statIcon} />
+                Critical
+              </div>
+              <Text className={data.criticalCount > 0 ? styles.statValueDanger : styles.statValue}>
+                {data.criticalCount}
+              </Text>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Expand Prompt */}
-      {handleCycleSize && (
-        <div className={styles.expandPrompt} onClick={handleCycleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalItems} items waiting on you</span>
-        </div>
-      )}
+        {/* Top People Waiting On You */}
+        {topPeople.length > 0 && (
+          <div className={styles.topPeopleSection}>
+            <Text className={styles.sectionLabel}>Longest Waiting</Text>
+            <div className={styles.topPeopleList}>
+              {topPeople.map((group) => (
+                <div key={group.person.id || group.person.email} className={styles.personRow}>
+                  {group.person.relationship === 'manager' && (
+                    <Crown20Filled className={styles.vipIcon} />
+                  )}
+                  <Avatar
+                    name={group.person.displayName}
+                    image={group.person.photoUrl ? { src: group.person.photoUrl } : undefined}
+                    size={24}
+                  />
+                  <span className={styles.personInfo}>
+                    <span className={styles.personName}>{group.person.displayName}</span>
+                  </span>
+                  <Badge
+                    appearance="tint"
+                    color={group.totalWaitHours >= 168 ? 'danger' : group.totalWaitHours >= 72 ? 'warning' : 'informative'}
+                    size="small"
+                  >
+                    {formatWait(group.totalWaitHours)} · {group.itemCount} item{group.itemCount > 1 ? 's' : ''}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalItems} items waiting on you</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>
