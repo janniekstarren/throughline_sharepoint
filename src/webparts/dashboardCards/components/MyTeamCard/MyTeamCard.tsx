@@ -29,7 +29,7 @@ import {
   DEFAULT_MY_TEAM_SETTINGS,
 } from '../../hooks/useMyTeam';
 import { MyTeamData, TeamPresenceData } from '../../models/MyTeam';
-import { BaseCard, CardHeader, EmptyState, DonutChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, DonutChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem, DonutSegment } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
@@ -37,6 +37,7 @@ import { getTestMyTeamData, getTestTeamPresenceData } from '../../services/testD
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Styles
@@ -77,6 +78,13 @@ interface MyTeamCardProps {
   settings?: IMyTeamSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
+  onCycleSize?: () => void;
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -98,8 +106,18 @@ export const MyTeamCard: React.FC<MyTeamCardProps> = ({
   settings = DEFAULT_MY_TEAM_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onSizeChange,
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -222,18 +240,25 @@ export const MyTeamCard: React.FC<MyTeamCardProps> = ({
     }));
   }, [data]);
 
-  // Expand button
-  const expandButton = onToggleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
-        aria-label="Expand card"
+  // SMALL CARD VARIANT
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="myTeam"
+        title="My Team"
+        icon={<People24Regular />}
+        metricValue={data?.members?.length ?? 0}
+        smartLabelKey="person"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
+        isLoading={isLoading}
+        hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
       />
-    </Tooltip>
-  ) : undefined;
+    );
+  }
 
   // Header actions
   const headerActions = (
@@ -246,7 +271,7 @@ export const MyTeamCard: React.FC<MyTeamCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -257,7 +282,7 @@ export const MyTeamCard: React.FC<MyTeamCardProps> = ({
         <CardHeader
           icon={<People24Regular />}
           title="My Team"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<People24Regular />}
@@ -283,63 +308,65 @@ export const MyTeamCard: React.FC<MyTeamCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner */}
-      {aiDemoMode && aiCardSummary && (
-        <AIInsightBanner
-          summary={aiCardSummary}
-          insights={aiInsights}
-          onLearnMore={handleAiLearnMore}
-        />
-      )}
-
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showAiOnboarding}
-        onClose={() => setShowAiOnboarding(false)}
-      />
-
-      {/* Presence Donut Chart */}
-      {presenceData && data && data.totalCount > 0 && (
-        <div className={styles.chartContainer}>
-          <DonutChart
-            data={chartData}
-            title="Team Presence"
-            size={120}
-            thickness={20}
-            centerValue={data.availableCount}
-            centerText="Available"
-            showLegend={true}
-            colors={[
-              PRESENCE_COLORS.available,
-              PRESENCE_COLORS.busy,
-              PRESENCE_COLORS.away,
-              PRESENCE_COLORS.offline,
-            ]}
+      <div className={cardStyles.cardContent}>
+        {/* AI Insight Banner */}
+        {aiDemoMode && aiCardSummary && (
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            onLearnMore={handleAiLearnMore}
           />
-        </div>
-      )}
+        )}
 
-      {/* Statistics Grid */}
-      {data && (
-        <StatsGrid stats={statsData} />
-      )}
-
-      {/* Top Available Members - Limited to 1 item to fit in medium card */}
-      {topItems.length > 0 && (
-        <TopItemsList
-          header="Available Now"
-          items={topItems}
-          maxItems={1}
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showAiOnboarding}
+          onClose={() => setShowAiOnboarding(false)}
         />
-      )}
 
-      {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalCount} team members</span>
-        </div>
-      )}
+        {/* Presence Donut Chart */}
+        {presenceData && data && data.totalCount > 0 && (
+          <div className={styles.chartContainer}>
+            <DonutChart
+              data={chartData}
+              title="Team Presence"
+              size={120}
+              thickness={20}
+              centerValue={data.availableCount}
+              centerText="Available"
+              showLegend={true}
+              colors={[
+                PRESENCE_COLORS.available,
+                PRESENCE_COLORS.busy,
+                PRESENCE_COLORS.away,
+                PRESENCE_COLORS.offline,
+              ]}
+            />
+          </div>
+        )}
+
+        {/* Statistics Grid */}
+        {data && (
+          <StatsGrid stats={statsData} />
+        )}
+
+        {/* Top Available Members - Limited to 1 item to fit in medium card */}
+        {topItems.length > 0 && (
+          <TopItemsList
+            header="Available Now"
+            items={topItems}
+            maxItems={1}
+          />
+        )}
+
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalCount} team members</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>

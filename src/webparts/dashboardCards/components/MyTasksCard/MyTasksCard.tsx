@@ -14,6 +14,7 @@ import {
 } from '@fluentui/react-components';
 import {
   TaskListSquareLtr24Regular,
+  Clipboard24Regular,
   ArrowClockwiseRegular,
   ArrowExpand20Regular,
   TaskListLtr20Regular,
@@ -29,7 +30,7 @@ import {
   DEFAULT_MY_TASKS_SETTINGS,
 } from '../../hooks/useMyTasks';
 import { MyTasksData, TasksTrendData } from '../../models/MyTasks';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, DonutChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, TrendBarChart, DonutChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { StatItem, TopItem, DonutSegment, ChartCarousel } from '../shared/charts';
@@ -40,6 +41,7 @@ import {
   getAITasksCardSummary,
   getAllTasksInsights,
 } from '../../services/testData/aiDemoData';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Styles
@@ -80,6 +82,13 @@ interface MyTasksCardProps {
   settings?: IMyTasksSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
+  onCycleSize?: () => void;
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -128,8 +137,17 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
   settings = DEFAULT_MY_TASKS_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onSizeChange,
+  onCycleSize,
+  onToggleSize, // deprecated
 }) => {
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
+  const handleCycleSize = onCycleSize || onToggleSize;
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -250,6 +268,28 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
     return trendData.trend;
   }, [trendData]);
 
+  // SMALL CARD VARIANT
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="myTasks"
+        title="My Tasks"
+        icon={<Clipboard24Regular />}
+        metricValue={data?.totalCount ?? 0}
+        smartLabelKey="task"
+        chartData={trendData?.dataPoints}
+        chartColor="brand"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
+        isLoading={isLoading}
+        hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
+      />
+    );
+  }
+
   // Donut chart data - tasks by list
   const tasksByListData = useMemo((): DonutSegment[] => {
     if (!data || data.tasks.length === 0) return [];
@@ -268,19 +308,6 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
       .slice(0, 6); // Limit to top 6 lists for readability
   }, [data]);
 
-  // Expand button
-  const expandButton = onToggleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
   // Header actions
   const headerActions = (
     <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
@@ -292,7 +319,7 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -306,7 +333,7 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
         <CardHeader
           icon={<TaskListSquareLtr24Regular />}
           title="My Tasks"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<TaskListSquareLtr24Regular />}
@@ -333,77 +360,79 @@ export const MyTasksCard: React.FC<MyTasksCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner */}
-      {aiDemoMode && aiCardSummary && (
-        <AIInsightBanner
-          summary={aiCardSummary}
-          insights={aiInsights}
-          onLearnMore={handleAiLearnMore}
+      <div className={cardStyles.cardContent}>
+        {/* AI Insight Banner */}
+        {aiDemoMode && aiCardSummary && (
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            onLearnMore={handleAiLearnMore}
+          />
+        )}
+
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showAiOnboarding}
+          onClose={() => setShowAiOnboarding(false)}
         />
-      )}
 
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showAiOnboarding}
-        onClose={() => setShowAiOnboarding(false)}
-      />
+        {/* Charts Carousel */}
+        {data && data.totalCount > 0 && (
+          <div className={styles.chartContainer}>
+            <ChartCarousel showArrows={true} showIndicators={true}>
+              {/* Trend Chart - Completion over 7 days */}
+              {trendData && (
+                <TrendBarChart
+                  data={trendData.dataPoints}
+                  title="Completed (7 days)"
+                  trend={chartTrend}
+                  trendLabels={{
+                    improving: 'Improving',
+                    worsening: 'Slowing',
+                    stable: 'Steady',
+                  }}
+                  color="brand"
+                  footerText={`Avg: ${trendData.averageCompletedPerDay} tasks/day`}
+                />
+              )}
+              {/* Donut Chart - Tasks by List */}
+              {tasksByListData.length > 0 && (
+                <DonutChart
+                  data={tasksByListData}
+                  title="Tasks by List"
+                  size={100}
+                  thickness={18}
+                  centerValue={data.totalCount}
+                  centerText="total"
+                  showLegend={true}
+                />
+              )}
+            </ChartCarousel>
+          </div>
+        )}
 
-      {/* Charts Carousel */}
-      {data && data.totalCount > 0 && (
-        <div className={styles.chartContainer}>
-          <ChartCarousel showArrows={true} showIndicators={true}>
-            {/* Trend Chart - Completion over 7 days */}
-            {trendData && (
-              <TrendBarChart
-                data={trendData.dataPoints}
-                title="Completed (7 days)"
-                trend={chartTrend}
-                trendLabels={{
-                  improving: 'Improving',
-                  worsening: 'Slowing',
-                  stable: 'Steady',
-                }}
-                color="brand"
-                footerText={`Avg: ${trendData.averageCompletedPerDay} tasks/day`}
-              />
-            )}
-            {/* Donut Chart - Tasks by List */}
-            {tasksByListData.length > 0 && (
-              <DonutChart
-                data={tasksByListData}
-                title="Tasks by List"
-                size={100}
-                thickness={18}
-                centerValue={data.totalCount}
-                centerText="total"
-                showLegend={true}
-              />
-            )}
-          </ChartCarousel>
-        </div>
-      )}
+        {/* Statistics Grid */}
+        {data && (
+          <StatsGrid stats={statsData} />
+        )}
 
-      {/* Statistics Grid */}
-      {data && (
-        <StatsGrid stats={statsData} />
-      )}
+        {/* Top Overdue Tasks - Limited to 1 item to fit in medium card */}
+        {topItems.length > 0 && (
+          <TopItemsList
+            header="Most Overdue"
+            items={topItems}
+            maxItems={1}
+          />
+        )}
 
-      {/* Top Overdue Tasks - Limited to 1 item to fit in medium card */}
-      {topItems.length > 0 && (
-        <TopItemsList
-          header="Most Overdue"
-          items={topItems}
-          maxItems={1}
-        />
-      )}
-
-      {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalCount} tasks</span>
-        </div>
-      )}
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalCount} tasks</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>

@@ -49,7 +49,8 @@ const useStyles = makeStyles({
   container: {
     display: 'flex',
     flexDirection: 'column',
-    // Height determined by content - detail panel sets the height
+    height: '100%',          // Fill the grid cell — no empty space
+    minHeight: 0,
     backgroundColor: tokens.colorNeutralBackground1,
     borderRadius: tokens.borderRadiusLarge,
     boxShadow: tokens.shadow8,
@@ -92,19 +93,21 @@ const useStyles = makeStyles({
   },
   body: {
     display: 'flex',
-    // Height determined by detail panel content
+    flex: 1,               // Fill remaining space below header
+    minHeight: 0,          // Allow shrinking so both panels scroll
     overflow: 'hidden',
   },
   // Master panel (left side - list)
-  // Scrolls independently if items exceed detail panel height
+  // Fills body height, scrolls independently when items overflow
   masterPanel: {
     width: '40%',
     minWidth: '200px',
-    maxHeight: '500px', // Limit master panel height - scrolls if needed
     borderRight: `1px solid ${tokens.colorNeutralStroke2}`,
     overflowY: 'auto',
     backgroundColor: tokens.colorNeutralBackground1,
     // Custom scrollbar
+    scrollbarWidth: 'thin' as const,
+    scrollbarColor: `${tokens.colorNeutralStroke2} transparent`,
     '::-webkit-scrollbar': {
       width: '6px',
     },
@@ -120,16 +123,35 @@ const useStyles = makeStyles({
     },
   },
   // Detail panel (right side - details)
-  // This panel determines the card height - no scrolling, content fits
+  // Fills body height; detail content scrolls, actions pinned at bottom
   detailPanel: {
     width: '60%',
     display: 'flex',
     flexDirection: 'column',
     backgroundColor: tokens.colorNeutralBackground1,
+    minHeight: 0,
   },
   detailContent: {
-    // Content determines height - no scrolling needed
+    flex: 1,
+    minHeight: 0,
+    overflowY: 'auto',
     padding: tokens.spacingVerticalL,
+    // Custom scrollbar
+    scrollbarWidth: 'thin' as const,
+    scrollbarColor: `${tokens.colorNeutralStroke2} transparent`,
+    '::-webkit-scrollbar': {
+      width: '6px',
+    },
+    '::-webkit-scrollbar-track': {
+      background: 'transparent',
+    },
+    '::-webkit-scrollbar-thumb': {
+      background: tokens.colorNeutralStroke2,
+      borderRadius: '3px',
+    },
+    '::-webkit-scrollbar-thumb:hover': {
+      background: tokens.colorNeutralStroke1,
+    },
   },
   detailActions: {
     display: 'flex',

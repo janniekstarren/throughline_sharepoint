@@ -48,7 +48,6 @@ import {
   ChannelShare24Regular,
   Send20Regular,
   Open20Regular,
-  ContractDownLeft20Regular,
   ClockAlarm20Regular,
   ClockAlarm20Filled,
   CheckmarkCircle24Regular,
@@ -70,6 +69,8 @@ import {
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 
 import { MasterDetailCard } from './shared/MasterDetailCard';
+import { CardSizeMenu } from './shared';
+import { CardSize } from '../types/CardSize';
 import { PendingResponse, GroupedPendingData, PendingTrendData, PersonOwesGroup, ViewMode, SortMode } from '../models/WaitingOnOthers';
 import { useWaitingOnOthers, IWaitingOnOthersSettings, DEFAULT_WAITING_ON_OTHERS_SETTINGS } from '../hooks/useWaitingOnOthers';
 import { WaitingOnOthersService } from '../services/WaitingOnOthersService';
@@ -97,8 +98,8 @@ export interface IWaitingOnOthersCardLargeProps {
   dataMode?: DataMode;
   /** Enable AI Demo Mode (only works with test data) */
   aiDemoMode?: boolean;
-  /** Callback to toggle between large and medium card size */
-  onToggleSize?: () => void;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
 }
 
 const useStyles = makeStyles({
@@ -587,7 +588,7 @@ export const WaitingOnOthersCardLarge: React.FC<IWaitingOnOthersCardLargeProps> 
   settings = DEFAULT_WAITING_ON_OTHERS_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  onSizeChange,
 }) => {
   const styles = useStyles();
   const [viewMode, setViewMode] = React.useState<ViewMode>('people');
@@ -1717,18 +1718,7 @@ export const WaitingOnOthersCardLarge: React.FC<IWaitingOnOthersCardLargeProps> 
                 />
               </Tooltip>
             )}
-            {/* Collapse button */}
-            {onToggleSize && (
-              <Tooltip content="Collapse to summary view" relationship="label">
-                <Button
-                  appearance="subtle"
-                  size="small"
-                  icon={<ContractDownLeft20Regular />}
-                  onClick={onToggleSize}
-                  aria-label="Collapse card"
-                />
-              </Tooltip>
-            )}
+            <CardSizeMenu currentSize="large" onSizeChange={onSizeChange} />
           </div>
         }
         headerContent={

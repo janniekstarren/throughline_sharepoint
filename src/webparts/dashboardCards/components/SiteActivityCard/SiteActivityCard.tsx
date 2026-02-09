@@ -29,7 +29,7 @@ import {
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 
 import { SiteActivityData, ActivityTrendData } from '../../models/SiteActivity';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
@@ -37,6 +37,7 @@ import { getTestSiteActivityData, getTestActivityTrendData } from '../../service
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Styles
@@ -76,6 +77,13 @@ export interface ISiteActivityCardProps {
   context: WebPartContext;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
+  onCycleSize?: () => void;
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -126,8 +134,18 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
   context,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onSizeChange,
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -241,18 +259,27 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
     }
   }, [trendData]);
 
-  // Expand button
-  const expandButton = onToggleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
-        aria-label="Expand card"
+  // SMALL CARD VARIANT
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="siteActivity"
+        title="Site Activity"
+        icon={<History24Regular />}
+        metricValue={data?.activities?.length ?? 0}
+        smartLabelKey="activity"
+        chartData={trendData?.dataPoints}
+        chartColor="brand"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
+        isLoading={isLoading}
+        hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
       />
-    </Tooltip>
-  ) : undefined;
+    );
+  }
 
   // Header actions
   const headerActions = (
@@ -265,7 +292,7 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -277,7 +304,7 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
           icon={<History24Regular />}
           title="Site Activity"
           cardId="siteActivity"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<History24Regular />}
@@ -304,60 +331,62 @@ export const SiteActivityCard: React.FC<ISiteActivityCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner */}
-      {aiDemoMode && aiCardSummary && (
-        <AIInsightBanner
-          summary={aiCardSummary}
-          insights={aiInsights}
-          onLearnMore={handleAiLearnMore}
-        />
-      )}
-
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showAiOnboarding}
-        onClose={() => setShowAiOnboarding(false)}
-      />
-
-      {/* Trend Chart */}
-      {trendData && data && data.totalCount > 0 && (
-        <div className={styles.chartContainer}>
-          <TrendBarChart
-            data={trendData.dataPoints}
-            title="Activity (7 days)"
-            trend={chartTrend}
-            trendLabels={{
-              improving: 'More Active',
-              worsening: 'Less Active',
-              stable: 'Steady',
-            }}
-            color="brand"
-            footerText={`Avg: ${trendData.averageActivitiesPerDay} activities/day`}
+      <div className={cardStyles.cardContent}>
+        {/* AI Insight Banner */}
+        {aiDemoMode && aiCardSummary && (
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            onLearnMore={handleAiLearnMore}
           />
-        </div>
-      )}
+        )}
 
-      {/* Statistics Grid */}
-      {data && (
-        <StatsGrid stats={statsData} />
-      )}
-
-      {/* Top Recent Activities - Limited to 1 item to fit in medium card */}
-      {topItems.length > 0 && (
-        <TopItemsList
-          header="Recent Activity"
-          items={topItems}
-          maxItems={1}
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showAiOnboarding}
+          onClose={() => setShowAiOnboarding(false)}
         />
-      )}
 
-      {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalCount} activities</span>
-        </div>
-      )}
+        {/* Trend Chart */}
+        {trendData && data && data.totalCount > 0 && (
+          <div className={styles.chartContainer}>
+            <TrendBarChart
+              data={trendData.dataPoints}
+              title="Activity (7 days)"
+              trend={chartTrend}
+              trendLabels={{
+                improving: 'More Active',
+                worsening: 'Less Active',
+                stable: 'Steady',
+              }}
+              color="brand"
+              footerText={`Avg: ${trendData.averageActivitiesPerDay} activities/day`}
+            />
+          </div>
+        )}
+
+        {/* Statistics Grid */}
+        {data && (
+          <StatsGrid stats={statsData} />
+        )}
+
+        {/* Top Recent Activities - Limited to 1 item to fit in medium card */}
+        {topItems.length > 0 && (
+          <TopItemsList
+            header="Recent Activity"
+            items={topItems}
+            maxItems={1}
+          />
+        )}
+
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalCount} activities</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>

@@ -19,7 +19,6 @@ import {
 import {
   BrainCircuitRegular,
   ArrowClockwiseRegular,
-  ContractDownLeft20Regular,
   TimelineRegular,
   TargetRegular,
   MailRegular,
@@ -46,6 +45,8 @@ import { getTestContextSwitchingData } from '../../services/testData/contextSwit
 import { getAllContextSwitchingInsights } from '../../services/testData/aiDemoData';
 import { ContextSwitchingService } from '../../services/ContextSwitchingService';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
+import { CardSizeMenu } from '../shared';
+import { CardSize } from '../../types/CardSize';
 import { FocusScoreCircle, HourlyChart } from './components';
 import { AIInsightsPanel } from '../shared/AIComponents';
 
@@ -71,8 +72,8 @@ interface ContextSwitchingCardLargeProps {
   title?: string;
   /** AI Demo Mode - show AI-enhanced content (only when dataMode === 'test') */
   aiDemoMode?: boolean;
-  /** Callback to toggle between medium and large card size */
-  onToggleSize?: () => void;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
 }
 
 // ============================================
@@ -319,7 +320,7 @@ export const ContextSwitchingCardLarge: React.FC<ContextSwitchingCardLargeProps>
   settings = DEFAULT_CONTEXT_SWITCHING_SETTINGS,
   title = 'Context Switching',
   aiDemoMode = false,
-  onToggleSize,
+  onSizeChange,
 }) => {
   const styles = useStyles();
 
@@ -637,7 +638,7 @@ export const ContextSwitchingCardLarge: React.FC<ContextSwitchingCardLargeProps>
 
   // Header actions
   const headerActions = (
-    <>
+    <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
       <Tooltip content="Refresh" relationship="label">
         <Button
           appearance="subtle"
@@ -647,17 +648,8 @@ export const ContextSwitchingCardLarge: React.FC<ContextSwitchingCardLargeProps>
           disabled={loading}
         />
       </Tooltip>
-      {onToggleSize && (
-        <Tooltip content="Collapse" relationship="label">
-          <Button
-            appearance="subtle"
-            icon={<ContractDownLeft20Regular />}
-            size="small"
-            onClick={onToggleSize}
-          />
-        </Tooltip>
-      )}
-    </>
+      <CardSizeMenu currentSize="large" onSizeChange={onSizeChange} />
+    </div>
   );
 
   // Header content (tabs)

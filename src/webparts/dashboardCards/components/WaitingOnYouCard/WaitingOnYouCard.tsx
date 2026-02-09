@@ -34,7 +34,7 @@ import { DataMode } from '../../services/testData';
 import { getTestWaitingOnYouData, getTestWaitingOnYouTrend } from '../../services/testData/waitingOnYou';
 import { WaitingDebtChart } from './components/WaitingDebtChart';
 // Shared components
-import { BaseCard, CardHeader, EmptyState, AIInsightBanner, AIOnboardingDialog, SmallCard } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, AIInsightBanner, AIOnboardingDialog, SmallCard } from '../shared';
 import { useCardStyles } from '../cardStyles';
 // AI Demo Mode imports
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
@@ -58,9 +58,11 @@ export interface WaitingOnYouCardProps {
   aiDemoMode?: boolean;
   /** Card size: 'small' | 'medium' | 'large' */
   size?: CardSize;
-  /** Callback to cycle through card sizes (small → medium → large → small) */
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
   onCycleSize?: () => void;
-  /** @deprecated Use size and onCycleSize instead */
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -75,10 +77,15 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
   dataMode = 'api',
   aiDemoMode = false,
   size = 'medium',
+  onSizeChange,
   onCycleSize,
-  onToggleSize, // deprecated, use onCycleSize
+  onToggleSize, // deprecated
 }) => {
-  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
   const handleCycleSize = onCycleSize || onToggleSize;
   const styles = useWaitingOnYouStyles();
   const cardStyles = useCardStyles();
@@ -153,17 +160,6 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
       }
     : apiHook.refresh;
 
-  // Get AI summary text for small card
-  const aiSummaryText = useMemo(() => {
-    if (!aiCardSummary) return undefined;
-    return aiCardSummary.summary;
-  }, [aiCardSummary]);
-
-  // Get AI insights array for small card (use title for short display)
-  const aiInsightsList = useMemo(() => {
-    return aiInsights.map(insight => insight.title);
-  }, [aiInsights]);
-
   // ============================================
   // SMALL CARD VARIANT
   // Compact chip with title, count, and AI popover
@@ -174,13 +170,17 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
         cardId="waitingOnYou"
         title="Waiting On You"
         icon={<PersonClockRegular />}
-        itemCount={data?.totalItems}
-        aiDemoMode={aiDemoMode}
-        aiSummary={aiSummaryText}
-        aiInsights={aiInsightsList}
-        onCycleSize={handleCycleSize || (() => {})}
+        metricValue={data?.totalItems ?? 0}
+        smartLabelKey="waiting"
+        chartData={trendData?.dataPoints?.map(p => ({ date: new Date(p.date), value: p.itemCount }))}
+        chartColor="warning"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
         isLoading={isLoading}
         hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
       />
     );
   }
@@ -215,19 +215,6 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
     return Math.round(data.totalWaitHours / data.totalItems);
   }, [data]);
 
-  // Expand button for switching to large card view
-  const expandButton = handleCycleSize ? (
-    <Tooltip content="View all details" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={handleCycleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
   // Header actions
   const headerActions = (
     <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
@@ -239,7 +226,7 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -250,7 +237,7 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
         <CardHeader
           icon={<PersonClockRegular />}
           title="Waiting On You"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<PersonClockRegular />}
@@ -277,108 +264,110 @@ export const WaitingOnYouCard: React.FC<WaitingOnYouCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner (AI Demo Mode only) */}
-      {aiDemoMode && aiCardSummary && aiInsights && aiInsights.length > 0 && (
-        <div style={{ padding: `0 ${tokens.spacingHorizontalL}`, marginBottom: tokens.spacingVerticalS }}>
-          <AIInsightBanner
-            summary={aiCardSummary}
-            insights={aiInsights}
-            defaultExpanded={false}
-            onLearnMore={() => setShowOnboarding(true)}
-          />
-        </div>
-      )}
-
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showOnboarding}
-        onClose={handleOnboardingClose}
-        onDontShowAgain={handleDontShowAgain}
-      />
-
-      {/* Trend Chart - positioned higher (after AI banner) */}
-      {showChart && trendData && data && data.totalItems > 0 && (
-        <div className={styles.chartContainer}>
-          <WaitingDebtChart trend={trendData} />
-        </div>
-      )}
-
-      {/* Statistics Grid */}
-      {data && (
-        <div className={styles.statsGrid}>
-          <div className={styles.statItem}>
-            <div className={styles.statLabel}>
-              <Person20Regular className={styles.statIcon} />
-              People
-            </div>
-            <Text className={styles.statValue}>{data.totalPeopleWaiting}</Text>
+      <div className={cardStyles.cardContent}>
+        {/* AI Insight Banner (AI Demo Mode only) */}
+        {aiDemoMode && aiCardSummary && aiInsights && aiInsights.length > 0 && (
+          <div style={{ padding: `0 ${tokens.spacingHorizontalL}`, marginBottom: tokens.spacingVerticalS }}>
+            <AIInsightBanner
+              summary={aiCardSummary}
+              insights={aiInsights}
+              defaultExpanded={false}
+              onLearnMore={() => setShowOnboarding(true)}
+            />
           </div>
-          <div className={styles.statItem}>
-            <div className={styles.statLabel}>
-              <DocumentMultiple20Regular className={styles.statIcon} />
-              Items
-            </div>
-            <Text className={styles.statValue}>{data.totalItems}</Text>
-          </div>
-          <div className={styles.statItem}>
-            <div className={styles.statLabel}>
-              <Timer20Regular className={styles.statIcon} />
-              Avg Wait
-            </div>
-            <Text className={getStatValueClass(avgWaitHours)}>
-              {formatWait(avgWaitHours)}
-            </Text>
-          </div>
-          <div className={styles.statItem}>
-            <div className={styles.statLabel}>
-              <AlertUrgent20Regular className={styles.statIcon} />
-              Critical
-            </div>
-            <Text className={data.criticalCount > 0 ? styles.statValueDanger : styles.statValue}>
-              {data.criticalCount}
-            </Text>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Top People Waiting On You */}
-      {topPeople.length > 0 && (
-        <div className={styles.topPeopleSection}>
-          <Text className={styles.sectionLabel}>Longest Waiting</Text>
-          <div className={styles.topPeopleList}>
-            {topPeople.map((group) => (
-              <div key={group.person.id || group.person.email} className={styles.personRow}>
-                {group.person.relationship === 'manager' && (
-                  <Crown20Filled className={styles.vipIcon} />
-                )}
-                <Avatar
-                  name={group.person.displayName}
-                  image={group.person.photoUrl ? { src: group.person.photoUrl } : undefined}
-                  size={24}
-                />
-                <span className={styles.personInfo}>
-                  <span className={styles.personName}>{group.person.displayName}</span>
-                </span>
-                <Badge
-                  appearance="tint"
-                  color={group.totalWaitHours >= 168 ? 'danger' : group.totalWaitHours >= 72 ? 'warning' : 'informative'}
-                  size="small"
-                >
-                  {formatWait(group.totalWaitHours)} · {group.itemCount} item{group.itemCount > 1 ? 's' : ''}
-                </Badge>
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showOnboarding}
+          onClose={handleOnboardingClose}
+          onDontShowAgain={handleDontShowAgain}
+        />
+
+        {/* Trend Chart - positioned higher (after AI banner) */}
+        {showChart && trendData && data && data.totalItems > 0 && (
+          <div className={styles.chartContainer}>
+            <WaitingDebtChart trend={trendData} />
+          </div>
+        )}
+
+        {/* Statistics Grid */}
+        {data && (
+          <div className={styles.statsGrid}>
+            <div className={styles.statItem}>
+              <div className={styles.statLabel}>
+                <Person20Regular className={styles.statIcon} />
+                People
               </div>
-            ))}
+              <Text className={styles.statValue}>{data.totalPeopleWaiting}</Text>
+            </div>
+            <div className={styles.statItem}>
+              <div className={styles.statLabel}>
+                <DocumentMultiple20Regular className={styles.statIcon} />
+                Items
+              </div>
+              <Text className={styles.statValue}>{data.totalItems}</Text>
+            </div>
+            <div className={styles.statItem}>
+              <div className={styles.statLabel}>
+                <Timer20Regular className={styles.statIcon} />
+                Avg Wait
+              </div>
+              <Text className={getStatValueClass(avgWaitHours)}>
+                {formatWait(avgWaitHours)}
+              </Text>
+            </div>
+            <div className={styles.statItem}>
+              <div className={styles.statLabel}>
+                <AlertUrgent20Regular className={styles.statIcon} />
+                Critical
+              </div>
+              <Text className={data.criticalCount > 0 ? styles.statValueDanger : styles.statValue}>
+                {data.criticalCount}
+              </Text>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Expand Prompt */}
-      {handleCycleSize && (
-        <div className={styles.expandPrompt} onClick={handleCycleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalItems} items waiting on you</span>
-        </div>
-      )}
+        {/* Top People Waiting On You */}
+        {topPeople.length > 0 && (
+          <div className={styles.topPeopleSection}>
+            <Text className={styles.sectionLabel}>Longest Waiting</Text>
+            <div className={styles.topPeopleList}>
+              {topPeople.map((group) => (
+                <div key={group.person.id || group.person.email} className={styles.personRow}>
+                  {group.person.relationship === 'manager' && (
+                    <Crown20Filled className={styles.vipIcon} />
+                  )}
+                  <Avatar
+                    name={group.person.displayName}
+                    image={group.person.photoUrl ? { src: group.person.photoUrl } : undefined}
+                    size={24}
+                  />
+                  <span className={styles.personInfo}>
+                    <span className={styles.personName}>{group.person.displayName}</span>
+                  </span>
+                  <Badge
+                    appearance="tint"
+                    color={group.totalWaitHours >= 168 ? 'danger' : group.totalWaitHours >= 72 ? 'warning' : 'informative'}
+                    size="small"
+                  >
+                    {formatWait(group.totalWaitHours)} · {group.itemCount} item{group.itemCount > 1 ? 's' : ''}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalItems} items waiting on you</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>

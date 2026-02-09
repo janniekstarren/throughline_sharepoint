@@ -1,0 +1,99 @@
+// ============================================
+// CardSizeMenu Styles
+// Pure CSS dropdown menu for SharePoint compatibility
+// ============================================
+
+.container {
+  position: relative;
+  display: inline-block;
+}
+
+.triggerButton {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: inherit;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #0078d4;
+    outline-offset: 1px;
+  }
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 120px;
+  background: #ffffff;
+  border: 1px solid #e1e1e1;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000001; // SharePoint z-index
+  overflow: hidden;
+
+  // Animation
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #323130;
+  text-align: left;
+  transition: background-color 0.1s ease;
+
+  &:hover {
+    background-color: #f3f2f1;
+  }
+
+  &:focus-visible {
+    outline: none;
+    background-color: #edebe9;
+  }
+}
+
+.menuItemActive {
+  font-weight: 600;
+  color: #0078d4;
+}
+
+.checkmark {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  color: #0078d4;
+}

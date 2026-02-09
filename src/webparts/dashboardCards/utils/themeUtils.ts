@@ -385,6 +385,45 @@ function getDefaultDarkTheme(): ISharePointTheme {
 export type ThemeMode = 'auto' | 'light' | 'dark';
 
 /**
+ * Detect the actual page background color by sampling the computed background
+ * of the SharePoint canvas area or body. Returns the hex color if detectable.
+ */
+function detectPageBackgroundColor(): string | undefined {
+  try {
+    // Try common SharePoint canvas selectors
+    const selectors = [
+      '[data-automation-id="CanvasZone"]',
+      '.CanvasZone',
+      '.SPCanvas',
+      '[data-sp-feature-tag]',
+      'main',
+      'body',
+    ];
+
+    for (const selector of selectors) {
+      const el = document.querySelector(selector) as HTMLElement | null;
+      if (el) {
+        const computed = getComputedStyle(el);
+        const bg = computed.backgroundColor;
+        if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+          // Parse rgb/rgba to hex
+          const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+          if (match) {
+            const r = parseInt(match[1], 10);
+            const g = parseInt(match[2], 10);
+            const b = parseInt(match[3], 10);
+            return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // Silent fail — return undefined
+  }
+  return undefined;
+}
+
+/**
  * Get a Fluent UI v9 theme based on mode and SharePoint context
  */
 export function getFluentTheme(context?: WebPartContext, themeMode: ThemeMode = 'light'): Theme {
@@ -406,8 +445,31 @@ export function getFluentTheme(context?: WebPartContext, themeMode: ThemeMode = 
     return webLightTheme;
   }
 
-  // Auto mode - use SharePoint theme if available
+  // Auto mode — detect whether the actual page background is dark
+  // This handles dark SharePoint section backgrounds that the SP theme object may not reflect
   if (spTheme) {
+    // First, check the actual page background color
+    const pageBg = detectPageBackgroundColor();
+    if (pageBg) {
+      const bgLuminance = calculateLuminance(pageBg);
+      if (bgLuminance < 0.4) {
+        // Dark page background detected — use dark theme with SP brand colors
+        const darkDefaults = getDefaultDarkTheme();
+        return createFluentThemeFromSharePoint({
+          ...darkDefaults,
+          themePrimary: spTheme.themePrimary || darkDefaults.themePrimary,
+          themeDark: spTheme.themeDark || darkDefaults.themeDark,
+          themeDarker: spTheme.themeDarker || darkDefaults.themeDarker,
+          themeLight: spTheme.themeLight || darkDefaults.themeLight,
+          themeLighter: spTheme.themeLighter || darkDefaults.themeLighter,
+          themeLighterAlt: spTheme.themeLighterAlt || darkDefaults.themeLighterAlt,
+          themeTertiary: spTheme.themeTertiary || darkDefaults.themeTertiary,
+          themeSecondary: spTheme.themeSecondary || darkDefaults.themeSecondary,
+        });
+      }
+    }
+
+    // Fall back to the SP theme's own light/dark detection
     return createFluentThemeFromSharePoint(spTheme);
   }
 

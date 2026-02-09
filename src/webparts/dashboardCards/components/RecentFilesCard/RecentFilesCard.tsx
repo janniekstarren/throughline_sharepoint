@@ -14,6 +14,7 @@ import {
 } from '@fluentui/react-components';
 import {
   DocumentMultiple24Regular,
+  Document24Regular,
   ArrowClockwiseRegular,
   ArrowExpand20Regular,
   Document20Regular,
@@ -35,7 +36,7 @@ import {
   DEFAULT_RECENT_FILES_SETTINGS,
 } from '../../hooks/useRecentFiles';
 import { RecentFilesData, FileItem, FilesTrendData } from '../../models/RecentFiles';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
@@ -43,6 +44,7 @@ import { getTestRecentFilesData, getTestFilesTrendData } from '../../services/te
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Styles
@@ -83,6 +85,13 @@ interface RecentFilesCardProps {
   settings?: IRecentFilesSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
+  onCycleSize?: () => void;
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -141,8 +150,18 @@ export const RecentFilesCard: React.FC<RecentFilesCardProps> = ({
   settings = DEFAULT_RECENT_FILES_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onSizeChange,
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -259,18 +278,27 @@ export const RecentFilesCard: React.FC<RecentFilesCardProps> = ({
     }
   }, [trendData]);
 
-  // Expand button
-  const expandButton = onToggleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
-        aria-label="Expand card"
+  // SMALL CARD VARIANT
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="recentFiles"
+        title="Recent Files"
+        icon={<Document24Regular />}
+        metricValue={data?.totalCount ?? 0}
+        smartLabelKey="file"
+        chartData={trendData?.dataPoints}
+        chartColor="brand"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
+        isLoading={isLoading}
+        hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
       />
-    </Tooltip>
-  ) : undefined;
+    );
+  }
 
   // Header actions
   const headerActions = (
@@ -283,7 +311,7 @@ export const RecentFilesCard: React.FC<RecentFilesCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -294,7 +322,7 @@ export const RecentFilesCard: React.FC<RecentFilesCardProps> = ({
         <CardHeader
           icon={<DocumentMultiple24Regular />}
           title="Recent Files"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<DocumentMultiple24Regular />}
@@ -320,60 +348,62 @@ export const RecentFilesCard: React.FC<RecentFilesCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner */}
-      {aiDemoMode && aiCardSummary && (
-        <AIInsightBanner
-          summary={aiCardSummary}
-          insights={aiInsights}
-          onLearnMore={handleAiLearnMore}
-        />
-      )}
-
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showAiOnboarding}
-        onClose={() => setShowAiOnboarding(false)}
-      />
-
-      {/* Trend Chart */}
-      {trendData && data && data.totalCount > 0 && (
-        <div className={styles.chartContainer}>
-          <TrendBarChart
-            data={trendData.dataPoints}
-            title="File Activity (7 days)"
-            trend={chartTrend}
-            trendLabels={{
-              improving: 'More Active',
-              worsening: 'Less Active',
-              stable: 'Steady',
-            }}
-            color="brand"
-            footerText={`Avg: ${trendData.averageFilesPerDay} files/day`}
+      <div className={cardStyles.cardContent}>
+        {/* AI Insight Banner */}
+        {aiDemoMode && aiCardSummary && (
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            onLearnMore={handleAiLearnMore}
           />
-        </div>
-      )}
+        )}
 
-      {/* Statistics Grid */}
-      {data && (
-        <StatsGrid stats={statsData} />
-      )}
-
-      {/* Top Recent Files - Limited to 1 item to fit in medium card */}
-      {topItems.length > 0 && (
-        <TopItemsList
-          header="Recently Modified"
-          items={topItems}
-          maxItems={1}
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showAiOnboarding}
+          onClose={() => setShowAiOnboarding(false)}
         />
-      )}
 
-      {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalCount} files</span>
-        </div>
-      )}
+        {/* Trend Chart */}
+        {trendData && data && data.totalCount > 0 && (
+          <div className={styles.chartContainer}>
+            <TrendBarChart
+              data={trendData.dataPoints}
+              title="File Activity (7 days)"
+              trend={chartTrend}
+              trendLabels={{
+                improving: 'More Active',
+                worsening: 'Less Active',
+                stable: 'Steady',
+              }}
+              color="brand"
+              footerText={`Avg: ${trendData.averageFilesPerDay} files/day`}
+            />
+          </div>
+        )}
+
+        {/* Statistics Grid */}
+        {data && (
+          <StatsGrid stats={statsData} />
+        )}
+
+        {/* Top Recent Files - Limited to 1 item to fit in medium card */}
+        {topItems.length > 0 && (
+          <TopItemsList
+            header="Recently Modified"
+            items={topItems}
+            maxItems={1}
+          />
+        )}
+
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalCount} files</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>

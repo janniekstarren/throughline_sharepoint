@@ -34,7 +34,7 @@ import {
   Flag20Regular,
   Flag20Filled,
   ArrowClockwiseRegular,
-  ContractDownLeft20Regular,
+  
   ArrowSort20Regular,
   Filter20Regular,
   Dismiss20Regular,
@@ -63,6 +63,8 @@ import {
   DEFAULT_EMAIL_CARD_SETTINGS,
 } from '../../hooks/useEmailCard';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
+import { CardSizeMenu } from '../shared';
+import { CardSize } from '../../types/CardSize';
 import { DataMode } from '../../services/testData';
 // AI Demo Mode components
 import {
@@ -392,7 +394,7 @@ interface EmailCardLargeProps {
   dataMode?: DataMode;
   /** AI Demo Mode - show AI insights when true */
   aiDemoMode?: boolean;
-  onToggleSize?: () => void;
+  onSizeChange?: (size: CardSize) => void;
 }
 
 // ============================================
@@ -443,7 +445,7 @@ export const EmailCardLarge: React.FC<EmailCardLargeProps> = ({
   settings = DEFAULT_EMAIL_CARD_SETTINGS,
   dataMode = 'test',
   aiDemoMode = false,
-  onToggleSize,
+  onSizeChange,
 }) => {
   const styles = useStyles();
 
@@ -999,18 +1001,7 @@ export const EmailCardLarge: React.FC<EmailCardLargeProps> = ({
               onClick={refresh}
             />
           </Tooltip>
-          {/* Collapse button */}
-          {onToggleSize && (
-            <Tooltip content="Collapse to summary view" relationship="label">
-              <Button
-                appearance="subtle"
-                size="small"
-                icon={<ContractDownLeft20Regular />}
-                onClick={onToggleSize}
-                aria-label="Collapse card"
-              />
-            </Tooltip>
-          )}
+          <CardSizeMenu currentSize="large" onSizeChange={onSizeChange} />
         </div>
       }
       headerContent={

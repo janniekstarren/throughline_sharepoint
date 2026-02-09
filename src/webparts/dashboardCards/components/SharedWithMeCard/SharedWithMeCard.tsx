@@ -14,6 +14,7 @@ import {
 } from '@fluentui/react-components';
 import {
   ShareMultiple24Regular,
+  Share24Regular,
   ArrowClockwiseRegular,
   ArrowExpand20Regular,
   Share20Regular,
@@ -32,7 +33,7 @@ import {
   DEFAULT_SHARED_WITH_ME_SETTINGS,
 } from '../../hooks/useSharedWithMe';
 import { SharedWithMeData, SharingTrendData } from '../../models/SharedWithMe';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
@@ -40,6 +41,7 @@ import { getTestSharedWithMeData, getTestSharingTrendData } from '../../services
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Styles
@@ -118,6 +120,13 @@ interface SharedWithMeCardProps {
   settings?: ISharedWithMeSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
+  onCycleSize?: () => void;
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -129,8 +138,18 @@ export const SharedWithMeCard: React.FC<SharedWithMeCardProps> = ({
   settings = DEFAULT_SHARED_WITH_ME_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onSizeChange,
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -245,18 +264,27 @@ export const SharedWithMeCard: React.FC<SharedWithMeCardProps> = ({
     }
   }, [trendData]);
 
-  // Expand button
-  const expandButton = onToggleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
-        aria-label="Expand card"
+  // SMALL CARD VARIANT
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="sharedWithMe"
+        title="Shared With Me"
+        icon={<Share24Regular />}
+        metricValue={data?.totalCount ?? 0}
+        smartLabelKey="shared"
+        chartData={trendData?.dataPoints}
+        chartColor="brand"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
+        isLoading={isLoading}
+        hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
       />
-    </Tooltip>
-  ) : undefined;
+    );
+  }
 
   // Header actions
   const headerActions = (
@@ -269,7 +297,7 @@ export const SharedWithMeCard: React.FC<SharedWithMeCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -280,7 +308,7 @@ export const SharedWithMeCard: React.FC<SharedWithMeCardProps> = ({
         <CardHeader
           icon={<ShareMultiple24Regular />}
           title="Shared With Me"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<ShareMultiple24Regular />}
@@ -306,60 +334,62 @@ export const SharedWithMeCard: React.FC<SharedWithMeCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner */}
-      {aiDemoMode && aiCardSummary && (
-        <AIInsightBanner
-          summary={aiCardSummary}
-          insights={aiInsights}
-          onLearnMore={handleAiLearnMore}
-        />
-      )}
-
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showAiOnboarding}
-        onClose={() => setShowAiOnboarding(false)}
-      />
-
-      {/* Trend Chart */}
-      {trendData && data && data.totalCount > 0 && (
-        <div className={styles.chartContainer}>
-          <TrendBarChart
-            data={trendData.dataPoints}
-            title="Files Shared (7 days)"
-            trend={chartTrend}
-            trendLabels={{
-              improving: 'Less sharing',
-              worsening: 'More sharing',
-              stable: 'Steady',
-            }}
-            color="brand"
-            footerText={`Avg: ${trendData.averageFilesPerDay} files/day`}
+      <div className={cardStyles.cardContent}>
+        {/* AI Insight Banner */}
+        {aiDemoMode && aiCardSummary && (
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            onLearnMore={handleAiLearnMore}
           />
-        </div>
-      )}
+        )}
 
-      {/* Statistics Grid */}
-      {data && (
-        <StatsGrid stats={statsData} />
-      )}
-
-      {/* Top Recently Shared Files - Limited to 1 item to fit in medium card */}
-      {topItems.length > 0 && (
-        <TopItemsList
-          header="Recently Shared"
-          items={topItems}
-          maxItems={1}
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showAiOnboarding}
+          onClose={() => setShowAiOnboarding(false)}
         />
-      )}
 
-      {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalCount} shared files</span>
-        </div>
-      )}
+        {/* Trend Chart */}
+        {trendData && data && data.totalCount > 0 && (
+          <div className={styles.chartContainer}>
+            <TrendBarChart
+              data={trendData.dataPoints}
+              title="Files Shared (7 days)"
+              trend={chartTrend}
+              trendLabels={{
+                improving: 'Less sharing',
+                worsening: 'More sharing',
+                stable: 'Steady',
+              }}
+              color="brand"
+              footerText={`Avg: ${trendData.averageFilesPerDay} files/day`}
+            />
+          </div>
+        )}
+
+        {/* Statistics Grid */}
+        {data && (
+          <StatsGrid stats={statsData} />
+        )}
+
+        {/* Top Recently Shared Files - Limited to 1 item to fit in medium card */}
+        {topItems.length > 0 && (
+          <TopItemsList
+            header="Recently Shared"
+            items={topItems}
+            maxItems={1}
+          />
+        )}
+
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalCount} shared files</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>

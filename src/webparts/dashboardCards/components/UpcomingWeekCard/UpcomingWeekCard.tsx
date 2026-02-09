@@ -29,7 +29,7 @@ import {
   DEFAULT_UPCOMING_WEEK_SETTINGS,
 } from '../../hooks/useUpcomingWeek';
 import { UpcomingWeekData, WeekTrendData } from '../../models/UpcomingWeek';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { StatItem, TopItem } from '../shared/charts';
@@ -37,6 +37,7 @@ import { useCardStyles } from '../cardStyles';
 import { DataMode } from '../../services/testData';
 import { getTestUpcomingWeekData, getTestWeekTrendData } from '../../services/testData/upcomingWeek';
 import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Styles
@@ -77,6 +78,13 @@ interface UpcomingWeekCardProps {
   settings?: IUpcomingWeekSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
+  onCycleSize?: () => void;
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -88,8 +96,18 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
   settings = DEFAULT_UPCOMING_WEEK_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onSizeChange,
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -206,18 +224,27 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
     }
   }, [trendData]);
 
-  // Expand button
-  const expandButton = onToggleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
-        aria-label="Expand card"
+  // SMALL CARD VARIANT
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="upcomingWeek"
+        title="Upcoming Week"
+        icon={<CalendarWeekNumbers24Regular />}
+        metricValue={data?.totalCount ?? 0}
+        smartLabelKey="event"
+        chartData={trendData?.dataPoints}
+        chartColor="brand"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
+        isLoading={isLoading}
+        hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
       />
-    </Tooltip>
-  ) : undefined;
+    );
+  }
 
   // Header actions
   const headerActions = (
@@ -230,7 +257,7 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -241,7 +268,7 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
         <CardHeader
           icon={<CalendarWeekNumbers24Regular />}
           title="Upcoming Week"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<CalendarWeekNumbers24Regular />}
@@ -267,60 +294,62 @@ export const UpcomingWeekCard: React.FC<UpcomingWeekCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner */}
-      {aiDemoMode && aiCardSummary && (
-        <AIInsightBanner
-          summary={aiCardSummary}
-          insights={aiInsights}
-          onLearnMore={handleAiLearnMore}
-        />
-      )}
-
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showAiOnboarding}
-        onClose={() => setShowAiOnboarding(false)}
-      />
-
-      {/* Trend Chart */}
-      {trendData && data && data.totalCount > 0 && (
-        <div className={styles.chartContainer}>
-          <TrendBarChart
-            data={trendData.dataPoints}
-            title="Meetings (Next 7 days)"
-            trend={chartTrend}
-            trendLabels={{
-              improving: 'Quieter',
-              worsening: 'Busier',
-              stable: 'Steady',
-            }}
-            color="brand"
-            footerText={`Avg: ${trendData.averageMeetingsPerDay} meetings/day`}
+      <div className={cardStyles.cardContent}>
+        {/* AI Insight Banner */}
+        {aiDemoMode && aiCardSummary && (
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            onLearnMore={handleAiLearnMore}
           />
-        </div>
-      )}
+        )}
 
-      {/* Statistics Grid */}
-      {data && (
-        <StatsGrid stats={statsData} />
-      )}
-
-      {/* Top Busiest Days - Limited to 1 item to fit in medium card */}
-      {topItems.length > 0 && (
-        <TopItemsList
-          header="Busiest Days"
-          items={topItems}
-          maxItems={1}
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showAiOnboarding}
+          onClose={() => setShowAiOnboarding(false)}
         />
-      )}
 
-      {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalCount} events</span>
-        </div>
-      )}
+        {/* Trend Chart */}
+        {trendData && data && data.totalCount > 0 && (
+          <div className={styles.chartContainer}>
+            <TrendBarChart
+              data={trendData.dataPoints}
+              title="Meetings (Next 7 days)"
+              trend={chartTrend}
+              trendLabels={{
+                improving: 'Quieter',
+                worsening: 'Busier',
+                stable: 'Steady',
+              }}
+              color="brand"
+              footerText={`Avg: ${trendData.averageMeetingsPerDay} meetings/day`}
+            />
+          </div>
+        )}
+
+        {/* Statistics Grid */}
+        {data && (
+          <StatsGrid stats={statsData} />
+        )}
+
+        {/* Top Busiest Days - Limited to 1 item to fit in medium card */}
+        {topItems.length > 0 && (
+          <TopItemsList
+            header="Busiest Days"
+            items={topItems}
+            maxItems={1}
+          />
+        )}
+
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalCount} events</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>

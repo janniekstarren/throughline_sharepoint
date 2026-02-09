@@ -9,10 +9,24 @@
   position: relative;
   background: transparent !important;
   background-color: transparent !important;
+  // Inherit text color from Fluent theme — adapts to light/dark backgrounds
+  color: var(--colorNeutralForeground1);
   min-height: 100vh;
   max-width: 1600px;
   margin: 0 auto;
   overflow-x: hidden; // Prevent horizontal scroll
+}
+
+// ============================================
+// DASHBOARD HEADER
+// Contains salutation and settings button
+// ============================================
+.dashboardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 // Ensure FluentProvider wrapper is also transparent

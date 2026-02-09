@@ -1,0 +1,191 @@
+// ============================================
+// MasonryGrid Styles
+// CSS Module for SharePoint compatibility
+// ============================================
+
+// Animation timing
+$transition-duration: 300ms;
+$transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+$enter-duration: 200ms;
+
+// ============================================
+// Grid Container
+// ============================================
+
+.masonryGrid {
+  position: relative;
+  width: 100%;
+  // Smooth height transitions when cards resize
+  transition: min-height $transition-duration $transition-easing;
+}
+
+// ============================================
+// Grid Item
+// ============================================
+
+.masonryGridItem {
+  // Reset
+  box-sizing: border-box;
+
+  // Positioning handled by inline styles
+  // (transform, width from layout engine)
+
+  // Prevent content overflow
+  overflow: hidden;
+}
+
+// Initial measurement state (hidden)
+.masonryGridItemInitial {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+// ============================================
+// Animation States
+// ============================================
+
+.animated {
+  // Enable smooth position transitions
+  transition:
+    transform $transition-duration $transition-easing,
+    opacity $enter-duration ease;
+}
+
+// Entering state (initial - before animation)
+.entering {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+
+// Entered state (fully visible)
+.entered {
+  opacity: 1;
+  // Transform is applied inline from layout engine
+}
+
+// Exiting state
+.exiting {
+  opacity: 0;
+  transform: scale(0.9);
+  pointer-events: none;
+}
+
+// ============================================
+// Category Section
+// ============================================
+
+.categorySection {
+  margin-bottom: 24px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 150ms ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #0078d4;
+    outline-offset: 2px;
+  }
+}
+
+.categoryTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #242424;
+}
+
+.categoryCount {
+  font-size: 12px;
+  color: #616161;
+  margin-left: 4px;
+}
+
+.categoryChevron {
+  margin-left: auto;
+  font-size: 10px;
+  color: #616161;
+  transition: transform 200ms ease;
+}
+
+.chevronCollapsed {
+  transform: rotate(-90deg);
+}
+
+// Collapsed category
+.collapsed {
+  .categoryHeader {
+    margin-bottom: 0;
+  }
+}
+
+// ============================================
+// Debug Info (development only)
+// ============================================
+
+.debugInfo {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 10px;
+  font-family: monospace;
+  border-radius: 4px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+// ============================================
+// Responsive Adjustments
+// ============================================
+
+@media (max-width: 768px) {
+  .categoryHeader {
+    padding: 6px 10px;
+  }
+
+  .categoryTitle {
+    font-size: 13px;
+  }
+}
+
+// ============================================
+// Reduced Motion Support
+// ============================================
+
+@media (prefers-reduced-motion: reduce) {
+  .animated {
+    transition: none !important;
+  }
+
+  .entering,
+  .entered,
+  .exiting {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .masonryGrid {
+    transition: none !important;
+  }
+}

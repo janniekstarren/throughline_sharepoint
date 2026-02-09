@@ -16,6 +16,7 @@ import {
 } from '@fluentui/react-components';
 import {
   LinkMultiple24Regular,
+  Link24Regular,
   ArrowClockwise20Regular,
   ArrowExpand20Regular,
   Link20Regular,
@@ -39,9 +40,10 @@ import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { getGenericAICardSummary, getGenericAIInsights } from '../../services/testData/aiDemoData';
 import { QuickLinksService } from '../../services/QuickLinksService';
-import { BaseCard, CardHeader, EmptyState, DonutChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, DonutChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { StatItem, TopItem, DonutSegment } from '../shared/charts';
 import { useCardStyles } from '../cardStyles';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Types
@@ -60,7 +62,13 @@ export interface QuickLinksCardProps {
   settings?: IQuickLinksSettings;
   /** Card title */
   title?: string;
-  /** Callback to toggle size/expand */
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
+  onCycleSize?: () => void;
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -116,8 +124,18 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
   aiDemoMode = false,
   settings = DEFAULT_QUICK_LINKS_SETTINGS,
   title = 'Quick Links',
-  onToggleSize,
+  size = 'medium',
+  onSizeChange,
+  onCycleSize,
+  onToggleSize, // deprecated, use onCycleSize
 }) => {
+  // Use onCycleSize if provided, fallback to onToggleSize for backwards compatibility
+  const handleCycleSize = onCycleSize || onToggleSize;
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -289,18 +307,25 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
     }));
   }, [categoryData]);
 
-  // Expand button
-  const expandButton = onToggleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
-        aria-label="Expand card"
+  // SMALL CARD VARIANT
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="quickLinks"
+        title="Quick Links"
+        icon={<Link24Regular />}
+        metricValue={data?.links?.length ?? 0}
+        smartLabelKey="link"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
+        isLoading={loading}
+        hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
       />
-    </Tooltip>
-  ) : undefined;
+    );
+  }
 
   // Header actions
   const headerActions = (
@@ -315,7 +340,7 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
           aria-label="Refresh links"
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -326,7 +351,7 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
         <CardHeader
           icon={<LinkMultiple24Regular />}
           title={title}
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<LinkMultiple24Regular />}
@@ -352,57 +377,59 @@ export const QuickLinksCard: React.FC<QuickLinksCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner */}
-      {aiDemoMode && aiCardSummary && (
-        <AIInsightBanner
-          summary={aiCardSummary}
-          insights={aiInsights}
-          onLearnMore={handleAiLearnMore}
-        />
-      )}
-
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showAiOnboarding}
-        onClose={() => setShowAiOnboarding(false)}
-      />
-
-      {/* Donut Chart - Category Distribution */}
-      {donutData.length > 0 && data && data.totalCount > 0 && (
-        <div className={styles.chartContainer}>
-          <DonutChart
-            data={donutData}
-            title="Links by Category"
-            size={120}
-            thickness={20}
-            centerValue={data.totalCount}
-            centerText="links"
-            showLegend={true}
+      <div className={cardStyles.cardContent}>
+        {/* AI Insight Banner */}
+        {aiDemoMode && aiCardSummary && (
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            onLearnMore={handleAiLearnMore}
           />
-        </div>
-      )}
+        )}
 
-      {/* Statistics Grid */}
-      {data && (
-        <StatsGrid stats={statsData} />
-      )}
-
-      {/* Top Items - Most Used/Favorite Links - Limited to 1 item to fit in medium card */}
-      {topItems.length > 0 && (
-        <TopItemsList
-          header="Most Used"
-          items={topItems}
-          maxItems={1}
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showAiOnboarding}
+          onClose={() => setShowAiOnboarding(false)}
         />
-      )}
 
-      {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalCount} links</span>
-        </div>
-      )}
+        {/* Donut Chart - Category Distribution */}
+        {donutData.length > 0 && data && data.totalCount > 0 && (
+          <div className={styles.chartContainer}>
+            <DonutChart
+              data={donutData}
+              title="Links by Category"
+              size={120}
+              thickness={20}
+              centerValue={data.totalCount}
+              centerText="links"
+              showLegend={true}
+            />
+          </div>
+        )}
+
+        {/* Statistics Grid */}
+        {data && (
+          <StatsGrid stats={statsData} />
+        )}
+
+        {/* Top Items - Most Used/Favorite Links - Limited to 1 item to fit in medium card */}
+        {topItems.length > 0 && (
+          <TopItemsList
+            header="Most Used"
+            items={topItems}
+            maxItems={1}
+          />
+        )}
+
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalCount} links</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>

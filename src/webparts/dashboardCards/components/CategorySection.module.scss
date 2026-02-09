@@ -1,31 +1,51 @@
 // ============================================
 // CATEGORY SECTION LAYOUT
-// Large cards: full width, stacked
-// Medium cards: masonry grid (3/2/1 columns)
+// Uses CSS Grid with fixed column counts
 // ============================================
 
 .categorySection {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 
   &:last-child {
     margin-bottom: 0;
   }
 }
 
-.categoryTitle {
+// ============================================
+// CATEGORY HEADER
+// Clickable header with collapse/expand
+// Uses Fluent2 tokens for theme-adaptive colors
+// ============================================
+.categoryHeader {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: var(--colorNeutralBackground3, rgba(0, 0, 0, 0.03));
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 150ms ease;
+
+  &:hover {
+    background: var(--colorNeutralBackground3Hover, rgba(0, 0, 0, 0.06));
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--colorBrandStroke1, #0078d4);
+    outline-offset: 2px;
+  }
+}
+
+.categoryTitle {
+  font-size: 14px;
   font-weight: 600;
-  // Use CSS custom properties that Fluent UI FluentProvider injects
-  // These adapt to light/dark theme automatically
-  color: var(--colorNeutralForeground2);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin: 0 0 16px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--colorNeutralStroke2);
+  color: var(--colorNeutralForeground1);
+  margin: 0;
+  flex: 1;
 }
 
 .categoryIcon {
@@ -41,199 +61,175 @@
   }
 }
 
+.cardCount {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--colorNeutralForeground2);
+}
+
+.chevron {
+  display: flex;
+  align-items: center;
+  color: var(--colorNeutralForeground2);
+  transition: transform 200ms ease;
+}
+
 // ============================================
-// LARGE CARDS ROW
-// 2-column grid for large cards (half width each)
-// Height adapts to detail panel content
+// CATEGORY CONTENT
 // ============================================
-.largeCardsRow {
+.categoryContent {
+  display: block;
+}
+
+.animated {
+  display: block;
+}
+
+// ============================================
+// CSS GRID LAYOUT - Dense Packing
+// 4-column grid with dense auto-flow for optimal packing
+// Cards are sorted by size in JS (large first) for best results
+// Row height = 300px (fixed to prevent layout shifts)
+// - Small: 1 col × 1 row  = 300px
+// - Medium: 1 col × 2 rows = 300 + 16 + 300 = 616px
+// - Large: 2 cols × 2 rows = 616px tall, double wide
+// ============================================
+.cardGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);  // 2 large cards per row
-  gap: 20px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 300px; // Fixed row height — prevents layout shifts
+  grid-auto-flow: dense; // Fill gaps by placing smaller items in holes
+  gap: 16px;
 
-  // Each large card takes half width
-  // Height determined by detail panel content
-  > div {
-    width: 100%;
-  }
-
-  // Remove bottom margin if no medium cards follow
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  // Full width on smaller screens
+  // 3 columns on medium screens
   @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  // 2 columns on tablet
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  // 1 column on mobile - no spanning, auto row height
+  @media (max-width: 600px) {
     grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    grid-auto-flow: row;
   }
 }
 
-// Taller variant for AI-enhanced Email cards
-// Reserved for future use - height determined by content
-.largeCardsRowTall {
-  // Placeholder to ensure class is exported
+// Base card wrapper — fills the grid cell so card content can scroll
+// Fluent2 motion: smooth transition when card size changes
+.cardWrapper {
   display: flex;
+  flex-direction: column;
+  min-width: 0; // Prevent horizontal overflow
+  min-height: 0; // Allow shrinking to fit grid cell
+  overflow: hidden; // Clip to grid cell bounds
+  // Fluent2 decelerate-mid easing for size change animations
+  transition: transform 250ms cubic-bezier(0.1, 0.9, 0.2, 1),
+              opacity 200ms cubic-bezier(0.1, 0.9, 0.2, 1),
+              box-shadow 200ms cubic-bezier(0.1, 0.9, 0.2, 1);
+
+  // Force child card to fill the grid cell exactly.
+  // Content scrolls inside the card's cardContent area.
+  > * {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    max-height: none !important; // Grid cell controls height
+  }
 }
 
-// ============================================
-// MASONRY GRID
-// Uses react-masonry-css flexbox layout
-// Optimized for 2 columns per row for wider cards
-// ============================================
-.masonryWrapper {
-  // Wrapper for masonry grid when not dragging
-  position: relative;
+// Size-change animation class — applied briefly via JS when size changes
+.cardSizeChanging {
+  animation: cardSizeChange 300ms cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
 }
 
-.masonryGrid {
-  display: flex;
-  width: auto;
-  margin-left: -16px; // Reduced offset for tighter 4-column grid
+@keyframes cardSizeChange {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-.masonryColumn {
-  padding-left: 16px; // Reduced gap for 4-column layout
-  background-clip: padding-box;
+// Small card - 1 column, 1 row = 300px
+.cardSmall {
+  grid-column: span 1;
+  grid-row: span 1;
+}
 
-  // Gap between rows (cards in same column)
-  > div {
-    margin-bottom: 16px;
-    // Cards use dynamic height based on content
-    // Removed fixed min-height to allow cards to size naturally
+// Medium card - 1 column, 2 rows = 616px
+.cardMedium {
+  grid-column: span 1;
+  grid-row: span 2;
 
-    &:last-child {
-      margin-bottom: 0;
+  @media (max-width: 600px) {
+    grid-row: auto;
+
+    > * {
+      height: auto;
+      max-height: 600px !important;
     }
   }
 }
 
-// ============================================
-// DRAG AND DROP STYLES
-// Grid layout used during drag operations
-// Now uses 2 columns by default for wider cards
-// ============================================
-.gridLayout {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr); // 4 columns by default for narrower cards
-  gap: 16px;
-  min-height: 100px;
-  padding: 8px;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
+// Large card - 2 columns, 2 rows = 616px tall, double wide
+.cardLarge {
+  grid-column: span 2;
+  grid-row: span 2;
 
-  @media (max-width: 1400px) {
-    grid-template-columns: repeat(3, 1fr);
+  @media (max-width: 600px) {
+    grid-column: span 1;
+    grid-row: auto;
+
+    > * {
+      height: auto;
+      max-height: 600px !important;
+    }
   }
-
-  @media (max-width: 1024px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-// Highlight when dragging over a drop zone
-.gridDragOver {
-  background-color: var(--colorBrandBackground2);
-}
-
-// Card wrapper for draggable items
-.draggableCard {
-  position: relative;
-  cursor: grab;
-  // Removed fixed min-height to allow dynamic card heights
-
-  &:active {
-    cursor: grabbing;
-  }
-}
-
-// Card being dragged
-.cardDragging {
-  opacity: 0.95;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  transform: rotate(1deg);
-  z-index: 1000;
-}
-
-// Placeholder styling (dashed outline for drop position)
-// react-beautiful-dnd injects a placeholder element
-:global([data-rbd-placeholder-context-id]) {
-  border: 2px dashed var(--colorBrandStroke1) !important;
-  border-radius: 12px !important;
-  background-color: var(--colorBrandBackground2) !important;
-  min-height: 200px !important; // Reduced for dynamic card heights
 }
 
 // ============================================
 // RESPONSIVE ADJUSTMENTS
 // ============================================
-
-// Tablet/Medium screens - 3 columns for masonry
-@media (max-width: 1399px) {
-  .masonryGrid {
-    margin-left: -14px;
-  }
-
-  .masonryColumn {
-    padding-left: 14px;
-
-    > div {
-      margin-bottom: 14px;
-    }
-  }
-
-  .largeCardsRow {
-    gap: 16px;
+@media (max-width: 768px) {
+  .categorySection {
     margin-bottom: 16px;
   }
-}
 
-// Mobile - single column
-@media (max-width: 767px) {
-  .categorySection {
-    margin-bottom: 20px;
+  .categoryHeader {
+    padding: 6px 10px;
   }
 
   .categoryTitle {
-    font-size: 12px;
-    margin-bottom: 12px;
+    font-size: 13px;
   }
 
-  .masonryGrid {
-    margin-left: -12px;
-  }
-
-  .masonryColumn {
-    padding-left: 12px;
-
-    > div {
-      margin-bottom: 12px;
-    }
-  }
-
-  .largeCardsRow {
+  .cardGrid {
     gap: 12px;
-    margin-bottom: 12px;
   }
 }
 
 // ============================================
-// SMALL CARDS ROW
-// Horizontal row of compact card chips
+// REDUCED MOTION SUPPORT
 // ============================================
-.smallCardsRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
-}
+@media (prefers-reduced-motion: reduce) {
+  .categoryHeader,
+  .chevron {
+    transition: none !important;
+  }
 
-.smallCardWrapper {
-  flex: 0 0 auto;
-  min-width: 180px;
-  max-width: 280px;
+  .cardWrapper {
+    transition: none !important;
+  }
+
+  .cardSizeChanging {
+    animation: none !important;
+  }
 }

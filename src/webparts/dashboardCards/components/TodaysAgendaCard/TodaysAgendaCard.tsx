@@ -1,6 +1,8 @@
 // ============================================
-// TodaysAgendaCard - Medium Card (Summary View)
-// Shows today's calendar events with chart, stats, and top items
+// TodaysAgendaCard - Card with size variants
+// Small: Compact chip with AI popover
+// Medium: Summary view with chart, stats, and top items
+// Large: Full master-detail layout
 // ============================================
 
 import * as React from 'react';
@@ -29,7 +31,7 @@ import {
   DEFAULT_TODAYS_AGENDA_SETTINGS,
 } from '../../hooks/useTodaysAgenda';
 import { TodaysAgendaData, AgendaTrendData } from '../../models/TodaysAgenda';
-import { BaseCard, CardHeader, EmptyState, TrendBarChart, StatsGrid, TopItemsList } from '../shared';
+import { BaseCard, CardHeader, CardSizeMenu, EmptyState, TrendBarChart, StatsGrid, TopItemsList, SmallCard } from '../shared';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
 import { StatItem, TopItem } from '../shared/charts';
@@ -40,6 +42,7 @@ import {
   getAIAgendaCardSummary,
   getAllAgendaInsights,
 } from '../../services/testData/aiDemoData';
+import { CardSize } from '../../types/CardSize';
 
 // ============================================
 // Styles
@@ -80,6 +83,13 @@ interface TodaysAgendaCardProps {
   settings?: ITodaysAgendaSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
+  /** Card size: 'small' | 'medium' | 'large' */
+  size?: CardSize;
+  /** Callback when size changes via dropdown menu */
+  onSizeChange?: (size: CardSize) => void;
+  /** @deprecated Use onSizeChange instead */
+  onCycleSize?: () => void;
+  /** @deprecated Use onSizeChange instead */
   onToggleSize?: () => void;
 }
 
@@ -91,8 +101,17 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
   settings = DEFAULT_TODAYS_AGENDA_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  size = 'medium',
+  onSizeChange,
+  onCycleSize,
+  onToggleSize, // deprecated
 }) => {
+  // Use onSizeChange if provided, fallback to onCycleSize/onToggleSize for backwards compatibility
+  const handleSizeChange = onSizeChange || ((newSize: CardSize) => {
+    if (onCycleSize) onCycleSize();
+    else if (onToggleSize) onToggleSize();
+  });
+  const handleCycleSize = onCycleSize || onToggleSize;
   const cardStyles = useCardStyles();
   const styles = useStyles();
 
@@ -153,6 +172,31 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
         }, 500);
       }
     : apiHook.refresh;
+
+  // ============================================
+  // SMALL CARD VARIANT
+  // Compact chip with title, count, and AI popover
+  // ============================================
+  if (size === 'small') {
+    return (
+      <SmallCard
+        cardId="todaysAgenda"
+        title="Today's Agenda"
+        icon={<CalendarLtr24Regular />}
+        metricValue={data?.totalCount ?? 0}
+        smartLabelKey="event"
+        chartData={trendData?.dataPoints}
+        chartColor="brand"
+        currentSize={size}
+        onSizeChange={handleSizeChange}
+        isLoading={isLoading}
+        hasError={!!error}
+        aiDemoMode={aiDemoMode}
+        aiSummary={aiCardSummary?.summary}
+        aiInsights={aiInsights?.map(i => i.title)}
+      />
+    );
+  }
 
   // Helper functions
   const formatTime = (date: Date): string => {
@@ -223,19 +267,6 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
     }
   }, [trendData]);
 
-  // Expand button
-  const expandButton = onToggleSize ? (
-    <Tooltip content="Expand to detailed view" relationship="label">
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowExpand20Regular />}
-        onClick={onToggleSize}
-        aria-label="Expand card"
-      />
-    </Tooltip>
-  ) : undefined;
-
   // Header actions
   const headerActions = (
     <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
@@ -247,7 +278,7 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {expandButton}
+      <CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />
     </div>
   );
 
@@ -258,7 +289,7 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
         <CardHeader
           icon={<CalendarLtr24Regular />}
           title="Today's Agenda"
-          actions={expandButton}
+          actions={<CardSizeMenu currentSize={size} onSizeChange={handleSizeChange} />}
         />
         <EmptyState
           icon={<CalendarLtr24Regular />}
@@ -284,60 +315,62 @@ export const TodaysAgendaCard: React.FC<TodaysAgendaCardProps> = ({
         actions={headerActions}
       />
 
-      {/* AI Insight Banner */}
-      {aiDemoMode && aiCardSummary && (
-        <AIInsightBanner
-          summary={aiCardSummary}
-          insights={aiInsights}
-          onLearnMore={handleAiLearnMore}
-        />
-      )}
-
-      {/* AI Onboarding Dialog */}
-      <AIOnboardingDialog
-        open={showAiOnboarding}
-        onClose={() => setShowAiOnboarding(false)}
-      />
-
-      {/* Trend Chart */}
-      {trendData && data && data.totalCount > 0 && (
-        <div className={styles.chartContainer}>
-          <TrendBarChart
-            data={trendData.dataPoints}
-            title="Meetings (7 days)"
-            trend={chartTrend}
-            trendLabels={{
-              improving: 'Quieter',
-              worsening: 'Busier',
-              stable: 'Steady',
-            }}
-            color="brand"
-            footerText={`Avg: ${trendData.averageMeetingsPerDay} meetings/day`}
+      <div className={cardStyles.cardContent}>
+        {/* AI Insight Banner */}
+        {aiDemoMode && aiCardSummary && (
+          <AIInsightBanner
+            summary={aiCardSummary}
+            insights={aiInsights}
+            onLearnMore={handleAiLearnMore}
           />
-        </div>
-      )}
+        )}
 
-      {/* Statistics Grid */}
-      {data && (
-        <StatsGrid stats={statsData} />
-      )}
-
-      {/* Top Upcoming Events - Limited to 1 item to fit in medium card */}
-      {topItems.length > 0 && (
-        <TopItemsList
-          header="Coming Up"
-          items={topItems}
-          maxItems={1}
+        {/* AI Onboarding Dialog */}
+        <AIOnboardingDialog
+          open={showAiOnboarding}
+          onClose={() => setShowAiOnboarding(false)}
         />
-      )}
 
-      {/* Expand Prompt */}
-      {onToggleSize && (
-        <div className={styles.expandPrompt} onClick={onToggleSize}>
-          <ArrowExpand20Regular />
-          <span>View all {data?.totalCount} events</span>
-        </div>
-      )}
+        {/* Trend Chart */}
+        {trendData && data && data.totalCount > 0 && (
+          <div className={styles.chartContainer}>
+            <TrendBarChart
+              data={trendData.dataPoints}
+              title="Meetings (7 days)"
+              trend={chartTrend}
+              trendLabels={{
+                improving: 'Quieter',
+                worsening: 'Busier',
+                stable: 'Steady',
+              }}
+              color="brand"
+              footerText={`Avg: ${trendData.averageMeetingsPerDay} meetings/day`}
+            />
+          </div>
+        )}
+
+        {/* Statistics Grid */}
+        {data && (
+          <StatsGrid stats={statsData} />
+        )}
+
+        {/* Top Upcoming Events - Limited to 1 item to fit in medium card */}
+        {topItems.length > 0 && (
+          <TopItemsList
+            header="Coming Up"
+            items={topItems}
+            maxItems={1}
+          />
+        )}
+
+        {/* Expand Prompt */}
+        {handleCycleSize && (
+          <div className={styles.expandPrompt} onClick={handleCycleSize}>
+            <ArrowExpand20Regular />
+            <span>View all {data?.totalCount} events</span>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={cardStyles.cardFooter}>

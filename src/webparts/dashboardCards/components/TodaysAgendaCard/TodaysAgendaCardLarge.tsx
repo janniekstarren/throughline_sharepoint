@@ -16,7 +16,7 @@ import {
   CalendarLtr24Regular,
   Video16Regular,
   Location16Regular,
-  ArrowMinimize20Regular,
+  
   ArrowClockwiseRegular,
 } from '@fluentui/react-icons';
 import { WebPartContext } from '@microsoft/sp-webpart-base';
@@ -28,6 +28,8 @@ import {
 } from '../../hooks/useTodaysAgenda';
 import { TodaysAgendaData, CalendarEvent } from '../../models/TodaysAgenda';
 import { MasterDetailCard } from '../shared/MasterDetailCard';
+import { CardSizeMenu } from '../shared';
+import { CardSize } from '../../types/CardSize';
 import { EventDetailPanel, EventDetailActions } from '../shared/EventDetailPanel';
 import { AIInsightBanner, AIOnboardingDialog } from '../shared/AIComponents';
 import { IAICardSummary, IAIInsight } from '../../models/AITypes';
@@ -124,7 +126,7 @@ interface TodaysAgendaCardLargeProps {
   settings?: ITodaysAgendaSettings;
   dataMode?: DataMode;
   aiDemoMode?: boolean;
-  onToggleSize?: () => void;
+  onSizeChange?: (size: CardSize) => void;
 }
 
 // ============================================
@@ -167,7 +169,7 @@ export const TodaysAgendaCardLarge: React.FC<TodaysAgendaCardLargeProps> = ({
   settings = DEFAULT_TODAYS_AGENDA_SETTINGS,
   dataMode = 'api',
   aiDemoMode = false,
-  onToggleSize,
+  onSizeChange,
 }) => {
   const styles = useStyles();
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | undefined>(undefined);
@@ -320,17 +322,7 @@ export const TodaysAgendaCardLarge: React.FC<TodaysAgendaCardLargeProps> = ({
           onClick={refresh}
         />
       </Tooltip>
-      {onToggleSize && (
-        <Tooltip content="Collapse to compact view" relationship="label">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<ArrowMinimize20Regular />}
-            onClick={onToggleSize}
-            aria-label="Collapse card"
-          />
-        </Tooltip>
-      )}
+      <CardSizeMenu currentSize="large" onSizeChange={onSizeChange} />
     </div>
   );
 
