@@ -10,9 +10,6 @@ import {
   makeStyles,
   tokens,
   mergeClasses,
-  FluentProvider,
-  webLightTheme,
-  Theme,
   Caption1,
   Body1,
   Body1Strong,
@@ -70,7 +67,6 @@ export interface IItemHoverCardProps {
   item: IHoverCardItem;
   itemType: HoverCardItemType;
   onAction?: (action: string, item: IHoverCardItem, itemType: HoverCardItemType) => void;
-  theme?: Theme;
 }
 
 // Fluent 2 consistent styles - matches existing card patterns
@@ -257,7 +253,6 @@ export const ItemHoverCard: React.FC<IItemHoverCardProps> = ({
   item,
   itemType,
   onAction,
-  theme,
 }) => {
   const styles = useStyles();
   const [isOpen, setIsOpen] = React.useState(false);
@@ -735,9 +730,7 @@ export const ItemHoverCard: React.FC<IItemHoverCardProps> = ({
         onMouseEnter={handlePopoverMouseEnter}
         onMouseLeave={handlePopoverMouseLeave}
       >
-        <FluentProvider theme={theme || webLightTheme}>
-          {renderContent()}
-        </FluentProvider>
+        {renderContent()}
       </PopoverSurface>
     </Popover>
   );

@@ -10,6 +10,8 @@ build.addSuppression(`Warning - [sass] The local CSS class 'ms-Grid' is not came
 build.addSuppression(/Warning - \[lint\].*/);
 build.addSuppression(/Warning - \[sass\].*/);
 build.addSuppression(/Warning - \[tsc\].*/);
+build.addSuppression(/Warning - \[configure-webpack\].*/);
+build.addSuppression(/Warning - lint -.*/);
 
 // Don't treat warnings as errors
 build.warnings = false;

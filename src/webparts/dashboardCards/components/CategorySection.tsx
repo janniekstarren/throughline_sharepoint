@@ -65,11 +65,6 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
   onToggleCollapsed,
   animationsEnabled = true,
 }) => {
-  // Don't render empty sections
-  if (orderedCards.length === 0) {
-    return null;
-  }
-
   // Helper to determine card size
   const getCardSize = (card: IOrderedCard): CardSize => {
     if (card.size) return card.size;
@@ -79,13 +74,20 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
   // Sort cards by size for optimal grid packing
   // Large cards first, then medium, then small
   // This allows dense packing to fill gaps properly
+  // NOTE: This hook MUST be called before any early returns (React rules of hooks)
   const sortedCards = React.useMemo(() => {
+    if (orderedCards.length === 0) return [];
     return [...orderedCards].sort((a, b) => {
       const sizeA = getCardSize(a);
       const sizeB = getCardSize(b);
       return SIZE_PRIORITY[sizeA] - SIZE_PRIORITY[sizeB];
     });
   }, [orderedCards]);
+
+  // Don't render empty sections - MUST be AFTER all hooks (React rules of hooks)
+  if (orderedCards.length === 0) {
+    return null;
+  }
 
   // Get the appropriate CSS class for a card based on its size
   const getCardClassName = (card: IOrderedCard): string => {

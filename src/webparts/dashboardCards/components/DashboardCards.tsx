@@ -268,6 +268,25 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     setCardSize(cardId, size);
   }, [setCardSize]);
 
+  // Check if a card is visible based on its visibility setting
+  const isCardVisible = React.useCallback((cardId: string): boolean => {
+    const visibilityMap: Record<string, boolean> = {
+      todaysAgenda: cardVisibility.showTodaysAgenda,
+      email: cardVisibility.showEmail,
+      myTasks: cardVisibility.showMyTasks,
+      recentFiles: cardVisibility.showRecentFiles,
+      upcomingWeek: cardVisibility.showUpcomingWeek,
+      myTeam: cardVisibility.showMyTeam,
+      sharedWithMe: cardVisibility.showSharedWithMe,
+      quickLinks: cardVisibility.showQuickLinks,
+      siteActivity: cardVisibility.showSiteActivity,
+      waitingOnYou: cardVisibility.showWaitingOnYou,
+      waitingOnOthers: cardVisibility.showWaitingOnOthers,
+      contextSwitching: cardVisibility.showContextSwitching,
+    };
+    return visibilityMap[cardId] ?? false;
+  }, [cardVisibility]);
+
   // Handle card reorder within a category (called from CategorySection)
   const handleCardReorder = React.useCallback((newCardIds: string[]) => {
     // Rebuild the full cardOrder with the new order for visible cards
@@ -294,7 +313,7 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
     if (onCardOrderChange) {
       onCardOrderChange(newCardOrder);
     }
-  }, [cardOrder, setUserCardOrder, onCardOrderChange]);
+  }, [cardOrder, isCardVisible, setUserCardOrder, onCardOrderChange]);
 
   // Get theme from SharePoint (converts SP theme to Fluent UI v9, respecting theme mode)
   const [currentTheme, setCurrentTheme] = React.useState<Theme | null>(null);
@@ -329,6 +348,90 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
       });
   }, [context]);
 
+  // Settings panel data - convert current state to format expected by SettingsPanel
+  const settingsCategories: ISettingsCategoryConfig[] = React.useMemo(() => {
+    if (categoryOrder.length === 0) {
+      // No categories - create a default "All Cards" category
+      return [{
+        categoryId: 'all',
+        displayName: 'All Cards',
+        icon: 'GridDots',
+        order: 0,
+        visible: true,
+        collapsed: false,
+        userEditable: true,
+        cardIds: cardOrder.filter(id => isCardVisible(id)),
+      }];
+    }
+
+    return categoryOrder.map((catId, index) => {
+      const catConfig = categoryConfig[catId];
+      return {
+        categoryId: catId,
+        displayName: categoryNames[catId] || catId,
+        icon: categoryIcons[catId] || 'GridDots',
+        order: index,
+        visible: catConfig?.visible !== false,
+        collapsed: false,
+        userEditable: true,
+        cardIds: cardOrder.filter(id => cardCategoryAssignment[id] === catId && isCardVisible(id)),
+      };
+    });
+  }, [categoryOrder, categoryConfig, categoryNames, categoryIcons, cardOrder, cardCategoryAssignment, isCardVisible]);
+
+  const settingsCards: Record<string, ICardConfig> = React.useMemo(() => {
+    const cards: Record<string, ICardConfig> = {};
+    cardOrder.forEach((cardId, index) => {
+      const size = getCardSizeForRender(cardId);
+      cards[cardId] = {
+        cardId,
+        size,
+        columnSpan: size === 'large' ? 2 : 1,
+        visible: isCardVisible(cardId),
+        orderInCategory: index,
+      };
+    });
+    return cards;
+  }, [cardOrder, isCardVisible, getCardSizeForRender]);
+
+  // Check if user has any custom preferences
+  const hasUserOverrides = React.useMemo(() => {
+    const orderChanged = JSON.stringify(cardOrder) !== JSON.stringify(defaultCardOrder);
+    const sizesChanged = cardOrder.some(id => getCardSizeForRender(id) !== 'medium');
+    return orderChanged || sizesChanged;
+  }, [cardOrder, defaultCardOrder, getCardSizeForRender]);
+
+  // Settings panel handlers
+  const handleCategoryReorder = React.useCallback((categoryIds: string[]) => {
+    console.log('Category reorder requested:', categoryIds);
+  }, []);
+
+  const handleCategoryCollapsedChange = React.useCallback((categoryId: string, collapsed: boolean) => {
+    console.log('Category collapsed change:', categoryId, collapsed);
+  }, []);
+
+  const handleCardVisibilityChange = React.useCallback((cardId: string, visible: boolean) => {
+    console.log('Card visibility change requested (admin-only):', cardId, visible);
+  }, []);
+
+  const handleCardReorderInCategory = React.useCallback((categoryId: string, newCardIds: string[]) => {
+    console.log('Card reorder in category:', categoryId, newCardIds);
+    handleCardReorder(newCardIds);
+  }, [handleCardReorder]);
+
+  const handleCardMoveToCategory = React.useCallback((cardId: string, targetCategoryId: string) => {
+    console.log('Card move to category:', cardId, targetCategoryId);
+  }, []);
+
+  const handleAnimationsEnabledChange = React.useCallback((enabled: boolean) => {
+    console.log('Animations enabled change:', enabled);
+  }, []);
+
+  const handleResetToDefaults = React.useCallback(() => {
+    setUserCardOrder(defaultCardOrder);
+    cardOrder.forEach(id => setCardSize(id, 'medium'));
+  }, [defaultCardOrder, setUserCardOrder, cardOrder, setCardSize]);
+
   // Wait for theme to be ready
   if (!currentTheme) {
     return (
@@ -340,25 +443,6 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
 
   // Card size is now handled by CategorySection (large = full width, medium = masonry)
   // CARD_SIZES is still used by isLargeCard() to determine layout
-
-  // Check if a card is visible based on its visibility setting
-  const isCardVisible = (cardId: string): boolean => {
-    const visibilityMap: Record<string, boolean> = {
-      todaysAgenda: cardVisibility.showTodaysAgenda,
-      email: cardVisibility.showEmail,
-      myTasks: cardVisibility.showMyTasks,
-      recentFiles: cardVisibility.showRecentFiles,
-      upcomingWeek: cardVisibility.showUpcomingWeek,
-      myTeam: cardVisibility.showMyTeam,
-      sharedWithMe: cardVisibility.showSharedWithMe,
-      quickLinks: cardVisibility.showQuickLinks,
-      siteActivity: cardVisibility.showSiteActivity,
-      waitingOnYou: cardVisibility.showWaitingOnYou,
-      waitingOnOthers: cardVisibility.showWaitingOnOthers,
-      contextSwitching: cardVisibility.showContextSwitching,
-    };
-    return visibilityMap[cardId] ?? false;
-  };
 
   // Render a card by its ID (returns the card element without visibility check)
   // Uses Large card variants for cards with master-detail layout unless collapsed
@@ -697,90 +781,6 @@ export const DashboardCards: React.FC<IDashboardCardsProps> = ({
 
     return result;
   };
-
-  // Settings panel data - convert current state to format expected by SettingsPanel
-  const settingsCategories: ISettingsCategoryConfig[] = React.useMemo(() => {
-    if (categoryOrder.length === 0) {
-      // No categories - create a default "All Cards" category
-      return [{
-        categoryId: 'all',
-        displayName: 'All Cards',
-        icon: 'GridDots',
-        order: 0,
-        visible: true,
-        collapsed: false,
-        userEditable: true,
-        cardIds: cardOrder.filter(id => isCardVisible(id)),
-      }];
-    }
-
-    return categoryOrder.map((catId, index) => {
-      const catConfig = categoryConfig[catId];
-      return {
-        categoryId: catId,
-        displayName: categoryNames[catId] || catId,
-        icon: categoryIcons[catId] || 'GridDots',
-        order: index,
-        visible: catConfig?.visible !== false,
-        collapsed: false,
-        userEditable: true,
-        cardIds: cardOrder.filter(id => cardCategoryAssignment[id] === catId && isCardVisible(id)),
-      };
-    });
-  }, [categoryOrder, categoryConfig, categoryNames, categoryIcons, cardOrder, cardCategoryAssignment, cardVisibility]);
-
-  const settingsCards: Record<string, ICardConfig> = React.useMemo(() => {
-    const cards: Record<string, ICardConfig> = {};
-    cardOrder.forEach((cardId, index) => {
-      const size = getCardSizeForRender(cardId);
-      cards[cardId] = {
-        cardId,
-        size,
-        columnSpan: size === 'large' ? 2 : 1,
-        visible: isCardVisible(cardId),
-        orderInCategory: index,
-      };
-    });
-    return cards;
-  }, [cardOrder, cardVisibility, getCardSizeForRender]);
-
-  // Check if user has any custom preferences
-  const hasUserOverrides = React.useMemo(() => {
-    const orderChanged = JSON.stringify(cardOrder) !== JSON.stringify(defaultCardOrder);
-    const sizesChanged = cardOrder.some(id => getCardSizeForRender(id) !== 'medium');
-    return orderChanged || sizesChanged;
-  }, [cardOrder, defaultCardOrder, getCardSizeForRender]);
-
-  // Settings panel handlers
-  const handleCategoryReorder = React.useCallback((_categoryIds: string[]) => {
-    console.log('Category reorder requested:', _categoryIds);
-  }, []);
-
-  const handleCategoryCollapsedChange = React.useCallback((_categoryId: string, _collapsed: boolean) => {
-    console.log('Category collapsed change:', _categoryId, _collapsed);
-  }, []);
-
-  const handleCardVisibilityChange = React.useCallback((_cardId: string, _visible: boolean) => {
-    console.log('Card visibility change requested (admin-only):', _cardId, _visible);
-  }, []);
-
-  const handleCardReorderInCategory = React.useCallback((categoryId: string, newCardIds: string[]) => {
-    console.log('Card reorder in category:', categoryId, newCardIds);
-    handleCardReorder(newCardIds);
-  }, [handleCardReorder]);
-
-  const handleCardMoveToCategory = React.useCallback((_cardId: string, _targetCategoryId: string) => {
-    console.log('Card move to category:', _cardId, _targetCategoryId);
-  }, []);
-
-  const handleAnimationsEnabledChange = React.useCallback((_enabled: boolean) => {
-    console.log('Animations enabled change:', _enabled);
-  }, []);
-
-  const handleResetToDefaults = React.useCallback(() => {
-    setUserCardOrder(defaultCardOrder);
-    cardOrder.forEach(id => setCardSize(id, 'medium'));
-  }, [defaultCardOrder, setUserCardOrder, cardOrder, setCardSize]);
 
   return (
     <IdPrefixProvider value="throughline-dashboard">
