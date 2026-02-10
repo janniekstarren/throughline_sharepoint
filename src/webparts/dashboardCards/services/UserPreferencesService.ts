@@ -14,6 +14,8 @@ export interface IUserPreferences {
   cardOrder?: string[];
   collapsedCardIds?: string[];
   cardSizes?: ICardSizeState;
+  /** Snapshot of card sizes before compact view was activated */
+  preCompactCardSizes?: ICardSizeState;
   lastUpdated?: string;
 }
 

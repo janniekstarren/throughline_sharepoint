@@ -19,7 +19,16 @@ export type LabelKey =
   | 'waiting'   // Items waiting on you
   | 'pending'   // Items pending from others
   | 'switch'    // Context switches
-  | 'shared';   // Shared items
+  | 'shared'    // Shared items
+  | 'conflict'  // Scheduling conflicts
+  | 'action'    // Suggested actions
+  // Productivity Patterns cards
+  | 'hour'      // Peak hours / after-hours
+  | 'block'     // Deep work blocks
+  | 'meeting'   // Meetings (prep gap, creep)
+  | 'score'     // Composite scores (overload, capacity)
+  | 'month'     // Seasonal/monthly periods
+  | 'pattern';  // Response patterns
 
 interface LabelRule {
   zero: string;      // Label when count is 0
@@ -44,6 +53,15 @@ const LABEL_RULES: Record<LabelKey, LabelRule> = {
   pending:  { zero: 'All clear!',   one: 'Pending',  other: 'Pending' },
   switch:   { zero: 'Focused!',     one: 'Switch',   other: 'Switches' },
   shared:   { zero: 'No shares',    one: 'Shared',   other: 'Shared' },
+  conflict: { zero: 'No conflicts', one: 'Conflict', other: 'Conflicts' },
+  action:   { zero: 'All clear!',   one: 'Action',   other: 'Actions' },
+  // Productivity Patterns cards
+  hour:     { zero: 'On track!',   one: 'Hour',     other: 'Hours' },
+  block:    { zero: 'No blocks',   one: 'Block',    other: 'Blocks' },
+  meeting:  { zero: 'No meetings', one: 'Meeting',  other: 'Meetings' },
+  score:    { zero: 'Healthy!',    one: 'Point',    other: 'Points' },
+  month:    { zero: 'No data',     one: 'Month',    other: 'Months' },
+  pattern:  { zero: 'No patterns', one: 'Pattern',  other: 'Patterns' },
 };
 
 /**

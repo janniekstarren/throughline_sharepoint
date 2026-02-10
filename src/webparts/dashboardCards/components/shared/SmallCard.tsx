@@ -26,6 +26,9 @@ import { TrendBarChart } from './charts';
 import { TrendDataPoint } from './charts/TrendBarChart';
 import { CardSize } from '../../types/CardSize';
 import { getSmartLabel, LabelKey } from '../../utils/labelUtils';
+import { VisualWeight } from '../../models/VisualWeight';
+import { MiniSparkline } from '../hub/MiniSparkline';
+import { MiniGauge } from '../cards/MiniGauge';
 // CSS Module for AI popover (SharePoint-compatible, not makeStyles)
 import popoverStyles from './SmallCard.module.scss';
 
@@ -66,6 +69,20 @@ export interface ISmallCardProps {
   currentSize?: CardSize;
   /** Callback when size is changed via menu */
   onSizeChange?: (size: CardSize) => void;
+
+  // Adaptive rendering props
+  /** Visual weight for typographic hierarchy */
+  visualWeight?: VisualWeight;
+  /** Data visualisation hint for hero area */
+  dataVisualisationHint?: 'sparkline' | 'gauge' | 'count' | 'status';
+  /** Sparkline data points (used when dataVisualisationHint = 'sparkline') */
+  sparklineData?: number[];
+  /** Gauge value 0-100 (used when dataVisualisationHint = 'gauge') */
+  gaugeValue?: number;
+  /** Status indicator text (used when dataVisualisationHint = 'status') */
+  statusText?: string;
+  /** Whether status is positive */
+  statusPositive?: boolean;
 }
 
 const useStyles = makeStyles({
@@ -172,6 +189,53 @@ const useStyles = makeStyles({
     marginTop: tokens.spacingVerticalXS,
   },
 
+  // Weight-driven metric typography (Phase 7)
+  metricCritical: {
+    fontSize: '32px',
+    color: tokens.colorPaletteRedForeground1,
+  },
+  metricWarning: {
+    fontSize: '28px',
+    color: tokens.colorPaletteYellowForeground1,
+  },
+  metricActive: {
+    fontSize: '28px',
+    color: tokens.colorBrandForeground1,
+  },
+  metricQuiet: {
+    fontSize: '20px',
+    color: tokens.colorNeutralForeground3,
+  },
+  metricPlaceholder: {
+    fontSize: '16px',
+    color: tokens.colorNeutralForeground4,
+  },
+
+  // Data visualisation area
+  vizArea: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: tokens.spacingVerticalS,
+  },
+  statusBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: tokens.fontSizeBase200,
+    fontWeight: tokens.fontWeightSemibold,
+    padding: `2px ${tokens.spacingHorizontalS}`,
+    borderRadius: tokens.borderRadiusMedium,
+  },
+  statusPositive: {
+    color: tokens.colorPaletteGreenForeground1,
+    backgroundColor: tokens.colorPaletteGreenBackground1,
+  },
+  statusNegative: {
+    color: tokens.colorPaletteRedForeground1,
+    backgroundColor: tokens.colorPaletteRedBackground1,
+  },
+
   // Chart slide (slide 2)
   chartSlide: {
     padding: tokens.spacingHorizontalS,
@@ -236,6 +300,12 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
   currentSize = 'small',
   onSizeChange,
   onCycleSize,
+  visualWeight,
+  dataVisualisationHint,
+  sparklineData,
+  gaugeValue,
+  statusText,
+  statusPositive = true,
 }) => {
   const styles = useStyles();
   const [activeSlide, setActiveSlide] = useState(0);
@@ -258,6 +328,19 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
     }
     return metricLabel || '';
   }, [smartLabelKey, displayValue, metricLabel]);
+
+  // Compute weight-driven metric class
+  const weightMetricClass = React.useMemo(() => {
+    if (visualWeight === undefined) return undefined;
+    switch (visualWeight) {
+      case VisualWeight.Critical: return styles.metricCritical;
+      case VisualWeight.Warning: return styles.metricWarning;
+      case VisualWeight.Active: return styles.metricActive;
+      case VisualWeight.Quiet: return styles.metricQuiet;
+      case VisualWeight.Placeholder: return styles.metricPlaceholder;
+      default: return undefined;
+    }
+  }, [visualWeight, styles]);
 
   // Close popover when clicking outside
   useEffect(() => {
@@ -406,17 +489,47 @@ export const SmallCard: React.FC<ISmallCardProps> = ({
           className={styles.slideTrack}
           style={{ transform: `translateX(-${activeSlide * 100}%)` }}
         >
-          {/* Slide 1: Metric */}
+          {/* Slide 1: Metric + optional data viz */}
           <div className={styles.slide}>
             {displayValue !== undefined ? (
               <>
-                <Text className={styles.metricValue}>{displayValue}</Text>
+                <Text className={mergeClasses(styles.metricValue, weightMetricClass)}>{displayValue}</Text>
                 {displayLabel && (
                   <Text className={styles.metricLabel}>{displayLabel}</Text>
                 )}
               </>
             ) : (
               <Text className={styles.metricLabel}>No data</Text>
+            )}
+            {/* Ambient data visualisation based on hint */}
+            {dataVisualisationHint === 'sparkline' && sparklineData && sparklineData.length >= 2 && (
+              <div className={styles.vizArea}>
+                <MiniSparkline
+                  data={sparklineData}
+                  width={80}
+                  height={20}
+                  color={
+                    visualWeight === VisualWeight.Critical ? tokens.colorPaletteRedForeground1 :
+                    visualWeight === VisualWeight.Warning ? tokens.colorPaletteYellowForeground1 :
+                    tokens.colorBrandForeground1
+                  }
+                />
+              </div>
+            )}
+            {dataVisualisationHint === 'gauge' && gaugeValue !== undefined && (
+              <div className={styles.vizArea}>
+                <MiniGauge value={gaugeValue} size={48} />
+              </div>
+            )}
+            {dataVisualisationHint === 'status' && statusText && (
+              <div className={styles.vizArea}>
+                <span className={mergeClasses(
+                  styles.statusBadge,
+                  statusPositive ? styles.statusPositive : styles.statusNegative
+                )}>
+                  {statusText}
+                </span>
+              </div>
             )}
           </div>
 

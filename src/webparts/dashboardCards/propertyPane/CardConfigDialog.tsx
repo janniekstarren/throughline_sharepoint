@@ -143,6 +143,7 @@ import {
   Question24Regular,
   Flash24Regular,
   Fingerprint24Regular,
+  PlugConnected24Regular,
 } from '@fluentui/react-icons';
 import { MiniCard } from './MiniCard';
 import { CardSettingsDrawer, IWaitingOnYouSettings, IWaitingOnOthersSettings, IContextSwitchingSettings } from './CardSettingsDrawer';
@@ -346,6 +347,7 @@ export const AVAILABLE_ICONS: IIconDefinition[] = [
   { id: 'bug', name: 'Bug', icon: <Bug24Regular />, category: 'Tools' },
   { id: 'beaker', name: 'Beaker', icon: <Beaker24Regular />, category: 'Tools' },
   { id: 'puzzle', name: 'Puzzle', icon: <PuzzlePiece24Regular />, category: 'Tools' },
+  { id: 'plug', name: 'Plug Connected', icon: <PlugConnected24Regular />, category: 'Tools' },
   // Design
   { id: 'designIdeas', name: 'Design', icon: <DesignIdeas24Regular />, category: 'Design' },
   { id: 'paintBrush', name: 'Paint Brush', icon: <PaintBrush24Regular />, category: 'Design' },

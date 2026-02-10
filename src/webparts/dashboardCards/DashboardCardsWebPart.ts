@@ -6,37 +6,17 @@ import {
   PropertyPaneDropdown,
   PropertyPaneToggle,
   PropertyPaneSlider,
-  PropertyPaneTextField,
   IPropertyPaneGroup,
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 
 import * as strings from 'DashboardCardsWebPartStrings';
 import DashboardCards from './components/DashboardCards';
-import { IDashboardCardsProps, ICardVisibility } from './components/DashboardCards';
-import { SalutationType, SalutationSize } from './components/Salutation';
-import { PropertyPaneCardOrder } from './propertyPane/PropertyPaneCardOrder';
+import { IDashboardCardsProps } from './components/DashboardCards';
+import { SalutationType } from './components/Salutation';
 import { PropertyPaneResetButtons } from './propertyPane/PropertyPaneResetButtons';
-import { ICategoryConfig } from './propertyPane/CardConfigDialog';
-import { DEFAULT_CARD_ORDER } from './propertyPane/CardOrderEditor';
 import { clearUserPreferences } from './services/UserPreferencesService';
 import { cleanupPortalContainer } from './services/PortalService';
-
-// Card definitions for default category assignment
-const CARD_DEFAULT_CATEGORIES: Record<string, string> = {
-  todaysAgenda: 'calendar',
-  email: 'email',
-  myTasks: 'tasks',
-  recentFiles: 'files',
-  upcomingWeek: 'calendar',
-  myTeam: 'people',
-  sharedWithMe: 'files',
-  quickLinks: 'navigation',
-  siteActivity: 'people',
-  waitingOnYou: 'email',
-  waitingOnOthers: 'email',
-  contextSwitching: 'tasks', // productivity/focus fits with tasks
-};
 
 export type ThemeMode = 'auto' | 'light' | 'dark';
 
@@ -77,60 +57,56 @@ export type DataMode = 'api' | 'test';
 
 export interface IDashboardCardsWebPartProps {
   salutationType: SalutationType;
-  salutationSize: SalutationSize;
   // Theme mode
   themeMode: ThemeMode;
   // Data mode: 'api' for live Graph data, 'test' for mock data
   dataMode: DataMode;
   // AI Demo Mode: show AI-enhanced content (only applicable when dataMode === 'test')
   aiDemoMode: boolean;
-  // Card visibility toggles
-  showTodaysAgenda: boolean;
-  showEmail: boolean;
-  showMyTasks: boolean;
-  showRecentFiles: boolean;
-  showUpcomingWeek: boolean;
-  showMyTeam: boolean;
-  showSharedWithMe: boolean;
-  showQuickLinks: boolean;
-  showSiteActivity: boolean;
-  showWaitingOnYou: boolean;
-  showWaitingOnOthers: boolean;
-  showContextSwitching: boolean;
-  // Card order
-  cardOrder: string[];
-  // Custom card titles
-  cardTitles: Record<string, string>;
-  // Custom category names
-  categoryNames: Record<string, string>;
-  // Category order
-  categoryOrder: string[];
-  // Category configuration (visibility, showTitle)
-  categoryConfig: Record<string, ICategoryConfig>;
-  // Card to category assignment
-  cardCategoryAssignment: Record<string, string>;
-  // Custom category icons
-  categoryIcons: Record<string, string>;
+
+  // --- Legacy: persisted in SP property bag but no longer used in UI ---
+  salutationSize?: string;
+  showTodaysAgenda?: boolean;
+  showEmail?: boolean;
+  showMyTasks?: boolean;
+  showRecentFiles?: boolean;
+  showUpcomingWeek?: boolean;
+  showMyTeam?: boolean;
+  showSharedWithMe?: boolean;
+  showQuickLinks?: boolean;
+  showSiteActivity?: boolean;
+  showWaitingOnYou?: boolean;
+  showWaitingOnOthers?: boolean;
+  showContextSwitching?: boolean;
+  cardOrder?: string[];
+  cardTitles?: Record<string, string>;
+  categoryNames?: Record<string, string>;
+  categoryOrder?: string[];
+  categoryConfig?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  cardCategoryAssignment?: Record<string, string>;
+  categoryIcons?: Record<string, string>;
+  collapsedCardIds?: string[];
+  defaultCardSize?: string;
+  columnsOverride?: number;
+  dashboardTitle?: string;
+  showDashboardTitle?: boolean;
+  // --- End legacy ---
+
   // Waiting On You card settings
   waitingOnYouSettings: IWaitingOnYouSettings;
   // Waiting On Others card settings
   waitingOnOthersSettings: IWaitingOnOthersSettings;
   // Context Switching card settings
   contextSwitchingSettings: IContextSwitchingSettings;
-  // Collapsed card IDs (large cards shown as medium)
-  collapsedCardIds: string[];
   // Demo mode: show tier switcher FAB for license tier demos
   isDemoMode: boolean;
 
   // === ADMIN: DEFAULT LAYOUT ===
   defaultView: string;              // 'categories' | 'needs-attention' | 'high-impact' | 'compact'
-  defaultCardSize: string;          // 'small' | 'medium' | 'large'
-  columnsOverride: number;          // 0 = auto
   showLockedCards: boolean;
   showPlaceholderCards: boolean;
+  showIntegrationAndDevCards: boolean;
   showCategoryDescriptions: boolean;
-  dashboardTitle: string;
-  showDashboardTitle: boolean;
 
   // === ADMIN: USER CUSTOMISATION FEATURE FLAGS ===
   allowUserCustomisation: boolean;
@@ -141,6 +117,26 @@ export interface IDashboardCardsWebPartProps {
   allowCategoryHiding: boolean;
   allowCategoryRenaming: boolean;
   allowViewSwitching: boolean;
+
+  // === ADMIN: CARD STORE FEATURE FLAGS ===
+  showCardStore: boolean;
+  allowAlaCartePurchase: boolean;
+  allowTrials: boolean;
+  showPricing: boolean;
+
+  // === ADMIN: INTELLIGENCE HUB FLAGS ===
+  showIntelligenceHub: boolean;
+  showGreeting: boolean;
+  showQueryBox: boolean;
+  showInsightsRollup: boolean;
+  hubStartCollapsed: boolean;
+  insightsRefreshInterval: number;   // seconds (0 = manual only)
+  showFloatingAIChat: boolean;       // Floating AI chat dialog toggle
+  // Adaptive Rendering
+  enableAdaptiveRendering: boolean;  // Master toggle for adaptive visual rendering
+  enableAutoPromotion: boolean;      // Allow auto-promotion of card sizes
+  showPulse: boolean;                // Show global status pulse indicator
+  glowIntensity: string;             // 'subtle' | 'standard' | 'vivid'
 }
 
 export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashboardCardsWebPartProps> {
@@ -270,81 +266,14 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
   }
 
   public render(): void {
-    // Build card visibility object (default all to true if not set)
-    const cardVisibility: ICardVisibility = {
-      showTodaysAgenda: this.properties.showTodaysAgenda !== false,
-      showEmail: this.properties.showEmail !== false,
-      showMyTasks: this.properties.showMyTasks !== false,
-      showRecentFiles: this.properties.showRecentFiles !== false,
-      showUpcomingWeek: this.properties.showUpcomingWeek !== false,
-      showMyTeam: this.properties.showMyTeam !== false,
-      showSharedWithMe: this.properties.showSharedWithMe !== false,
-      showQuickLinks: this.properties.showQuickLinks !== false,
-      showSiteActivity: this.properties.showSiteActivity !== false,
-      showWaitingOnYou: this.properties.showWaitingOnYou !== false,
-      showWaitingOnOthers: this.properties.showWaitingOnOthers !== false,
-      showContextSwitching: this.properties.showContextSwitching !== false,
-    };
-
-    // Get card order (default if not set, and ensure new cards are included)
-    let cardOrder = this.properties.cardOrder && this.properties.cardOrder.length > 0
-      ? this.properties.cardOrder
-      : DEFAULT_CARD_ORDER;
-
-    // Ensure any new cards from DEFAULT_CARD_ORDER are added to the end
-    const missingCards = DEFAULT_CARD_ORDER.filter(cardId => !cardOrder.includes(cardId));
-    if (missingCards.length > 0) {
-      cardOrder = [...cardOrder, ...missingCards];
-    }
-
-    // Get custom card titles (default to empty object if not set)
-    const cardTitles = this.properties.cardTitles || {};
-
-    // Get category configuration
-    // IMPORTANT: Only pass non-empty admin category config when EXPLICITLY set by admin.
-    // Empty defaults trigger the new 80-card registry-based category layout.
-    // The legacy admin-configured layout only activates when admin has customised categories.
-    const hasAdminCategoryConfig = this.properties.categoryOrder && this.properties.categoryOrder.length > 0;
-    const categoryOrder = hasAdminCategoryConfig
-      ? this.properties.categoryOrder
-      : [];
-    const categoryNames = this.properties.categoryNames || {};
-    const categoryConfig = hasAdminCategoryConfig && this.properties.categoryConfig && Object.keys(this.properties.categoryConfig).length > 0
-      ? this.properties.categoryConfig
-      : {};
-    // Only fill card category assignment when admin has configured categories
-    let cardCategoryAssignment = hasAdminCategoryConfig
-      ? (this.properties.cardCategoryAssignment || {})
-      : {};
-    if (hasAdminCategoryConfig) {
-      // Add default category assignments for any missing cards
-      const missingAssignments = DEFAULT_CARD_ORDER.filter(cardId => !cardCategoryAssignment[cardId]);
-      if (missingAssignments.length > 0) {
-        cardCategoryAssignment = { ...cardCategoryAssignment };
-        missingAssignments.forEach(cardId => {
-          cardCategoryAssignment[cardId] = CARD_DEFAULT_CATEGORIES[cardId] || 'available';
-        });
-      }
-    }
-    const categoryIcons = this.properties.categoryIcons || {};
-
     const element: React.ReactElement<IDashboardCardsProps> = React.createElement(
       DashboardCards,
       {
         context: this.context,
         salutationType: this.properties.salutationType || 'timeBased',
-        salutationSize: this.properties.salutationSize || 'h4',
         themeMode: this.properties.themeMode || 'light',
         dataMode: this.properties.dataMode || 'api',
         aiDemoMode: this.properties.aiDemoMode || false,
-        cardVisibility,
-        cardOrder,
-        cardTitles,
-        categoryOrder,
-        categoryNames,
-        categoryConfig,
-        cardCategoryAssignment,
-        categoryIcons,
         waitingOnYouSettings: this.properties.waitingOnYouSettings || {
           staleDays: 2,
           includeEmail: true,
@@ -371,11 +300,6 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
           showHourlyChart: true,
           showDistribution: true,
         },
-        // Collapsed card IDs (large cards shown as medium)
-        collapsedCardIds: this.properties.collapsedCardIds || [],
-        onCollapsedCardsChange: (cardIds: string[]) => {
-          this.properties.collapsedCardIds = cardIds;
-        },
         // Demo mode for tier switcher
         isDemoMode: this.properties.isDemoMode || false,
         // Admin feature flags
@@ -391,30 +315,37 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
           isDemoMode: this.properties.isDemoMode || false,
           showLockedCards: this.properties.showLockedCards !== false,
           showPlaceholderCards: this.properties.showPlaceholderCards !== false,
+          showIntegrationAndDevCards: this.properties.showIntegrationAndDevCards !== false,
           showCategoryDescriptions: this.properties.showCategoryDescriptions !== false,
+          // Card Store flags
+          showCardStore: this.properties.showCardStore !== false,
+          allowAlaCartePurchase: this.properties.allowAlaCartePurchase !== false,
+          allowTrials: this.properties.allowTrials !== false,
+          showPricing: this.properties.showPricing !== false,
+          // Intelligence Hub flags
+          showIntelligenceHub: this.properties.showIntelligenceHub !== false,
+          showGreeting: this.properties.showGreeting !== false,
+          showQueryBox: this.properties.showQueryBox !== false,
+          showInsightsRollup: this.properties.showInsightsRollup !== false,
+          hubStartCollapsed: this.properties.hubStartCollapsed || false,
+          insightsRefreshInterval: this.properties.insightsRefreshInterval ?? 300,
+          enableFloatingAIChat: this.properties.showFloatingAIChat !== false,
+          // Adaptive Rendering flags
+          enableAdaptiveRendering: this.properties.enableAdaptiveRendering !== false,
+          enableAutoPromotion: this.properties.enableAutoPromotion !== false,
+          showPulse: this.properties.showPulse !== false,
+          glowIntensity: (this.properties.glowIntensity as 'subtle' | 'standard' | 'vivid') || 'standard',
         },
         // Admin layout defaults
         defaultView: this.properties.defaultView || 'categories',
         showLockedCards: this.properties.showLockedCards !== false,
         showPlaceholderCards: this.properties.showPlaceholderCards !== false,
         showCategoryDescriptions: this.properties.showCategoryDescriptions !== false,
-        // Card order change callback for drag-and-drop in dashboard
-        onCardOrderChange: (newOrder: string[]) => {
-          this.properties.cardOrder = newOrder;
-          this.render();
-          // Refresh property pane if open to show updated order
-          if (this.context.propertyPane.isPropertyPaneOpen()) {
-            this.context.propertyPane.refresh();
-          }
-        },
       }
     );
 
     ReactDom.render(element, this.domElement);
   }
-
-  // Legacy CardConfigDialog and default category methods removed — now using registry-based layout
-
 
   protected onDispose(): void {
     ReactDom.unmountComponentAtNode(this.domElement);
@@ -428,10 +359,10 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
 
   /**
    * Build the greeting settings group fields
-   * Only shows size option when greeting type is not 'none'
+   * Returns the salutationType dropdown only.
    */
   private getGreetingFields(): IPropertyPaneGroup['groupFields'] {
-    const fields: IPropertyPaneGroup['groupFields'] = [
+    return [
       PropertyPaneDropdown('salutationType', {
         label: strings.SalutationTypeLabel,
         options: [
@@ -441,165 +372,6 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
           { key: 'none', text: strings.SalutationNone },
         ],
         selectedKey: this.properties.salutationType || 'timeBased',
-      }),
-    ];
-
-    // Only show size option if greeting is enabled
-    if (this.properties.salutationType !== 'none') {
-      fields.push(
-        PropertyPaneDropdown('salutationSize', {
-          label: strings.SalutationSizeLabel,
-          options: [
-            { key: 'h1', text: strings.SalutationSizeH1 },
-            { key: 'h2', text: strings.SalutationSizeH2 },
-            { key: 'h3', text: strings.SalutationSizeH3 },
-            { key: 'h4', text: strings.SalutationSizeH4 },
-            { key: 'h5', text: strings.SalutationSizeH5 },
-          ],
-          selectedKey: this.properties.salutationSize || 'h4',
-        })
-      );
-    }
-
-    return fields;
-  }
-
-  /**
-   * Build the card configuration fields (visibility + order combined)
-   */
-  private getCardConfigFields(): IPropertyPaneGroup['groupFields'] {
-    // Build visibility map
-    const cardVisibility: Record<string, boolean> = {
-      todaysAgenda: this.properties.showTodaysAgenda !== false,
-      email: this.properties.showEmail !== false,
-      myTasks: this.properties.showMyTasks !== false,
-      recentFiles: this.properties.showRecentFiles !== false,
-      upcomingWeek: this.properties.showUpcomingWeek !== false,
-      myTeam: this.properties.showMyTeam !== false,
-      sharedWithMe: this.properties.showSharedWithMe !== false,
-      quickLinks: this.properties.showQuickLinks !== false,
-      siteActivity: this.properties.showSiteActivity !== false,
-      waitingOnYou: this.properties.showWaitingOnYou !== false,
-      waitingOnOthers: this.properties.showWaitingOnOthers !== false,
-    };
-
-    // Map cardId to property name
-    const propMap: Record<string, keyof IDashboardCardsWebPartProps> = {
-      todaysAgenda: 'showTodaysAgenda',
-      email: 'showEmail',
-      myTasks: 'showMyTasks',
-      recentFiles: 'showRecentFiles',
-      upcomingWeek: 'showUpcomingWeek',
-      myTeam: 'showMyTeam',
-      sharedWithMe: 'showSharedWithMe',
-      quickLinks: 'showQuickLinks',
-      siteActivity: 'showSiteActivity',
-      waitingOnYou: 'showWaitingOnYou',
-      waitingOnOthers: 'showWaitingOnOthers',
-      contextSwitching: 'showContextSwitching',
-    };
-
-    const categoryNames = this.properties.categoryNames || {};
-    // Only use admin-configured categories — empty triggers registry-based layout
-    const hasAdminCategories = this.properties.categoryOrder && this.properties.categoryOrder.length > 0;
-    const categoryOrder = hasAdminCategories ? this.properties.categoryOrder : [];
-    const categoryConfig = hasAdminCategories ? (this.properties.categoryConfig || {}) : {};
-
-    // Get card order and ensure new cards are included
-    let cardOrder = this.properties.cardOrder && this.properties.cardOrder.length > 0
-      ? this.properties.cardOrder
-      : DEFAULT_CARD_ORDER;
-    const missingCards = DEFAULT_CARD_ORDER.filter(cardId => !cardOrder.includes(cardId));
-    if (missingCards.length > 0) {
-      cardOrder = [...cardOrder, ...missingCards];
-    }
-
-    // Only use admin-configured card-to-category assignment
-    const cardCategoryAssignment = hasAdminCategories
-      ? (this.properties.cardCategoryAssignment || {})
-      : {};
-
-    return [
-      PropertyPaneCardOrder('cardOrder', {
-        label: strings.CardOrderLabel,
-        cardOrder,
-        cardVisibility,
-        categoryNames,
-        categoryOrder,
-        categoryConfig,
-        cardCategoryAssignment,
-        onOrderChanged: (newOrder: string[]) => {
-          this.properties.cardOrder = newOrder;
-          this.render();
-        },
-        onVisibilityChanged: (cardId: string, visible: boolean) => {
-          const propName = propMap[cardId];
-          if (propName) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (this.properties as any)[propName] = visible;
-            // Trigger re-render of the webpart to reflect visibility change
-            this.render();
-          }
-        },
-        onCategoryNameChanged: (categoryId: string, name: string) => {
-          if (!this.properties.categoryNames) {
-            this.properties.categoryNames = {};
-          }
-          this.properties.categoryNames[categoryId] = name;
-        },
-        onCategoryOrderChanged: (newOrder: string[]) => {
-          this.properties.categoryOrder = newOrder;
-        },
-        onCategoryConfigChanged: (categoryId: string, config: Partial<ICategoryConfig>) => {
-          if (!this.properties.categoryConfig) {
-            this.properties.categoryConfig = {};
-          }
-          this.properties.categoryConfig[categoryId] = {
-            ...this.properties.categoryConfig[categoryId],
-            ...config,
-          };
-        },
-        onCardCategoryChanged: (cardId: string, categoryId: string) => {
-          if (!this.properties.cardCategoryAssignment) {
-            this.properties.cardCategoryAssignment = {};
-          }
-          this.properties.cardCategoryAssignment[cardId] = categoryId;
-          this.render();
-        },
-        onCategoryAdded: (categoryId: string, name: string) => {
-          if (!this.properties.categoryOrder) {
-            this.properties.categoryOrder = [];
-          }
-          this.properties.categoryOrder.push(categoryId);
-
-          if (!this.properties.categoryNames) {
-            this.properties.categoryNames = {};
-          }
-          this.properties.categoryNames[categoryId] = name;
-
-          if (!this.properties.categoryConfig) {
-            this.properties.categoryConfig = {};
-          }
-          this.properties.categoryConfig[categoryId] = { id: categoryId, visible: true, showTitle: true };
-
-          // Note: CATEGORIES is already updated in the dialog/editor component
-        },
-        onCategoryDeleted: (categoryId: string) => {
-          if (this.properties.categoryOrder) {
-            this.properties.categoryOrder = this.properties.categoryOrder.filter(id => id !== categoryId);
-          }
-
-          // Move cards to 'available'
-          if (this.properties.cardCategoryAssignment) {
-            Object.keys(this.properties.cardCategoryAssignment).forEach(cardId => {
-              if (this.properties.cardCategoryAssignment[cardId] === categoryId) {
-                this.properties.cardCategoryAssignment[cardId] = 'available';
-              }
-            });
-          }
-
-          this.render();
-        },
       }),
     ];
   }
@@ -661,39 +433,8 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
    * Reset all webpart properties to default values
    */
   private _resetToDefaultSettings(): void {
-    // Reset card visibility - all cards visible
-    this.properties.showTodaysAgenda = true;
-    this.properties.showEmail = true;
-    this.properties.showMyTasks = true;
-    this.properties.showRecentFiles = true;
-    this.properties.showUpcomingWeek = true;
-    this.properties.showMyTeam = true;
-    this.properties.showSharedWithMe = true;
-    this.properties.showQuickLinks = true;
-    this.properties.showSiteActivity = true;
-    this.properties.showWaitingOnYou = true;
-    this.properties.showWaitingOnOthers = true;
-    this.properties.showContextSwitching = true;
-
-    // Reset card order to default
-    this.properties.cardOrder = [...DEFAULT_CARD_ORDER];
-
-    // Reset custom card titles
-    this.properties.cardTitles = {};
-
-    // Reset category configuration — clear to empty so registry-based layout activates
-    this.properties.categoryOrder = [];
-    this.properties.categoryNames = {};
-    this.properties.categoryConfig = {};
-    this.properties.cardCategoryAssignment = {};
-    this.properties.categoryIcons = {};
-
-    // Reset collapsed cards
-    this.properties.collapsedCardIds = [];
-
     // Reset greeting settings
     this.properties.salutationType = 'timeBased' as SalutationType;
-    this.properties.salutationSize = 'h4' as SalutationSize;
 
     // Reset appearance
     this.properties.themeMode = 'light' as ThemeMode;
@@ -762,35 +503,139 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
           },
           displayGroupsAsAccordion: true,
           groups: [
+            // --- Intelligence Hub ---
             {
-              groupName: 'Appearance',
-              isCollapsed: true,
-              groupFields: this.getAppearanceFields(),
+              groupName: 'Intelligence Hub',
+              isCollapsed: false,
+              groupFields: [
+                PropertyPaneToggle('showIntelligenceHub', {
+                  label: 'Show Intelligence Hub',
+                  onText: 'Visible',
+                  offText: 'Hidden',
+                  checked: this.properties.showIntelligenceHub !== false,
+                }),
+                PropertyPaneToggle('showGreeting', {
+                  label: 'Show greeting',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.showGreeting !== false,
+                  disabled: this.properties.showIntelligenceHub === false,
+                }),
+                PropertyPaneToggle('showQueryBox', {
+                  label: 'Show query box',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.showQueryBox !== false,
+                  disabled: this.properties.showIntelligenceHub === false,
+                }),
+                PropertyPaneToggle('showInsightsRollup', {
+                  label: 'Show insights rollup',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.showInsightsRollup !== false,
+                  disabled: this.properties.showIntelligenceHub === false,
+                }),
+                PropertyPaneToggle('hubStartCollapsed', {
+                  label: 'Start collapsed',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.hubStartCollapsed || false,
+                  disabled: this.properties.showIntelligenceHub === false,
+                }),
+                PropertyPaneSlider('insightsRefreshInterval', {
+                  label: 'Insights refresh (seconds, 0 = manual)',
+                  min: 0,
+                  max: 900,
+                  step: 60,
+                  value: this.properties.insightsRefreshInterval ?? 300,
+                  disabled: this.properties.showIntelligenceHub === false,
+                }),
+                PropertyPaneToggle('showFloatingAIChat', {
+                  label: 'Floating AI Chat',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.showFloatingAIChat !== false,
+                  disabled: this.properties.showIntelligenceHub === false,
+                }),
+              ],
             },
+            // --- Adaptive Rendering ---
             {
-              groupName: strings.GreetingGroupName,
+              groupName: 'Adaptive Rendering',
               isCollapsed: true,
-              groupFields: this.getGreetingFields(),
+              groupFields: [
+                PropertyPaneToggle('enableAdaptiveRendering', {
+                  label: 'Enable adaptive card rendering',
+                  onText: 'Cards respond visually to data urgency',
+                  offText: 'Uniform card appearance (classic mode)',
+                  checked: this.properties.enableAdaptiveRendering !== false,
+                }),
+                PropertyPaneToggle('enableAutoPromotion', {
+                  label: 'Allow auto-sizing of cards',
+                  onText: 'Urgent cards can promote to larger size',
+                  offText: 'All cards stay at chosen size',
+                  checked: this.properties.enableAutoPromotion !== false,
+                  disabled: this.properties.enableAdaptiveRendering === false,
+                }),
+                PropertyPaneToggle('showPulse', {
+                  label: 'Show status pulse in header',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.showPulse !== false,
+                  disabled: this.properties.enableAdaptiveRendering === false,
+                }),
+                PropertyPaneDropdown('glowIntensity', {
+                  label: 'Glow intensity',
+                  options: [
+                    { key: 'subtle', text: 'Subtle — soft ambient glow' },
+                    { key: 'standard', text: 'Standard — clear urgency glow' },
+                    { key: 'vivid', text: 'Vivid — strong urgency glow' },
+                  ],
+                  selectedKey: this.properties.glowIntensity || 'standard',
+                  disabled: this.properties.enableAdaptiveRendering === false,
+                }),
+              ],
             },
+            // --- Card Store ---
             {
-              groupName: strings.CardsGroupName,
-              isCollapsed: true,
-              groupFields: this.getCardConfigFields(),
+              groupName: 'Card Store',
+              isCollapsed: false,
+              groupFields: [
+                PropertyPaneToggle('showCardStore', {
+                  label: 'Show Card Store',
+                  onText: 'Visible',
+                  offText: 'Hidden',
+                  checked: this.properties.showCardStore !== false,
+                }),
+                PropertyPaneToggle('allowAlaCartePurchase', {
+                  label: 'Allow a la carte purchase',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.allowAlaCartePurchase !== false,
+                  disabled: this.properties.showCardStore === false,
+                }),
+                PropertyPaneToggle('allowTrials', {
+                  label: 'Allow free trials',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.allowTrials !== false,
+                  disabled: this.properties.showCardStore === false,
+                }),
+                PropertyPaneToggle('showPricing', {
+                  label: 'Show pricing',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.showPricing !== false,
+                  disabled: this.properties.showCardStore === false,
+                }),
+              ],
             },
+            // --- Dashboard Display (merged with Appearance) ---
             {
               groupName: 'Dashboard Display',
               isCollapsed: true,
               groupFields: [
-                PropertyPaneTextField('dashboardTitle', {
-                  label: 'Dashboard title',
-                  value: this.properties.dashboardTitle || 'Throughline',
-                }),
-                PropertyPaneToggle('showDashboardTitle', {
-                  label: 'Show dashboard title',
-                  onText: 'On',
-                  offText: 'Off',
-                  checked: this.properties.showDashboardTitle !== false,
-                }),
+                ...this.getAppearanceFields(),
                 PropertyPaneDropdown('defaultView', {
                   label: 'Default dashboard view',
                   options: [
@@ -801,21 +646,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
                   ],
                   selectedKey: this.properties.defaultView || 'categories',
                 }),
-                PropertyPaneDropdown('defaultCardSize', {
-                  label: 'Default card size',
-                  options: [
-                    { key: 'small', text: 'Small (grid)' },
-                    { key: 'medium', text: 'Medium' },
-                    { key: 'large', text: 'Large' },
-                  ],
-                  selectedKey: this.properties.defaultCardSize || 'small',
-                }),
-                PropertyPaneSlider('columnsOverride', {
-                  label: 'Grid columns (0 = auto)',
-                  min: 0,
-                  max: 6,
-                  value: this.properties.columnsOverride || 0,
-                }),
+                ...this.getGreetingFields(),
                 PropertyPaneToggle('showLockedCards', {
                   label: 'Show locked/upgrade cards',
                   onText: 'On',
@@ -828,6 +659,12 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
                   offText: 'Off',
                   checked: this.properties.showPlaceholderCards !== false,
                 }),
+                PropertyPaneToggle('showIntegrationAndDevCards', {
+                  label: 'Show integration & in-development cards',
+                  onText: 'On',
+                  offText: 'Off',
+                  checked: this.properties.showIntegrationAndDevCards !== false,
+                }),
                 PropertyPaneToggle('showCategoryDescriptions', {
                   label: 'Show category descriptions',
                   onText: 'On',
@@ -836,8 +673,9 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
                 }),
               ],
             },
+            // --- User Customisation ---
             {
-              groupName: 'User Customisation Permissions',
+              groupName: 'User Customisation',
               isCollapsed: true,
               groupFields: [
                 PropertyPaneToggle('allowUserCustomisation', {
@@ -897,6 +735,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
                 }),
               ],
             },
+            // --- Demo & POC ---
             {
               groupName: 'Demo & POC',
               isCollapsed: true,
@@ -909,6 +748,7 @@ export default class DashboardCardsWebPart extends BaseClientSideWebPart<IDashbo
                 }),
               ],
             },
+            // --- Reset & Maintenance ---
             {
               groupName: 'Reset & Maintenance',
               isCollapsed: true,

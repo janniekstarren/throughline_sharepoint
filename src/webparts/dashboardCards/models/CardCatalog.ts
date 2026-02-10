@@ -4,6 +4,7 @@
 // ============================================
 
 import { tokens } from '@fluentui/react-components';
+import { IntegrationCategory } from './Integration';
 
 // ============================================
 // Card Category Enum (6 canonical categories)
@@ -195,8 +196,16 @@ export interface CardRegistration {
   // Data source info (for placeholder cards)
   dataSources?: string[]; // e.g. ['Mail API', 'Teams Chat API']
 
+  // Ambient data visualisation hint for SmallCard hero area
+  dataVisualisationHint?: 'sparkline' | 'gauge' | 'count' | 'status';
+
   // Tags for search/filter
   tags?: string[];
+
+  // Integration dependency (Mode 1 — Dedicated Cards)
+  requiredIntegrationIds?: string[];
+  requiredIntegrationCategory?: IntegrationCategory;
+  isIntegrationCard?: boolean;
 }
 
 // ============================================

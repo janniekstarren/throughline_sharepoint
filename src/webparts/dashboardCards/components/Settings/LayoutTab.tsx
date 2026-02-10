@@ -70,6 +70,9 @@ interface LayoutTabProps {
   /** User preference: hide in-development/placeholder cards */
   hidePlaceholderCards?: boolean;
   onHidePlaceholderCardsChange?: (hide: boolean) => void;
+  /** User preference: hide integration & in-development cards */
+  hideIntegrationAndDevCards?: boolean;
+  onHideIntegrationAndDevCardsChange?: (hide: boolean) => void;
   /** Current effective greeting style */
   salutationType?: string;
   onSalutationTypeChange?: (type: string | undefined) => void;
@@ -79,6 +82,9 @@ interface LayoutTabProps {
   /** Current effective category navigation mode */
   navMode?: string;
   onNavModeChange?: (mode: string | undefined) => void;
+  /** Float the menu bar (sticky) or keep in flow */
+  floatMenu?: boolean;
+  onFloatMenuChange?: (float: boolean) => void;
 }
 
 // ============================================
@@ -90,12 +96,16 @@ export const LayoutTab: React.FC<LayoutTabProps> = ({
   onHideLockedCardsChange,
   hidePlaceholderCards = false,
   onHidePlaceholderCardsChange,
+  hideIntegrationAndDevCards = false,
+  onHideIntegrationAndDevCardsChange,
   salutationType,
   onSalutationTypeChange,
   themeMode,
   onThemeModeChange,
   navMode,
   onNavModeChange,
+  floatMenu,
+  onFloatMenuChange,
 }) => {
   const classes = useStyles();
 
@@ -103,7 +113,6 @@ export const LayoutTab: React.FC<LayoutTabProps> = ({
   const [defaultView, setDefaultView] = React.useState('categories');
   const [animationsEnabled, setAnimationsEnabled] = React.useState(true);
   const [showFooter, setShowFooter] = React.useState(true);
-  const [stickyHeader, setStickyHeader] = React.useState(true);
 
   return (
     <div className={classes.container}>
@@ -151,6 +160,19 @@ export const LayoutTab: React.FC<LayoutTabProps> = ({
           <Switch
             checked={hidePlaceholderCards}
             onChange={(_ev, data) => onHidePlaceholderCardsChange?.(data.checked)}
+          />
+        </div>
+
+        <div className={classes.settingRow}>
+          <div className={classes.settingLabelGroup}>
+            <Text className={classes.settingLabel}>Hide integration & in-development cards</Text>
+            <Text className={classes.settingDesc}>
+              Only show production-ready, non-integration cards
+            </Text>
+          </div>
+          <Switch
+            checked={hideIntegrationAndDevCards}
+            onChange={(_ev, data) => onHideIntegrationAndDevCardsChange?.(data.checked)}
           />
         </div>
       </div>
@@ -253,13 +275,20 @@ export const LayoutTab: React.FC<LayoutTabProps> = ({
           />
         </div>
 
-        <div className={classes.settingRow}>
-          <Text className={classes.settingLabel}>Sticky header</Text>
-          <Switch
-            checked={stickyHeader}
-            onChange={(_ev, data) => setStickyHeader(data.checked)}
-          />
-        </div>
+        {onFloatMenuChange && (
+          <div className={classes.settingRow}>
+            <div className={classes.settingLabelGroup}>
+              <Text className={classes.settingLabel}>Float menu bar</Text>
+              <Text className={classes.settingDesc}>
+                Menu stays visible as you scroll. Off = menu stays at top.
+              </Text>
+            </div>
+            <Switch
+              checked={floatMenu ?? false}
+              onChange={(_ev, data) => onFloatMenuChange(data.checked)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -22,7 +22,41 @@ export interface FeatureFlags {
   isDemoMode: boolean;
   showLockedCards: boolean;
   showPlaceholderCards: boolean;
+  showIntegrationAndDevCards: boolean;
   showCategoryDescriptions: boolean;
+
+  // Integration flags
+  showIntegrations: boolean;
+  allowIntegrationConnect: boolean;
+  showComingSoonPlatforms: boolean;
+  showRequestedPlatforms: boolean;
+
+  // Card Store flags
+  showCardStore: boolean;
+  allowAlaCartePurchase: boolean;
+  allowTrials: boolean;
+  showPricing: boolean;
+
+  // Intelligence Hub flags
+  showIntelligenceHub: boolean;
+  showGreeting: boolean;
+  showQueryBox: boolean;
+  showInsightsRollup: boolean;
+  hubStartCollapsed: boolean;
+  /** Insights auto-refresh interval in seconds (0 = manual only) */
+  insightsRefreshInterval: number;
+  /** Enable floating AI chat dialog (ChatSparkle icon in menu bar) */
+  enableFloatingAIChat: boolean;
+
+  // Adaptive Rendering flags
+  /** Master toggle for adaptive visual rendering (data-driven shadows, glows, typography) */
+  enableAdaptiveRendering: boolean;
+  /** Allow auto-promotion of card sizes based on visual weight */
+  enableAutoPromotion: boolean;
+  /** Show global status pulse indicator in sticky header */
+  showPulse: boolean;
+  /** Glow intensity level for adaptive shadows */
+  glowIntensity: 'subtle' | 'standard' | 'vivid';
 
   // Derived
   hasAnyUserFeature: boolean;
@@ -41,10 +75,30 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   allowCategoryHiding: true,
   allowCategoryRenaming: true,
   allowViewSwitching: true,
-  isDemoMode: false,
+  isDemoMode: true,
   showLockedCards: true,
   showPlaceholderCards: true,
+  showIntegrationAndDevCards: true,
   showCategoryDescriptions: true,
+  showIntegrations: true,
+  allowIntegrationConnect: true,
+  showComingSoonPlatforms: true,
+  showRequestedPlatforms: true,
+  showCardStore: true,
+  allowAlaCartePurchase: true,
+  allowTrials: true,
+  showPricing: true,
+  showIntelligenceHub: true,
+  showGreeting: true,
+  showQueryBox: true,
+  showInsightsRollup: true,
+  hubStartCollapsed: false,
+  insightsRefreshInterval: 300,
+  enableFloatingAIChat: true,
+  enableAdaptiveRendering: true,
+  enableAutoPromotion: true,
+  showPulse: true,
+  glowIntensity: 'standard',
   hasAnyUserFeature: true,
 };
 

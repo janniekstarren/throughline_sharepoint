@@ -27,6 +27,7 @@ import { CardsCanvasTab } from './CardsCanvasTab';
 import { CategoriesTab } from './CategoriesTab';
 import { AlertsThresholdsTab } from './AlertsThresholdsTab';
 import { LayoutTab } from './LayoutTab';
+import { IntegrationsTab } from './IntegrationsTab';
 import { FeatureFlags } from '../../context/FeatureFlagContext';
 import { LicenseTier } from '../../models/CardCatalog';
 
@@ -115,6 +116,9 @@ interface CommandCentreProps {
   /** User preference: hide in-development/placeholder cards */
   hidePlaceholderCards: boolean;
   onHidePlaceholderCardsChange: (hide: boolean) => void;
+  /** User preference: hide integration & in-development cards */
+  hideIntegrationAndDevCards: boolean;
+  onHideIntegrationAndDevCardsChange: (hide: boolean) => void;
   /** Current effective greeting style */
   salutationType?: string;
   onSalutationTypeChange?: (type: string | undefined) => void;
@@ -124,6 +128,18 @@ interface CommandCentreProps {
   /** Current effective category nav mode */
   navMode?: string;
   onNavModeChange?: (mode: string | undefined) => void;
+  /** User preference: integrations enabled/disabled */
+  integrationsEnabled?: boolean;
+  onIntegrationsEnabledChange?: (enabled: boolean) => void;
+  /** User preference: float menu (sticky) */
+  floatMenu?: boolean;
+  onFloatMenuChange?: (float: boolean) => void;
+  /** Optional initial tab to open (e.g., 'integrations') */
+  initialTab?: string;
+  /** Optional platform ID to deep-link to in the integrations tab */
+  initialPlatformId?: string;
+  /** Opens the Card Store (optionally to a specific card) */
+  onOpenStore?: (cardId?: string) => void;
 }
 
 // ============================================
@@ -144,15 +160,31 @@ export const CommandCentre: React.FC<CommandCentreProps> = ({
   onHideLockedCardsChange,
   hidePlaceholderCards,
   onHidePlaceholderCardsChange,
+  hideIntegrationAndDevCards,
+  onHideIntegrationAndDevCardsChange,
   salutationType,
   onSalutationTypeChange,
   themeMode,
   onThemeModeChange,
   navMode,
   onNavModeChange,
+  integrationsEnabled,
+  onIntegrationsEnabledChange,
+  floatMenu,
+  onFloatMenuChange,
+  initialTab,
+  initialPlatformId,
+  onOpenStore,
 }) => {
   const classes = useStyles();
-  const [activeTab, setActiveTab] = React.useState('cards');
+  const [activeTab, setActiveTab] = React.useState(initialTab || 'cards');
+
+  // Sync active tab when initialTab changes while opening
+  React.useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
 
   if (!isOpen) return null;
 
@@ -209,6 +241,9 @@ export const CommandCentre: React.FC<CommandCentreProps> = ({
             <Tab value="categories">Categories</Tab>
             <Tab value="alerts">Alerts &amp; Thresholds</Tab>
             <Tab value="layout">Layout</Tab>
+            {permissions.showIntegrations && (
+              <Tab value="integrations">Integrations</Tab>
+            )}
           </TabList>
         </div>
 
@@ -222,6 +257,7 @@ export const CommandCentre: React.FC<CommandCentreProps> = ({
               onTogglePin={onTogglePin}
               onToggleHide={onToggleHide}
               currentTier={currentTier}
+              onOpenStore={onOpenStore}
             />
           )}
           {activeTab === 'categories' && (
@@ -236,12 +272,23 @@ export const CommandCentre: React.FC<CommandCentreProps> = ({
               onHideLockedCardsChange={onHideLockedCardsChange}
               hidePlaceholderCards={hidePlaceholderCards}
               onHidePlaceholderCardsChange={onHidePlaceholderCardsChange}
+              hideIntegrationAndDevCards={hideIntegrationAndDevCards}
+              onHideIntegrationAndDevCardsChange={onHideIntegrationAndDevCardsChange}
               salutationType={salutationType}
               onSalutationTypeChange={onSalutationTypeChange}
               themeMode={themeMode}
               onThemeModeChange={onThemeModeChange}
               navMode={navMode}
               onNavModeChange={onNavModeChange}
+              floatMenu={floatMenu}
+              onFloatMenuChange={onFloatMenuChange}
+            />
+          )}
+          {activeTab === 'integrations' && onIntegrationsEnabledChange && (
+            <IntegrationsTab
+              integrationsEnabled={integrationsEnabled ?? true}
+              onIntegrationsEnabledChange={onIntegrationsEnabledChange}
+              initialPlatformId={initialPlatformId}
             />
           )}
         </div>

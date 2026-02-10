@@ -1,5 +1,8 @@
 // ============================================
-// Card Registry - Complete catalog of all 79 cards
+// Card Registry - Complete catalog of all 94 cards
+// Cards 1-79: Base M365 cards
+// Card 80: Quick Links (utility)
+// Cards 81-95: Integration-unlocked cards (Mode 1)
 // ============================================
 
 import {
@@ -8,6 +11,7 @@ import {
   LicenseTier,
   CardStatus,
 } from '../models/CardCatalog';
+import { IntegrationCategory } from '../models/Integration';
 
 export const CARD_REGISTRY: CardRegistration[] = [
   // ═══════════════════════════════════════════
@@ -26,6 +30,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Surfaces invisible accountability — people waiting on you',
     intelligenceEnrichment: 'Predicts escalation risk, drafts responses',
     dataSources: ['Mail API', 'Teams Chat API', 'Teams Channel API'],
+    dataVisualisationHint: 'count',
     tags: ['email', 'teams', 'urgency', 'accountability'],
   },
   {
@@ -35,11 +40,13 @@ export const CARD_REGISTRY: CardRegistration[] = [
     category: CardCategory.ImmediateAction,
     impactRating: 9,
     minimumTier: LicenseTier.Team,
-    status: CardStatus.Placeholder,
+    status: CardStatus.Implemented,
+    existingCardId: 'approvalBottlenecks',
     description: "Approvals you're holding up, sorted by wait time",
     keyValue: 'Direct productivity unlock for others',
     intelligenceEnrichment: 'Predicts downstream delays, suggests delegation',
     dataSources: ['Approvals API', 'Power Automate API'],
+    dataVisualisationHint: 'count',
     tags: ['approvals', 'blocking', 'urgency'],
   },
   {
@@ -55,6 +62,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Cuts through noise to what actually needs attention',
     intelligenceEnrichment: 'AI priority scoring, smart triage suggestions',
     dataSources: ['Mail API', 'Teams API', 'Planner API', 'To Do API'],
+    dataVisualisationHint: 'count',
     tags: ['triage', 'urgency', 'daily-review'],
   },
   {
@@ -70,6 +78,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: "Credibility protection — tracks what you said you'd do",
     intelligenceEnrichment: 'Sentiment-aware urgency, auto-drafts follow-up',
     dataSources: ['Mail API', 'Teams Chat API', 'Planner API'],
+    dataVisualisationHint: 'count',
     tags: ['commitments', 'credibility', 'overdue'],
   },
   {
@@ -85,6 +94,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Reduces meeting waste, signals preparedness',
     intelligenceEnrichment: 'AI-generated briefing notes, sentiment context',
     dataSources: ['Calendar API', 'Mail API', 'OneDrive API'],
+    dataVisualisationHint: 'count',
     tags: ['meetings', 'preparation', 'calendar'],
   },
   {
@@ -100,6 +110,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Relationship prioritisation at scale',
     intelligenceEnrichment: 'Sentiment detection, urgency prediction',
     dataSources: ['Mail API', 'People API'],
+    dataVisualisationHint: 'count',
     tags: ['vip', 'prioritisation', 'relationships'],
   },
   {
@@ -109,10 +120,12 @@ export const CARD_REGISTRY: CardRegistration[] = [
     category: CardCategory.ImmediateAction,
     impactRating: 7,
     minimumTier: LicenseTier.Team,
-    status: CardStatus.Placeholder,
+    status: CardStatus.Implemented,
+    existingCardId: 'preMeetingConflicts',
     description: 'Double-bookings or back-to-back with no transition',
     keyValue: 'Prevents the scramble, protects focus time',
     dataSources: ['Calendar API'],
+    dataVisualisationHint: 'count',
     tags: ['calendar', 'conflicts', 'scheduling'],
   },
   {
@@ -127,6 +140,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'External emails with no response in 5+ days',
     keyValue: 'Deal/project momentum maintenance',
     dataSources: ['Mail API'],
+    dataVisualisationHint: 'count',
     tags: ['external', 'follow-up', 'waiting'],
   },
   {
@@ -136,11 +150,13 @@ export const CARD_REGISTRY: CardRegistration[] = [
     category: CardCategory.ImmediateAction,
     impactRating: 9,
     minimumTier: LicenseTier.Manager,
-    status: CardStatus.Placeholder,
+    status: CardStatus.Implemented,
+    existingCardId: 'contextualActions',
     description: 'Actionable cards: "Reply to Sarah," "Schedule follow-up"',
     keyValue: 'Reduces decision fatigue, direct action',
     intelligenceEnrichment: 'AI-drafted actions, adaptive suggestions',
     dataSources: ['Adaptive Cards', 'Bot Framework'],
+    dataVisualisationHint: 'status',
     tags: ['actions', 'ai', 'suggestions'],
   },
   {
@@ -156,6 +172,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Organisational friction visibility',
     intelligenceEnrichment: 'Predicts cascade delays, suggests resolution paths',
     dataSources: ['Planner API', 'Project API'],
+    dataVisualisationHint: 'count',
     tags: ['dependencies', 'blocking', 'cross-team'],
   },
 
@@ -175,6 +192,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Awareness tool for cognitive load — the invisible tax',
     intelligenceEnrichment: 'Anomaly detection, adaptive personal thresholds',
     dataSources: ['SharePoint API', 'Teams API', 'Calendar API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['focus', 'context-switching', 'cognitive-load'],
   },
   {
@@ -190,6 +208,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Proactive calendar hygiene before chaos hits',
     intelligenceEnrichment: 'Optimal reschedule suggestions',
     dataSources: ['Calendar API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['focus', 'calendar', 'deep-work'],
   },
   {
@@ -199,11 +218,13 @@ export const CARD_REGISTRY: CardRegistration[] = [
     category: CardCategory.ProductivityPatterns,
     impactRating: 8,
     minimumTier: LicenseTier.Team,
-    status: CardStatus.Placeholder,
+    status: CardStatus.Implemented,
+    existingCardId: 'peakProductivity',
     description: 'When you complete tasks vs. when meetings are scheduled',
     keyValue: 'Self-knowledge for better scheduling decisions',
     intelligenceEnrichment: 'Adaptive pattern learning over time',
     dataSources: ['Calendar API', 'Planner API'],
+    dataVisualisationHint: 'gauge',
     tags: ['productivity', 'scheduling', 'patterns'],
   },
   {
@@ -213,10 +234,12 @@ export const CARD_REGISTRY: CardRegistration[] = [
     category: CardCategory.ProductivityPatterns,
     impactRating: 8,
     minimumTier: LicenseTier.Team,
-    status: CardStatus.Placeholder,
+    status: CardStatus.Implemented,
+    existingCardId: 'deepWorkOpportunities',
     description: 'Largest uninterrupted time blocks in next 5 days',
     keyValue: 'Helps protect what matters most',
     dataSources: ['Calendar API'],
+    dataVisualisationHint: 'status',
     tags: ['focus', 'deep-work', 'calendar'],
   },
   {
@@ -226,11 +249,13 @@ export const CARD_REGISTRY: CardRegistration[] = [
     category: CardCategory.ProductivityPatterns,
     impactRating: 7,
     minimumTier: LicenseTier.Team,
-    status: CardStatus.Placeholder,
+    status: CardStatus.Implemented,
+    existingCardId: 'afterHoursFootprint',
     description: 'Evening/weekend activity trends with behavioral nudges',
     keyValue: 'Burnout prevention, boundary awareness',
     intelligenceEnrichment: 'Burnout prediction, trend anomalies',
     dataSources: ['Mail API', 'Teams API', 'Activity API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['wellbeing', 'boundaries', 'after-hours'],
   },
   {
@@ -246,6 +271,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Calibration tool for realistic planning',
     intelligenceEnrichment: 'Predicts overdue risk per task',
     dataSources: ['Planner API', 'To Do API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['tasks', 'velocity', 'planning'],
   },
   {
@@ -255,10 +281,12 @@ export const CARD_REGISTRY: CardRegistration[] = [
     category: CardCategory.ProductivityPatterns,
     impactRating: 6,
     minimumTier: LicenseTier.Team,
-    status: CardStatus.Placeholder,
+    status: CardStatus.Implemented,
+    existingCardId: 'meetingPrepGap',
     description: "Accepted meetings where you haven't opened related docs",
     keyValue: 'Accountability for meeting readiness',
     dataSources: ['Calendar API', 'OneDrive API'],
+    dataVisualisationHint: 'gauge',
     tags: ['meetings', 'preparation'],
   },
   {
@@ -268,10 +296,12 @@ export const CARD_REGISTRY: CardRegistration[] = [
     category: CardCategory.ProductivityPatterns,
     impactRating: 6,
     minimumTier: LicenseTier.Team,
-    status: CardStatus.Placeholder,
+    status: CardStatus.Implemented,
+    existingCardId: 'emailResponse',
     description: 'Your typical response time by sender/urgency',
     keyValue: 'Helps set realistic expectations',
     dataSources: ['Mail API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['email', 'response-time', 'patterns'],
   },
   {
@@ -281,11 +311,13 @@ export const CARD_REGISTRY: CardRegistration[] = [
     category: CardCategory.ProductivityPatterns,
     impactRating: 9,
     minimumTier: LicenseTier.Team,
-    status: CardStatus.Placeholder,
+    status: CardStatus.Implemented,
+    existingCardId: 'collaborationOverload',
     description: 'Scientifically validated metrics on meeting load, after-hours',
     keyValue: 'Research-backed burnout indicators',
     intelligenceEnrichment: 'Predictive burnout scoring, trend forecasting',
     dataSources: ['Viva Insights API'],
+    dataVisualisationHint: 'gauge',
     tags: ['burnout', 'collaboration', 'overload'],
   },
   {
@@ -300,6 +332,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'How you interact across teams and channels',
     keyValue: 'Network visibility and balance',
     dataSources: ['Teams API', 'SharePoint API'],
+    dataVisualisationHint: 'gauge',
     tags: ['collaboration', 'network', 'patterns'],
   },
   {
@@ -309,11 +342,13 @@ export const CARD_REGISTRY: CardRegistration[] = [
     category: CardCategory.ProductivityPatterns,
     impactRating: 9,
     minimumTier: LicenseTier.Team,
-    status: CardStatus.Placeholder,
+    status: CardStatus.Implemented,
+    existingCardId: 'commitmentCapacity',
     description: 'Task load across all projects vs. available time',
     keyValue: 'Overcommitment detection before burnout',
     intelligenceEnrichment: 'Predicts overcommitment 2 weeks out',
     dataSources: ['Planner API', 'Calendar API'],
+    dataVisualisationHint: 'gauge',
     tags: ['capacity', 'overcommitment', 'planning'],
   },
   {
@@ -323,11 +358,13 @@ export const CARD_REGISTRY: CardRegistration[] = [
     category: CardCategory.ProductivityPatterns,
     impactRating: 8,
     minimumTier: LicenseTier.Manager,
-    status: CardStatus.Placeholder,
+    status: CardStatus.Implemented,
+    existingCardId: 'seasonalWorkload',
     description: 'Based on past years, when you typically get overwhelmed',
     keyValue: 'Proactive capacity planning',
     intelligenceEnrichment: 'ML-based seasonal forecasting',
     dataSources: ['Temporal Analysis'],
+    dataVisualisationHint: 'status',
     tags: ['prediction', 'seasonal', 'capacity'],
   },
   {
@@ -337,11 +374,13 @@ export const CARD_REGISTRY: CardRegistration[] = [
     category: CardCategory.ProductivityPatterns,
     impactRating: 8,
     minimumTier: LicenseTier.Manager,
-    status: CardStatus.Placeholder,
+    status: CardStatus.Implemented,
+    existingCardId: 'meetingCreep',
     description: 'How meeting load has changed over 6/12 months',
     keyValue: 'Before crisis becomes visible',
     intelligenceEnrichment: 'Trend extrapolation, tipping point alerts',
     dataSources: ['Calendar API', 'Temporal Analysis'],
+    dataVisualisationHint: 'sparkline',
     tags: ['meetings', 'trends', 'creep'],
   },
 
@@ -360,6 +399,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Documents not updated in 90+ days still being referenced',
     keyValue: 'Prevents outdated information spreading',
     dataSources: ['SharePoint API', 'OneDrive API'],
+    dataVisualisationHint: 'count',
     tags: ['documents', 'stale', 'knowledge'],
   },
   {
@@ -375,6 +415,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Bus factor risk identification',
     intelligenceEnrichment: 'Identifies knowledge concentration risks',
     dataSources: ['SharePoint API', 'Analytics API'],
+    dataVisualisationHint: 'count',
     tags: ['silos', 'risk', 'knowledge-sharing'],
   },
   {
@@ -388,6 +429,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Multiple versions of same-named docs in different locations',
     keyValue: 'Prevents confusion and rework',
     dataSources: ['SharePoint API', 'OneDrive API'],
+    dataVisualisationHint: 'count',
     tags: ['versions', 'conflicts', 'documents'],
   },
   {
@@ -402,6 +444,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Guides documentation priorities',
     intelligenceEnrichment: 'NLP analysis of questions vs. docs',
     dataSources: ['Search API', 'Viva Topics API'],
+    dataVisualisationHint: 'gauge',
     tags: ['gaps', 'documentation', 'questions'],
   },
   {
@@ -415,6 +458,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Documents shared outside org in last 7 days',
     keyValue: 'External sharing awareness',
     dataSources: ['SharePoint API', 'OneDrive API'],
+    dataVisualisationHint: 'count',
     tags: ['external', 'sharing', 'security'],
   },
   {
@@ -428,6 +472,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'External links that have expired or should be reviewed',
     keyValue: 'Security hygiene maintenance',
     dataSources: ['SharePoint API'],
+    dataVisualisationHint: 'count',
     tags: ['links', 'expired', 'security'],
   },
   {
@@ -441,6 +486,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Content with poor metadata/tagging that never appears in search',
     keyValue: 'Improves content findability',
     dataSources: ['Search API', 'SharePoint API'],
+    dataVisualisationHint: 'count',
     tags: ['search', 'metadata', 'findability'],
   },
   {
@@ -454,6 +500,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Team wiki pages with stale content',
     keyValue: 'Keeps knowledge bases current',
     dataSources: ['SharePoint API', 'OneNote API'],
+    dataVisualisationHint: 'gauge',
     tags: ['wiki', 'freshness', 'documentation'],
   },
   {
@@ -467,6 +514,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Meetings without attached notes or recordings',
     keyValue: 'Institutional memory protection',
     dataSources: ['Calendar API', 'OneNote API', 'Stream API'],
+    dataVisualisationHint: 'count',
     tags: ['meetings', 'notes', 'recording'],
   },
   {
@@ -481,6 +529,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Accelerates problem-solving',
     intelligenceEnrichment: 'ML-based expertise mapping',
     dataSources: ['Viva Topics API', 'Graph People API'],
+    dataVisualisationHint: 'status',
     tags: ['experts', 'topics', 'help'],
   },
   {
@@ -494,6 +543,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'High-traffic processes without documentation',
     keyValue: 'Reduces repeated questions',
     dataSources: ['SharePoint API', 'Analytics API'],
+    dataVisualisationHint: 'count',
     tags: ['documentation', 'debt', 'processes'],
   },
   {
@@ -507,6 +557,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'SharePoint sites with no recent activity',
     keyValue: 'Tenant hygiene and cost savings',
     dataSources: ['SharePoint Admin API'],
+    dataVisualisationHint: 'count',
     tags: ['sites', 'orphaned', 'cleanup'],
   },
   {
@@ -520,6 +571,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Documents approaching retention policy deadlines',
     keyValue: 'Compliance and archival awareness',
     dataSources: ['Compliance API', 'SharePoint API'],
+    dataVisualisationHint: 'count',
     tags: ['lifecycle', 'retention', 'compliance'],
   },
   {
@@ -534,6 +586,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Org-wide knowledge leverage',
     intelligenceEnrichment: 'Cross-team knowledge mapping',
     dataSources: ['Viva Topics API', 'Graph API'],
+    dataVisualisationHint: 'status',
     tags: ['cross-boundary', 'knowledge', 'sharing'],
   },
   {
@@ -548,6 +601,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Improves AI effectiveness',
     intelligenceEnrichment: 'Copilot performance analysis',
     dataSources: ['Copilot API', 'Search API'],
+    dataVisualisationHint: 'status',
     tags: ['ai', 'copilot', 'grounding'],
   },
   {
@@ -561,6 +615,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Frequent search queries with zero results',
     keyValue: 'Identifies content gaps',
     dataSources: ['Search Analytics API'],
+    dataVisualisationHint: 'count',
     tags: ['search', 'gaps', 'queries'],
   },
 
@@ -578,6 +633,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Colleagues you owe responses to',
     keyValue: 'Relationship maintenance at scale',
     dataSources: ['Mail API', 'Teams API'],
+    dataVisualisationHint: 'count',
     tags: ['communication', 'debt', 'relationships'],
   },
   {
@@ -592,6 +648,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Early warning for team cohesion',
     intelligenceEnrichment: 'Trend analysis, isolation detection',
     dataSources: ['Teams API', 'Mail API'],
+    dataVisualisationHint: 'count',
     tags: ['team', 'connectivity', 'isolation'],
   },
   {
@@ -606,6 +663,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Key relationships and how strong they are',
     keyValue: 'Proactive relationship management',
     dataSources: ['Mail API', 'Teams API', 'Calendar API'],
+    dataVisualisationHint: 'gauge',
     tags: ['relationships', 'strength', 'network'],
   },
   {
@@ -619,6 +677,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'People at the edges of your network who might be valuable',
     keyValue: 'Expands strategic connections',
     dataSources: ['Graph People API', 'Teams API'],
+    dataVisualisationHint: 'gauge',
     tags: ['network', 'periphery', 'connections'],
   },
   {
@@ -632,6 +691,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Previously strong connections now fading',
     keyValue: 'Prevents accidental relationship decay',
     dataSources: ['Mail API', 'Teams API', 'Calendar API'],
+    dataVisualisationHint: 'count',
     tags: ['relationships', 'declining', 'maintenance'],
   },
   {
@@ -646,6 +706,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Onboarding effectiveness tracking',
     intelligenceEnrichment: 'Benchmark against successful integrations',
     dataSources: ['Graph API', 'Teams API'],
+    dataVisualisationHint: 'count',
     tags: ['onboarding', 'new-joiners', 'integration'],
   },
   {
@@ -659,6 +720,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Your connections that span team boundaries',
     keyValue: 'Strategic network awareness',
     dataSources: ['Graph API', 'Teams API'],
+    dataVisualisationHint: 'status',
     tags: ['cross-team', 'bridges', 'network'],
   },
   {
@@ -673,6 +735,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Strategic influence awareness',
     intelligenceEnrichment: 'Centrality and brokerage analysis',
     dataSources: ['Graph Analytics API'],
+    dataVisualisationHint: 'gauge',
     tags: ['network', 'position', 'influence'],
   },
   {
@@ -686,6 +749,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Engagement signals from your meetings',
     keyValue: 'Meeting effectiveness feedback',
     dataSources: ['Teams Meeting API', 'Attendance API'],
+    dataVisualisationHint: 'gauge',
     tags: ['meetings', 'quality', 'engagement'],
   },
   {
@@ -699,6 +763,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Calibrate expectations with frequent collaborators',
     keyValue: 'Reduces friction from mismatched expectations',
     dataSources: ['Mail API', 'Teams API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['response-time', 'expectations', 'calibration'],
   },
   {
@@ -713,6 +778,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Org-level collaboration opportunities',
     intelligenceEnrichment: 'Silo detection and bridge suggestions',
     dataSources: ['Graph Analytics API', 'Teams API'],
+    dataVisualisationHint: 'gauge',
     tags: ['silos', 'collaboration', 'org-level'],
   },
   {
@@ -727,6 +793,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Burnout signals, security concerns',
     intelligenceEnrichment: 'Anomaly detection with adaptive baselines',
     dataSources: ['Activity API', 'Temporal Analysis'],
+    dataVisualisationHint: 'sparkline',
     tags: ['anomaly', 'patterns', 'burnout'],
   },
   {
@@ -740,6 +807,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Who schedules over your focus time',
     keyValue: 'Identifies calendar boundary violators',
     dataSources: ['Calendar API'],
+    dataVisualisationHint: 'gauge',
     tags: ['calendar', 'politics', 'boundaries'],
   },
 
@@ -757,6 +825,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Workload distribution across direct reports',
     keyValue: 'Prevents burnout and resentment',
     dataSources: ['Planner API', 'Calendar API', 'Teams API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['team', 'workload', 'balance'],
   },
   {
@@ -770,6 +839,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Direct reports without recent 1:1 meetings',
     keyValue: 'Manager accountability for face time',
     dataSources: ['Calendar API'],
+    dataVisualisationHint: 'count',
     tags: ['one-on-one', 'gaps', 'management'],
   },
   {
@@ -783,6 +853,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Who on your team is available when',
     keyValue: 'Scheduling and coverage planning',
     dataSources: ['Calendar API', 'Presence API'],
+    dataVisualisationHint: 'gauge',
     tags: ['team', 'availability', 'scheduling'],
   },
   {
@@ -797,6 +868,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Prevents recognition blind spots',
     intelligenceEnrichment: 'Suggests recognition moments',
     dataSources: ['Viva Engage API', 'Mail API'],
+    dataVisualisationHint: 'count',
     tags: ['recognition', 'team', 'engagement'],
   },
   {
@@ -811,6 +883,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Manager time reclaim',
     intelligenceEnrichment: 'Skill-matched delegation suggestions',
     dataSources: ['Planner API', 'Calendar API'],
+    dataVisualisationHint: 'count',
     tags: ['delegation', 'capacity', 'management'],
   },
   {
@@ -824,6 +897,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Which team members are in meeting overload',
     keyValue: 'Protects team productivity',
     dataSources: ['Calendar API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['meetings', 'burden', 'team'],
   },
   {
@@ -838,6 +912,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Risk mitigation and planning',
     intelligenceEnrichment: 'Knowledge concentration analysis',
     dataSources: ['SharePoint API', 'Graph API'],
+    dataVisualisationHint: 'gauge',
     tags: ['succession', 'risk', 'knowledge'],
   },
   {
@@ -851,6 +926,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'How well your team collaborates internally',
     keyValue: 'Team cohesion monitoring',
     dataSources: ['Teams API', 'Mail API'],
+    dataVisualisationHint: 'gauge',
     tags: ['team', 'collaboration', 'health'],
   },
   {
@@ -865,6 +941,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Proactive career conversations',
     intelligenceEnrichment: 'Skill development pattern analysis',
     dataSources: ['Viva Learning API', 'Project API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['career', 'development', 'growth'],
   },
   {
@@ -879,6 +956,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Early intervention opportunity',
     intelligenceEnrichment: 'ML-based attrition prediction',
     dataSources: ['Activity API', 'Calendar API', 'Teams API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['attrition', 'risk', 'retention'],
   },
   {
@@ -892,6 +970,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Activity and engagement of skip-level reports',
     keyValue: 'Extended team awareness',
     dataSources: ['Graph API', 'Teams API'],
+    dataVisualisationHint: 'gauge',
     tags: ['skip-level', 'visibility', 'team'],
   },
   {
@@ -905,6 +984,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'How quickly your team is acquiring new skills',
     keyValue: 'L&D investment tracking',
     dataSources: ['Viva Learning API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['learning', 'team', 'development'],
   },
   {
@@ -919,6 +999,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     keyValue: 'Early culture warning system',
     intelligenceEnrichment: 'NLP sentiment analysis',
     dataSources: ['Teams API', 'Viva Engage API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['sentiment', 'team', 'culture'],
   },
 
@@ -936,6 +1017,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Documents shared more broadly than necessary',
     keyValue: 'Security posture improvement',
     dataSources: ['SharePoint API', 'DLP API'],
+    dataVisualisationHint: 'count',
     tags: ['oversharing', 'security', 'documents'],
   },
   {
@@ -949,6 +1031,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Recent access to files with sensitivity labels',
     keyValue: 'Audit and awareness',
     dataSources: ['SharePoint API', 'Sensitivity Labels API'],
+    dataVisualisationHint: 'count',
     tags: ['sensitive', 'access', 'audit'],
   },
   {
@@ -962,6 +1045,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Unusual permission grants or access patterns',
     keyValue: 'Security incident prevention',
     dataSources: ['SharePoint API', 'Azure AD API'],
+    dataVisualisationHint: 'count',
     tags: ['permissions', 'anomalies', 'security'],
   },
   {
@@ -975,6 +1059,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Guest user access approaching expiry',
     keyValue: 'Access continuity management',
     dataSources: ['Azure AD API', 'SharePoint API'],
+    dataVisualisationHint: 'count',
     tags: ['guest', 'access', 'expiry'],
   },
   {
@@ -988,6 +1073,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Required training modules approaching deadline',
     keyValue: 'Compliance deadline awareness',
     dataSources: ['Viva Learning API'],
+    dataVisualisationHint: 'count',
     tags: ['training', 'compliance', 'deadlines'],
   },
   {
@@ -1001,6 +1087,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Recent DLP policy triggers from your activity',
     keyValue: 'Personal compliance awareness',
     dataSources: ['DLP API', 'Compliance Center API'],
+    dataVisualisationHint: 'count',
     tags: ['dlp', 'violations', 'compliance'],
   },
   {
@@ -1014,6 +1101,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Content requiring review before retention deletion',
     keyValue: 'Data governance participation',
     dataSources: ['Retention API', 'SharePoint API'],
+    dataVisualisationHint: 'count',
     tags: ['retention', 'review', 'governance'],
   },
   {
@@ -1027,6 +1115,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Unapproved apps being used for work',
     keyValue: 'Security and compliance risk awareness',
     dataSources: ['Cloud App Security API'],
+    dataVisualisationHint: 'sparkline',
     tags: ['shadow-it', 'apps', 'security'],
   },
   {
@@ -1040,6 +1129,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'PII detected in your documents',
     keyValue: 'GDPR/privacy compliance',
     dataSources: ['DLP API', 'Content Search API'],
+    dataVisualisationHint: 'count',
     tags: ['pii', 'privacy', 'gdpr'],
   },
   {
@@ -1053,6 +1143,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Access reviews requiring your action',
     keyValue: 'Timely access governance',
     dataSources: ['Identity Governance API'],
+    dataVisualisationHint: 'count',
     tags: ['access-review', 'governance', 'identity'],
   },
   {
@@ -1066,6 +1157,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Aggregate compliance health across your scope',
     keyValue: 'Executive compliance visibility',
     dataSources: ['Compliance Manager API'],
+    dataVisualisationHint: 'gauge',
     tags: ['compliance', 'posture', 'score'],
   },
   {
@@ -1079,6 +1171,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Data stored outside allowed regions',
     keyValue: 'Regulatory compliance',
     dataSources: ['Azure Policy API', 'SharePoint API'],
+    dataVisualisationHint: 'count',
     tags: ['data-residency', 'regions', 'compliance'],
   },
   {
@@ -1092,6 +1185,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Connected apps with excessive permissions',
     keyValue: 'App permission hygiene',
     dataSources: ['Azure AD API', 'App Governance API'],
+    dataVisualisationHint: 'count',
     tags: ['apps', 'permissions', 'risk'],
   },
   {
@@ -1105,6 +1199,7 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Dependencies on end-of-life systems',
     keyValue: 'Technical debt visibility',
     dataSources: ['Azure API', 'Custom Inventory'],
+    dataVisualisationHint: 'count',
     tags: ['eol', 'dependencies', 'technical-debt'],
   },
 
@@ -1123,7 +1218,255 @@ export const CARD_REGISTRY: CardRegistration[] = [
     description: 'Frequently accessed links and bookmarks',
     keyValue: 'Quick access to important resources',
     dataSources: ['SharePoint API', 'Custom Links'],
+    dataVisualisationHint: 'status',
     tags: ['links', 'bookmarks', 'navigation'],
+  },
+
+  // ═══════════════════════════════════════════
+  // INTEGRATION-UNLOCKED CARDS (Mode 1 — Dedicated Cards)
+  // These cards ONLY appear when their required integration is connected
+  // ═══════════════════════════════════════════
+
+  // --- CRM Cards (81-83) ---
+  {
+    id: 'deal-stall-detector',
+    catalogNumber: 81,
+    name: 'Deal Stall Detector',
+    category: CardCategory.ImmediateAction,
+    impactRating: 9,
+    minimumTier: LicenseTier.Team,
+    status: CardStatus.Planned,
+    description: 'CRM opportunities with no activity in configurable window',
+    keyValue: "Revenue protection — catches deals going cold before it's too late",
+    intelligenceEnrichment: 'Win probability decay, optimal re-engagement timing',
+    requiredIntegrationCategory: IntegrationCategory.CRM,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'count',
+    tags: ['crm', 'deals', 'pipeline', 'revenue'],
+  },
+  {
+    id: 'client-silence-alert',
+    catalogNumber: 82,
+    name: 'Client Silence Alert',
+    category: CardCategory.CollaborationHealth,
+    impactRating: 8,
+    minimumTier: LicenseTier.Team,
+    status: CardStatus.Planned,
+    description: 'Key accounts with no email/meeting/call activity in threshold period',
+    keyValue: 'Relationship maintenance — prevents silent churn',
+    requiredIntegrationCategory: IntegrationCategory.CRM,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'count',
+    tags: ['crm', 'clients', 'relationships', 'churn'],
+  },
+  {
+    id: 'relationship-decay',
+    catalogNumber: 83,
+    name: 'Relationship Decay',
+    category: CardCategory.CollaborationHealth,
+    impactRating: 8,
+    minimumTier: LicenseTier.Team,
+    status: CardStatus.Planned,
+    description: 'CRM contacts where interaction frequency is declining vs. historical baseline',
+    keyValue: 'Trend-aware relationship monitoring across CRM + M365 signals',
+    intelligenceEnrichment: 'Decay velocity prediction, prioritised re-engagement list',
+    requiredIntegrationCategory: IntegrationCategory.CRM,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'gauge',
+    tags: ['crm', 'relationships', 'trends'],
+  },
+
+  // --- Project & DevOps Cards (84-86) ---
+  {
+    id: 'sprint-drift',
+    catalogNumber: 84,
+    name: 'Sprint Drift',
+    category: CardCategory.ProductivityPatterns,
+    impactRating: 9,
+    minimumTier: LicenseTier.Team,
+    status: CardStatus.Planned,
+    description: 'Scope changes and unplanned work entering active sprints',
+    keyValue: 'Sprint integrity protection — makes scope creep visible',
+    requiredIntegrationCategory: IntegrationCategory.ProjectDevOps,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'sparkline',
+    tags: ['agile', 'sprints', 'scope', 'devops'],
+  },
+  {
+    id: 'blocked-work-radar',
+    catalogNumber: 85,
+    name: 'Blocked Work Radar',
+    category: CardCategory.ImmediateAction,
+    impactRating: 9,
+    minimumTier: LicenseTier.Team,
+    status: CardStatus.Planned,
+    description: 'Issues/tickets flagged as blocked with no recent activity on the blocker',
+    keyValue: 'Unblocking acceleration — surfaces stalled dependencies',
+    requiredIntegrationCategory: IntegrationCategory.ProjectDevOps,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'count',
+    tags: ['blocked', 'dependencies', 'issues'],
+  },
+  {
+    id: 'delivery-vs-commitment-gap',
+    catalogNumber: 86,
+    name: 'Delivery vs. Commitment Gap',
+    category: CardCategory.ManagerToolkit,
+    impactRating: 9,
+    minimumTier: LicenseTier.Manager,
+    status: CardStatus.Planned,
+    description: 'Planned vs. actual delivery across sprints and milestones',
+    keyValue: 'Predictability metric — builds trust with stakeholders',
+    intelligenceEnrichment: 'Forecasted delivery date based on velocity trends',
+    requiredIntegrationCategory: IntegrationCategory.ProjectDevOps,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'sparkline',
+    tags: ['delivery', 'velocity', 'commitments'],
+  },
+
+  // --- ITSM & Operations Cards (87-89) ---
+  {
+    id: 'ticket-escalation-patterns',
+    catalogNumber: 87,
+    name: 'Ticket Escalation Patterns',
+    category: CardCategory.ManagerToolkit,
+    impactRating: 8,
+    minimumTier: LicenseTier.Manager,
+    status: CardStatus.Planned,
+    description: 'Recurring escalation paths and common escalation triggers',
+    keyValue: 'Systemic issue identification — fix the cause, not the symptom',
+    requiredIntegrationCategory: IntegrationCategory.ITSMOperations,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'count',
+    tags: ['itsm', 'escalations', 'support'],
+  },
+  {
+    id: 'repeat-issue-clusters',
+    catalogNumber: 88,
+    name: 'Repeat Issue Clusters',
+    category: CardCategory.KnowledgeManagement,
+    impactRating: 8,
+    minimumTier: LicenseTier.Team,
+    status: CardStatus.Planned,
+    description: 'Tickets with similar descriptions or resolution patterns',
+    keyValue: 'Knowledge gap detection — identifies missing documentation or training',
+    intelligenceEnrichment: 'Semantic clustering, auto-suggested KB articles',
+    requiredIntegrationCategory: IntegrationCategory.ITSMOperations,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'count',
+    tags: ['itsm', 'patterns', 'knowledge'],
+  },
+  {
+    id: 'sla-breach-forecast',
+    catalogNumber: 89,
+    name: 'SLA Breach Forecast',
+    category: CardCategory.GovernanceCompliance,
+    impactRating: 9,
+    minimumTier: LicenseTier.Manager,
+    status: CardStatus.Planned,
+    description: 'Tickets approaching SLA thresholds with predicted breach probability',
+    keyValue: 'Proactive SLA management — act before the breach, not after',
+    intelligenceEnrichment: 'ML-based breach probability, resolution time estimation',
+    requiredIntegrationCategory: IntegrationCategory.ITSMOperations,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'count',
+    tags: ['sla', 'compliance', 'forecasting'],
+  },
+
+  // --- Communication Cards (90-92) ---
+  {
+    id: 'cross-platform-silence',
+    catalogNumber: 90,
+    name: 'Cross-Platform Silence',
+    category: CardCategory.CollaborationHealth,
+    impactRating: 8,
+    minimumTier: LicenseTier.Team,
+    status: CardStatus.Planned,
+    description: 'Stakeholders active on Slack/Zoom but silent on Teams (or vice versa)',
+    keyValue: 'Communication gap detection across fragmented tool landscape',
+    requiredIntegrationCategory: IntegrationCategory.Communication,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'count',
+    tags: ['communication', 'cross-platform', 'gaps'],
+  },
+  {
+    id: 'channel-sprawl-index',
+    catalogNumber: 91,
+    name: 'Channel Sprawl Index',
+    category: CardCategory.GovernanceCompliance,
+    impactRating: 7,
+    minimumTier: LicenseTier.Manager,
+    status: CardStatus.Planned,
+    description: 'Ratio of active vs. dormant channels across Teams + Slack',
+    keyValue: 'Communication hygiene — identifies channel pollution and noise',
+    requiredIntegrationCategory: IntegrationCategory.Communication,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'sparkline',
+    tags: ['channels', 'sprawl', 'governance'],
+  },
+  {
+    id: 'meeting-to-chat-ratio',
+    catalogNumber: 92,
+    name: 'Meeting-to-Chat Ratio',
+    category: CardCategory.ProductivityPatterns,
+    impactRating: 7,
+    minimumTier: LicenseTier.Team,
+    status: CardStatus.Planned,
+    description: 'Balance of synchronous (meetings) vs. asynchronous (chat) communication',
+    keyValue: 'Communication mode awareness — are you over-meeting?',
+    requiredIntegrationCategory: IntegrationCategory.Communication,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'sparkline',
+    tags: ['meetings', 'async', 'communication'],
+  },
+
+  // --- Finance & HR Cards (93-95) ---
+  {
+    id: 'utilisation-vs-capacity',
+    catalogNumber: 93,
+    name: 'Utilisation vs. Capacity',
+    category: CardCategory.ManagerToolkit,
+    impactRating: 9,
+    minimumTier: LicenseTier.Manager,
+    status: CardStatus.Planned,
+    description: 'Billable/productive hours vs. available capacity from HR + calendar data',
+    keyValue: 'Resource planning with real data — not gut feel',
+    intelligenceEnrichment: 'Capacity forecasting, optimal allocation suggestions',
+    requiredIntegrationCategory: IntegrationCategory.FinanceHR,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'sparkline',
+    tags: ['utilisation', 'capacity', 'resources'],
+  },
+  {
+    id: 'onboarding-velocity',
+    catalogNumber: 94,
+    name: 'Onboarding Velocity',
+    category: CardCategory.ManagerToolkit,
+    impactRating: 7,
+    minimumTier: LicenseTier.Manager,
+    status: CardStatus.Planned,
+    description: "Time-to-productivity metrics for new joiners based on HR + activity signals",
+    keyValue: "Onboarding effectiveness measurement — fix what's slow",
+    requiredIntegrationCategory: IntegrationCategory.FinanceHR,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'count',
+    tags: ['onboarding', 'hr', 'new-joiners'],
+  },
+  {
+    id: 'budget-burn-anomaly',
+    catalogNumber: 95,
+    name: 'Budget Burn Anomaly',
+    category: CardCategory.GovernanceCompliance,
+    impactRating: 8,
+    minimumTier: LicenseTier.Leader,
+    status: CardStatus.Planned,
+    description: 'Projects or departments with spend rates diverging from forecast',
+    keyValue: 'Financial early warning — catches overspend before it compounds',
+    intelligenceEnrichment: 'Anomaly detection, forecasted end-of-period variance',
+    requiredIntegrationCategory: IntegrationCategory.FinanceHR,
+    isIntegrationCard: true,
+    dataVisualisationHint: 'count',
+    tags: ['finance', 'budget', 'anomaly'],
   },
 ];
 
