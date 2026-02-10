@@ -116,6 +116,9 @@ interface CommandCentreProps {
   /** User preference: hide in-development/placeholder cards */
   hidePlaceholderCards: boolean;
   onHidePlaceholderCardsChange: (hide: boolean) => void;
+  /** User preference: hide integration & in-development cards */
+  hideIntegrationAndDevCards: boolean;
+  onHideIntegrationAndDevCardsChange: (hide: boolean) => void;
   /** Current effective greeting style */
   salutationType?: string;
   onSalutationTypeChange?: (type: string | undefined) => void;
@@ -135,6 +138,8 @@ interface CommandCentreProps {
   initialTab?: string;
   /** Optional platform ID to deep-link to in the integrations tab */
   initialPlatformId?: string;
+  /** Opens the Card Store (optionally to a specific card) */
+  onOpenStore?: (cardId?: string) => void;
 }
 
 // ============================================
@@ -155,6 +160,8 @@ export const CommandCentre: React.FC<CommandCentreProps> = ({
   onHideLockedCardsChange,
   hidePlaceholderCards,
   onHidePlaceholderCardsChange,
+  hideIntegrationAndDevCards,
+  onHideIntegrationAndDevCardsChange,
   salutationType,
   onSalutationTypeChange,
   themeMode,
@@ -167,6 +174,7 @@ export const CommandCentre: React.FC<CommandCentreProps> = ({
   onFloatMenuChange,
   initialTab,
   initialPlatformId,
+  onOpenStore,
 }) => {
   const classes = useStyles();
   const [activeTab, setActiveTab] = React.useState(initialTab || 'cards');
@@ -249,6 +257,7 @@ export const CommandCentre: React.FC<CommandCentreProps> = ({
               onTogglePin={onTogglePin}
               onToggleHide={onToggleHide}
               currentTier={currentTier}
+              onOpenStore={onOpenStore}
             />
           )}
           {activeTab === 'categories' && (
@@ -263,6 +272,8 @@ export const CommandCentre: React.FC<CommandCentreProps> = ({
               onHideLockedCardsChange={onHideLockedCardsChange}
               hidePlaceholderCards={hidePlaceholderCards}
               onHidePlaceholderCardsChange={onHidePlaceholderCardsChange}
+              hideIntegrationAndDevCards={hideIntegrationAndDevCards}
+              onHideIntegrationAndDevCardsChange={onHideIntegrationAndDevCardsChange}
               salutationType={salutationType}
               onSalutationTypeChange={onSalutationTypeChange}
               themeMode={themeMode}

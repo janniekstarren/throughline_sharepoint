@@ -24,8 +24,20 @@ interface ICardPreferences {
   navMode?: string;
   /** User preference: enable/disable integrations (default true) */
   integrationsEnabled: boolean;
+  /** User preference: hide integration & in-development cards (default false) */
+  hideIntegrationAndDevCards: boolean;
   /** User preference: float menu (sticky) or fixed at top (default: collapsed=true, expanded=false) */
   floatMenu?: boolean;
+  /** User preference: Intelligence Hub collapsed state (default false) */
+  hubCollapsed: boolean;
+  /** User preference: Intelligence Hub visibility via eye toggle (default true) */
+  isHubVisible: boolean;
+  /** User preference: adaptive rendering enabled (default true) */
+  adaptiveRenderingEnabled: boolean;
+  /** User preference: auto-promote mode ('smart' | 'all' | 'off') */
+  autoPromoteMode: 'smart' | 'all' | 'off';
+  /** Card IDs the user has explicitly managed (pinned, resized, reordered) */
+  userManagedCardIds: string[];
 }
 
 export interface IUseCardPreferencesResult {
@@ -42,8 +54,26 @@ export interface IUseCardPreferencesResult {
   navMode?: string;
   /** User preference: enable/disable integrations (default true) */
   integrationsEnabled: boolean;
+  /** User preference: hide integration & in-development cards (default false) */
+  hideIntegrationAndDevCards: boolean;
   /** User preference: float menu (sticky) or fixed at top */
   floatMenu?: boolean;
+  /** User preference: Intelligence Hub collapsed state */
+  hubCollapsed: boolean;
+  setHubCollapsed: (collapsed: boolean) => void;
+  /** User preference: Intelligence Hub visibility via eye toggle */
+  isHubVisible: boolean;
+  setIsHubVisible: (visible: boolean) => void;
+  /** User preference: adaptive rendering enabled */
+  adaptiveRenderingEnabled: boolean;
+  setAdaptiveRenderingEnabled: (enabled: boolean) => void;
+  /** User preference: auto-promote mode */
+  autoPromoteMode: 'smart' | 'all' | 'off';
+  setAutoPromoteMode: (mode: 'smart' | 'all' | 'off') => void;
+  /** Card IDs the user has explicitly managed */
+  userManagedCardIds: string[];
+  addUserManagedCard: (cardId: string) => void;
+  resetUserManagedCards: () => void;
   isPinned: (cardId: string) => boolean;
   isHidden: (cardId: string) => boolean;
   isCategoryCollapsed: (categoryId: string) => boolean;
@@ -56,6 +86,7 @@ export interface IUseCardPreferencesResult {
   setThemeMode: (mode: string | undefined) => void;
   setNavMode: (mode: string | undefined) => void;
   setIntegrationsEnabled: (enabled: boolean) => void;
+  setHideIntegrationAndDevCards: (hide: boolean) => void;
   setFloatMenu: (float: boolean | undefined) => void;
   expandAllCategories: () => void;
   collapseAllCategories: (categoryIds: string[]) => void;
@@ -99,6 +130,12 @@ function getDefaults(): ICardPreferences {
     hideLockedCards: false,
     hidePlaceholderCards: false,
     integrationsEnabled: true,
+    hideIntegrationAndDevCards: false,
+    hubCollapsed: false,
+    isHubVisible: true,
+    adaptiveRenderingEnabled: true,
+    autoPromoteMode: 'smart',
+    userManagedCardIds: [],
   };
 }
 
@@ -216,12 +253,59 @@ export function useCardPreferences(userId: string): IUseCardPreferencesResult {
     [prefs, persist]
   );
 
+  const setHideIntegrationAndDevCards = React.useCallback(
+    (hide: boolean) => {
+      persist({ ...prefs, hideIntegrationAndDevCards: hide });
+    },
+    [prefs, persist]
+  );
+
   const setFloatMenu = React.useCallback(
     (float: boolean | undefined) => {
       persist({ ...prefs, floatMenu: float });
     },
     [prefs, persist]
   );
+
+  const setHubCollapsed = React.useCallback(
+    (collapsed: boolean) => {
+      persist({ ...prefs, hubCollapsed: collapsed });
+    },
+    [prefs, persist]
+  );
+
+  const setIsHubVisible = React.useCallback(
+    (visible: boolean) => {
+      persist({ ...prefs, isHubVisible: visible });
+    },
+    [prefs, persist]
+  );
+
+  const setAdaptiveRenderingEnabled = React.useCallback(
+    (enabled: boolean) => {
+      persist({ ...prefs, adaptiveRenderingEnabled: enabled });
+    },
+    [prefs, persist]
+  );
+
+  const setAutoPromoteMode = React.useCallback(
+    (mode: 'smart' | 'all' | 'off') => {
+      persist({ ...prefs, autoPromoteMode: mode });
+    },
+    [prefs, persist]
+  );
+
+  const addUserManagedCard = React.useCallback(
+    (cardId: string) => {
+      if (prefs.userManagedCardIds.includes(cardId)) return;
+      persist({ ...prefs, userManagedCardIds: [...prefs.userManagedCardIds, cardId] });
+    },
+    [prefs, persist]
+  );
+
+  const resetUserManagedCards = React.useCallback(() => {
+    persist({ ...prefs, userManagedCardIds: [] });
+  }, [prefs, persist]);
 
   const expandAllCategories = React.useCallback(() => {
     persist({ ...prefs, collapsedCategories: [] });
@@ -244,7 +328,19 @@ export function useCardPreferences(userId: string): IUseCardPreferencesResult {
     themeMode: prefs.themeMode,
     navMode: prefs.navMode,
     integrationsEnabled: prefs.integrationsEnabled,
+    hideIntegrationAndDevCards: prefs.hideIntegrationAndDevCards,
     floatMenu: prefs.floatMenu,
+    hubCollapsed: prefs.hubCollapsed,
+    setHubCollapsed,
+    isHubVisible: prefs.isHubVisible,
+    setIsHubVisible,
+    adaptiveRenderingEnabled: prefs.adaptiveRenderingEnabled,
+    setAdaptiveRenderingEnabled,
+    autoPromoteMode: prefs.autoPromoteMode,
+    setAutoPromoteMode,
+    userManagedCardIds: prefs.userManagedCardIds,
+    addUserManagedCard,
+    resetUserManagedCards,
     isPinned,
     isHidden,
     isCategoryCollapsed,
@@ -257,6 +353,7 @@ export function useCardPreferences(userId: string): IUseCardPreferencesResult {
     setThemeMode,
     setNavMode,
     setIntegrationsEnabled,
+    setHideIntegrationAndDevCards,
     setFloatMenu,
     expandAllCategories,
     collapseAllCategories,

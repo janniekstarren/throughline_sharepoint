@@ -4,7 +4,15 @@
 // ============================================
 
 .categorySection {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--colorNeutralStroke3, rgba(0, 0, 0, 0.06));
+
+  &:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
 
   &:last-child {
     margin-bottom: 0;
@@ -76,6 +84,16 @@
   font-size: 12px;
   font-weight: 400;
   color: var(--colorNeutralForeground2);
+}
+
+// State summary for adaptive rendering (e.g., "2 critical · 1 warning · 5 clear")
+.stateSummary {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--colorNeutralForeground3);
+  letter-spacing: 0.01em;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .chevron {

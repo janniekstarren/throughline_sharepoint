@@ -70,6 +70,9 @@ interface LayoutTabProps {
   /** User preference: hide in-development/placeholder cards */
   hidePlaceholderCards?: boolean;
   onHidePlaceholderCardsChange?: (hide: boolean) => void;
+  /** User preference: hide integration & in-development cards */
+  hideIntegrationAndDevCards?: boolean;
+  onHideIntegrationAndDevCardsChange?: (hide: boolean) => void;
   /** Current effective greeting style */
   salutationType?: string;
   onSalutationTypeChange?: (type: string | undefined) => void;
@@ -93,6 +96,8 @@ export const LayoutTab: React.FC<LayoutTabProps> = ({
   onHideLockedCardsChange,
   hidePlaceholderCards = false,
   onHidePlaceholderCardsChange,
+  hideIntegrationAndDevCards = false,
+  onHideIntegrationAndDevCardsChange,
   salutationType,
   onSalutationTypeChange,
   themeMode,
@@ -155,6 +160,19 @@ export const LayoutTab: React.FC<LayoutTabProps> = ({
           <Switch
             checked={hidePlaceholderCards}
             onChange={(_ev, data) => onHidePlaceholderCardsChange?.(data.checked)}
+          />
+        </div>
+
+        <div className={classes.settingRow}>
+          <div className={classes.settingLabelGroup}>
+            <Text className={classes.settingLabel}>Hide integration & in-development cards</Text>
+            <Text className={classes.settingDesc}>
+              Only show production-ready, non-integration cards
+            </Text>
+          </div>
+          <Switch
+            checked={hideIntegrationAndDevCards}
+            onChange={(_ev, data) => onHideIntegrationAndDevCardsChange?.(data.checked)}
           />
         </div>
       </div>

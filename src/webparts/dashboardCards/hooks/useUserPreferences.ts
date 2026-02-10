@@ -52,6 +52,12 @@ export interface IUseUserPreferencesResult {
   getCardSize: (cardId: string) => CardSize;
   /** Set all card sizes at once */
   setAllCardSizes: (size: CardSize) => void;
+  /** Snapshot current card sizes before compact mode */
+  savePreCompactSizes: () => void;
+  /** Restore card sizes from pre-compact snapshot */
+  restorePreCompactSizes: () => void;
+  /** Whether a pre-compact size snapshot exists */
+  hasPreCompactSizes: boolean;
   /** Reset to default (webpart) preferences */
   resetToDefaults: () => void;
   /** Whether localStorage is available */
@@ -187,6 +193,32 @@ export function useUserPreferences(
     [userId, instanceId, userPrefs, isStorageAvailable]
   );
 
+  // Whether a pre-compact size snapshot exists
+  const hasPreCompactSizes = React.useMemo(
+    () => userPrefs.preCompactCardSizes !== undefined && Object.keys(userPrefs.preCompactCardSizes).length > 0,
+    [userPrefs.preCompactCardSizes]
+  );
+
+  // Snapshot current card sizes before switching to compact view
+  const savePreCompactSizes = React.useCallback(() => {
+    if (!isStorageAvailable || !userId) return;
+    const snapshot = { ...cardSizes };
+    const newPrefs = { ...userPrefs, preCompactCardSizes: snapshot };
+    setUserPrefs(newPrefs);
+    saveUserPreferences(userId, { preCompactCardSizes: snapshot }, instanceId);
+  }, [userId, instanceId, userPrefs, cardSizes, isStorageAvailable]);
+
+  // Restore card sizes from pre-compact snapshot and clear the snapshot
+  const restorePreCompactSizes = React.useCallback(() => {
+    if (!isStorageAvailable || !userId) return;
+    const snapshot = userPrefs.preCompactCardSizes;
+    if (!snapshot || Object.keys(snapshot).length === 0) return;
+    const newPrefs = { ...userPrefs, cardSizes: snapshot, preCompactCardSizes: undefined };
+    setUserPrefs(newPrefs);
+    setHasUserPreferences(true);
+    saveUserPreferences(userId, { cardSizes: snapshot, preCompactCardSizes: undefined }, instanceId);
+  }, [userId, instanceId, userPrefs, isStorageAvailable]);
+
   // Reset to defaults
   const resetToDefaults = React.useCallback(() => {
     setUserPrefs({});
@@ -206,6 +238,9 @@ export function useUserPreferences(
     setCollapsedCardIds,
     setCardSize,
     setAllCardSizes,
+    savePreCompactSizes,
+    restorePreCompactSizes,
+    hasPreCompactSizes,
     cycleCardSize,
     getCardSize,
     resetToDefaults,

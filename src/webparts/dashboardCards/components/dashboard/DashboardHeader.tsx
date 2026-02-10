@@ -1,7 +1,8 @@
 // ============================================
-// DashboardHeader - Sticky header with search, view, and actions
-// Supports 3 modes: expanded (all buttons), collapsed (hamburger), hidden
-// Collapsed: hamburger toggles inline to full menu bar with Fluent2 motion
+// DashboardHeader - Sticky floating header bar
+// Both expanded and collapsed modes are sticky/floating.
+// At rest: nav sits below the action bar as its own row.
+// On scroll (stuck): nav slides inline with actions, scrolls horizontally.
 // ============================================
 
 import * as React from 'react';
@@ -20,6 +21,7 @@ import {
   Tooltip,
   Badge,
   Text,
+  shorthands,
 } from '@fluentui/react-components';
 import {
   MoreHorizontal20Regular,
@@ -32,9 +34,8 @@ import {
   Navigation20Regular,
   Navigation20Filled,
   Dismiss20Regular,
+  Cart20Regular,
 } from '@fluentui/react-icons';
-// Fluent2 motion timing — using tokens.duration* (string) for Griffel compatibility
-// motionTokens from @fluentui/react-motion are numeric, Griffel needs strings
 import { CardSearch } from './CardSearch';
 import { ViewSwitcher, DashboardView } from './ViewSwitcher';
 import { LicenseTier, LicenseTierMeta } from '../../models/CardCatalog';
@@ -51,52 +52,96 @@ const useStyles = makeStyles({
     width: '100%',
     visibility: 'hidden',
   },
+
+  // Header — always sticky/floating
   header: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalM,
-    padding: `${tokens.spacingVerticalS} 0`,
+    gap: tokens.spacingHorizontalS,
+    ...shorthands.padding(tokens.spacingVerticalXS, tokens.spacingHorizontalM),
+    position: 'sticky',
+    top: 0,
     zIndex: 10,
-    transitionProperty: 'background-color, box-shadow, border-color',
+    ...shorthands.borderRadius(tokens.borderRadiusCircular),
+    // Start transparent, transition to frosted when stuck
+    backgroundColor: 'rgba(255, 255, 255, 0)',
+    boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)',
+    transitionProperty: 'background-color, box-shadow',
     transitionDuration: tokens.durationNormal,
     transitionTimingFunction: tokens.curveDecelerateMid,
   },
-  // Floating (sticky) mode — position only, background is transparent until scrolled
-  headerFloating: {
-    position: 'sticky',
-    top: 0,
-    paddingLeft: tokens.spacingHorizontalM,
-    paddingRight: tokens.spacingHorizontalM,
-    borderRadius: tokens.borderRadiusMedium,
-    // Use explicit rgba(0) to prevent white-flash during CSS transitions
-    backgroundColor: 'rgba(255, 255, 255, 0)',
-    borderBottom: '1px solid rgba(0, 0, 0, 0)',
-    boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)',
-  },
+
   // Applied when sticky header is actually stuck (user has scrolled past natural position)
-  // Frosted glass effect with backdrop-filter blur, matching nav pill border radius
-  headerFloatingStuck: {
+  headerStuck: {
     backgroundColor: 'rgba(255, 255, 255, 0.72)',
     '@media (prefers-color-scheme: dark)': {
       backgroundColor: 'rgba(32, 32, 32, 0.72)',
     },
     backdropFilter: 'saturate(180%) blur(16px)',
-    borderBottom: 'none',
-    borderRadius: tokens.borderRadiusCircular,
     boxShadow: tokens.shadow4,
   },
-  // Static mode — stays in flow, no shadow, inherits background
-  headerStatic: {
-    position: 'relative',
-    backgroundColor: 'inherit',
-  },
-  spacer: {
+
+  // Inline nav container — takes remaining space, scrolls horizontally
+  // Transitions from invisible to visible when header becomes stuck
+  navInline: {
     flex: 1,
+    minWidth: 0,
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    scrollbarWidth: 'none',
+    '::-webkit-scrollbar': {
+      display: 'none',
+    },
+    // Animated reveal when stuck
+    opacity: 1,
+    maxWidth: '9999px',
+    transitionProperty: 'opacity, max-width',
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveDecelerateMid,
   },
+
+  // Hidden state for inline nav (not stuck)
+  navInlineHidden: {
+    opacity: 0,
+    maxWidth: '0px',
+    overflow: 'hidden',
+    transitionDuration: tokens.durationFast,
+    transitionTimingFunction: tokens.curveAccelerateMid,
+  },
+
+  // Nav below the header — full width, separate row, shown at rest
+  // Transitions to hidden when stuck
+  navBelow: {
+    ...shorthands.padding(tokens.spacingVerticalXS, 0),
+    overflow: 'hidden',
+    opacity: 1,
+    maxHeight: '48px',
+    transitionProperty: 'opacity, max-height',
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveDecelerateMid,
+  },
+
+  // Hidden state for below nav (stuck — nav moved inline)
+  navBelowHidden: {
+    opacity: 0,
+    maxHeight: '0px',
+    paddingTop: '0',
+    paddingBottom: '0',
+    transitionDuration: tokens.durationFast,
+    transitionTimingFunction: tokens.curveAccelerateMid,
+  },
+
+  // Actions group (right side) — never shrinks
   actions: {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacingHorizontalXS,
+    flexShrink: 0,
+  },
+
+  // Spacer pushes actions to the right when no nav is inline
+  spacer: {
+    flex: 1,
   },
 
   // ---- Collapsed mode: inline expansion ----
@@ -104,6 +149,7 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacingHorizontalXS,
+    flexShrink: 0,
   },
 
   // Inline menu bar that animates in from the hamburger
@@ -211,28 +257,28 @@ interface DashboardHeaderProps {
   onExpandAll: () => void;
   onCollapseAll: () => void;
   onOpenCatalog?: () => void;
+  onOpenStore?: () => void;
   onOpenCommandCentre?: () => void;
   showCustomiseButton?: boolean;
-  /** Demo mode: show tier switcher in the header bar */
   isDemoMode?: boolean;
   currentTier?: LicenseTier;
   onTierChange?: (tier: LicenseTier) => void;
   accessibleCount?: number;
   lockedCount?: number;
-  /** Callback to set all visible card sizes at once */
   onSetAllCardSizes?: (size: CardSize) => void;
-  /** Whether the category nav rail is currently visible */
   isCategoriesVisible?: boolean;
-  /** Callback to toggle category nav visibility */
   onToggleCategories?: () => void;
-  /** Menu display mode: expanded (all buttons) | collapsed (hamburger) | hidden */
   menuMode?: string;
-  /** Float menu (sticky) or keep at top (static). Default: collapsed=float, expanded=static */
   floatMenu?: boolean;
+  /** Category nav element — rendered inline on scroll, below header at rest */
+  categoryNavElement?: React.ReactNode;
+  aiChatTrigger?: React.ReactNode;
+  /** Pulse indicator element — rendered in action bar */
+  pulseElement?: React.ReactNode;
 }
 
 // ============================================
-// Shared menu items (overflow ⋯ in expanded, part of inline bar in collapsed)
+// Shared menu items (overflow ⋯)
 // ============================================
 
 interface OverflowMenuProps {
@@ -331,6 +377,86 @@ const OverflowMenu: React.FC<OverflowMenuProps> = ({
 );
 
 // ============================================
+// TierSwitcher sub-component
+// ============================================
+
+interface TierSwitcherProps {
+  isDemoMode: boolean;
+  currentTier?: LicenseTier;
+  onTierChange?: (tier: LicenseTier) => void;
+  currentTierMeta: typeof LicenseTierMeta[LicenseTier] | null;
+  accessibleCount: number;
+  lockedCount: number;
+  classes: ReturnType<typeof useStyles>;
+}
+
+const TierSwitcher: React.FC<TierSwitcherProps> = ({
+  isDemoMode,
+  currentTier,
+  onTierChange,
+  currentTierMeta,
+  accessibleCount,
+  lockedCount,
+  classes,
+}) => {
+  if (!isDemoMode || !currentTier || !onTierChange) return null;
+
+  const tierOptions = [
+    LicenseTier.Individual,
+    LicenseTier.Team,
+    LicenseTier.Manager,
+    LicenseTier.Leader,
+  ];
+
+  return (
+    <Menu
+      checkedValues={{ tier: [currentTier] }}
+      onCheckedValueChange={(_e, data) => {
+        const selected = data.checkedItems[0] as LicenseTier;
+        if (selected) onTierChange(selected);
+      }}
+    >
+      <MenuTrigger>
+        <Tooltip content="Switch license tier (demo)" relationship="label">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<Sparkle20Regular />}
+            aria-label={`Current tier: ${currentTierMeta?.displayName}`}
+          >
+            <span className={classes.tierButton}>
+              <span className={classes.tierBadge}>{currentTierMeta?.displayName}</span>
+              <Badge size="small" appearance="filled" color="warning">POC</Badge>
+            </span>
+          </Button>
+        </Tooltip>
+      </MenuTrigger>
+      <MenuPopover>
+        <MenuList>
+          <div className={classes.tierMenuHeader}>
+            <Sparkle20Regular />
+            <Text weight="semibold" size={200}>Throughline Tier</Text>
+          </div>
+          <MenuDivider />
+          {tierOptions.map(tier => {
+            const meta = LicenseTierMeta[tier];
+            return (
+              <MenuItemRadio key={tier} name="tier" value={tier}>
+                {meta.displayName} — {meta.price}
+              </MenuItemRadio>
+            );
+          })}
+          <MenuDivider />
+          <div className={classes.tierStats}>
+            {accessibleCount} accessible · {lockedCount} locked · {accessibleCount + lockedCount} total
+          </div>
+        </MenuList>
+      </MenuPopover>
+    </Menu>
+  );
+};
+
+// ============================================
 // Component
 // ============================================
 
@@ -345,6 +471,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onExpandAll,
   onCollapseAll,
   onOpenCatalog,
+  onOpenStore,
   onOpenCommandCentre,
   showCustomiseButton = true,
   isDemoMode = false,
@@ -356,55 +483,47 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   isCategoriesVisible = true,
   onToggleCategories,
   menuMode = 'expanded',
-  floatMenu,
+  categoryNavElement,
+  aiChatTrigger,
+  pulseElement,
 }) => {
   const classes = useStyles();
-
-  // Determine floating behaviour:
-  // - collapsed mode defaults to floating (sticky)
-  // - expanded mode defaults to static (in-flow)
-  // - explicit floatMenu prop overrides the default
-  const isFloating = floatMenu !== undefined
-    ? floatMenu
-    : menuMode === 'collapsed';
 
   // Track whether the sticky header is actually "stuck" (scrolled past its natural position)
   const sentinelRef = React.useRef<HTMLDivElement>(null);
   const [isStuck, setIsStuck] = React.useState(false);
 
   React.useEffect(() => {
-    if (!isFloating || !sentinelRef.current) {
+    if (!sentinelRef.current) {
       setIsStuck(false);
       return;
     }
     const sentinel = sentinelRef.current;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // When sentinel is NOT intersecting, the header has left its natural position
         setIsStuck(!entry.isIntersecting);
       },
       { threshold: 0 }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [isFloating]);
+  }, []);
 
   const headerClassName = mergeClasses(
     classes.header,
-    isFloating ? classes.headerFloating : classes.headerStatic,
-    isFloating && isStuck ? classes.headerFloatingStuck : undefined,
+    isStuck ? classes.headerStuck : undefined,
   );
+
+  const currentTierMeta = currentTier ? LicenseTierMeta[currentTier] : null;
 
   // Collapsed mode: track if inline menu is open
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-  // Track exit animation before unmounting
   const [isExiting, setIsExiting] = React.useState(false);
 
   const handleToggleMenu = React.useCallback(() => {
     if (isMenuOpen) {
-      // Start exit animation, then unmount
       setIsExiting(true);
-      const duration = 150; // matches durationFast
+      const duration = 150;
       setTimeout(() => {
         setIsMenuOpen(false);
         setIsExiting(false);
@@ -413,15 +532,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       setIsMenuOpen(true);
     }
   }, [isMenuOpen]);
-
-  const tierOptions = [
-    LicenseTier.Individual,
-    LicenseTier.Team,
-    LicenseTier.Manager,
-    LicenseTier.Leader,
-  ];
-
-  const currentTierMeta = currentTier ? LicenseTierMeta[currentTier] : null;
 
   // Hidden: render nothing
   if (menuMode === 'hidden') {
@@ -432,12 +542,142 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   if (menuMode === 'collapsed') {
     return (
       <>
-      {/* Sentinel: when this scrolls out of view, the sticky header shows its background */}
+        <div ref={sentinelRef} className={classes.sentinel} />
+        <div className={headerClassName}>
+          {/* Inline nav — animated: fades in when stuck, fades out when not */}
+          {categoryNavElement && (
+            <div className={mergeClasses(classes.navInline, !isStuck && classes.navInlineHidden)}>
+              {categoryNavElement}
+            </div>
+          )}
+
+          {/* Spacer pushes actions right when nav is not inline */}
+          {!isStuck && <div className={classes.spacer} />}
+
+          {/* Right side: search + inline menu + hamburger */}
+          <div className={classes.collapsedContainer}>
+            <CardSearch
+              searchQuery={searchQuery}
+              onSearch={onSearch}
+              onClear={onClearSearch}
+              resultCount={searchResultCount}
+              totalCount={totalCardCount}
+            />
+
+            {/* Inline menu bar — slides in when open */}
+            {isMenuOpen && (
+              <div
+                className={`${classes.inlineMenuBar} ${isExiting ? classes.inlineMenuBarExit : classes.inlineMenuBarEnter}`}
+              >
+                <ViewSwitcher currentView={currentView} onViewChange={onViewChange} />
+
+                <TierSwitcher
+                  isDemoMode={isDemoMode}
+                  currentTier={currentTier}
+                  onTierChange={onTierChange}
+                  currentTierMeta={currentTierMeta}
+                  accessibleCount={accessibleCount}
+                  lockedCount={lockedCount}
+                  classes={classes}
+                />
+
+                {pulseElement}
+
+                {aiChatTrigger}
+
+                {onOpenCatalog && (
+                  <Tooltip content="Card Catalog" relationship="label">
+                    <Button
+                      appearance="subtle"
+                      icon={<Library20Regular />}
+                      size="small"
+                      onClick={onOpenCatalog}
+                      aria-label="Card Catalog"
+                    />
+                  </Tooltip>
+                )}
+
+                {onOpenStore && (
+                  <Tooltip content="Card Store" relationship="label">
+                    <Button
+                      appearance="subtle"
+                      icon={<Cart20Regular />}
+                      size="small"
+                      onClick={onOpenStore}
+                      aria-label="Card Store"
+                    />
+                  </Tooltip>
+                )}
+
+                {showCustomiseButton && onOpenCommandCentre && (
+                  <Tooltip content="Customise" relationship="label">
+                    <Button
+                      appearance="subtle"
+                      icon={<Settings20Regular />}
+                      size="small"
+                      onClick={onOpenCommandCentre}
+                      aria-label="Customise dashboard"
+                    />
+                  </Tooltip>
+                )}
+
+                <OverflowMenu
+                  onToggleCategories={onToggleCategories}
+                  isCategoriesVisible={isCategoriesVisible}
+                  onExpandAll={onExpandAll}
+                  onCollapseAll={onCollapseAll}
+                  onSetAllCardSizes={onSetAllCardSizes}
+                  onOpenCatalog={onOpenCatalog}
+                  onOpenCommandCentre={onOpenCommandCentre}
+                />
+              </div>
+            )}
+
+            {/* Hamburger / Close toggle */}
+            <Tooltip content={isMenuOpen ? 'Close menu' : 'Menu'} relationship="label">
+              <Button
+                appearance="subtle"
+                size="small"
+                aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={isMenuOpen}
+                onClick={handleToggleMenu}
+                icon={
+                  <span key={isMenuOpen ? 'close' : 'open'} className={classes.iconRotateIn}>
+                    {isMenuOpen ? <Dismiss20Regular /> : <Navigation20Filled />}
+                  </span>
+                }
+              />
+            </Tooltip>
+          </div>
+        </div>
+
+        {/* Nav below header — animated: visible at rest, collapses when stuck */}
+        {categoryNavElement && (
+          <div className={mergeClasses(classes.navBelow, isStuck && classes.navBelowHidden)}>
+            {categoryNavElement}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // ---- EXPANDED: All buttons visible individually ----
+  return (
+    <>
       <div ref={sentinelRef} className={classes.sentinel} />
       <div className={headerClassName}>
-        <div className={classes.spacer} />
-        <div className={classes.collapsedContainer}>
-          {/* Search always visible */}
+        {/* Inline nav — animated: fades in when stuck, fades out when not */}
+        {categoryNavElement && (
+          <div className={mergeClasses(classes.navInline, !isStuck && classes.navInlineHidden)}>
+            {categoryNavElement}
+          </div>
+        )}
+
+        {/* Spacer pushes actions right when nav is not inline */}
+        {!isStuck && <div className={classes.spacer} />}
+
+        {/* Right side: all action buttons */}
+        <div className={classes.actions}>
           <CardSearch
             searchQuery={searchQuery}
             onSearch={onSearch}
@@ -445,230 +685,76 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             resultCount={searchResultCount}
             totalCount={totalCardCount}
           />
+          <ViewSwitcher currentView={currentView} onViewChange={onViewChange} />
 
-          {/* Inline menu bar — slides in when open */}
-          {isMenuOpen && (
-            <div
-              className={`${classes.inlineMenuBar} ${isExiting ? classes.inlineMenuBarExit : classes.inlineMenuBarEnter}`}
-            >
-              <ViewSwitcher currentView={currentView} onViewChange={onViewChange} />
+          <TierSwitcher
+            isDemoMode={isDemoMode}
+            currentTier={currentTier}
+            onTierChange={onTierChange}
+            currentTierMeta={currentTierMeta}
+            accessibleCount={accessibleCount}
+            lockedCount={lockedCount}
+            classes={classes}
+          />
 
-              {/* Tier Switcher — demo mode only */}
-              {isDemoMode && currentTier && onTierChange && (
-                <Menu
-                  checkedValues={{ tier: [currentTier] }}
-                  onCheckedValueChange={(_e, data) => {
-                    const selected = data.checkedItems[0] as LicenseTier;
-                    if (selected) onTierChange(selected);
-                  }}
-                >
-                  <MenuTrigger>
-                    <Tooltip content="Switch license tier (demo)" relationship="label">
-                      <Button
-                        appearance="subtle"
-                        size="small"
-                        icon={<Sparkle20Regular />}
-                        aria-label={`Current tier: ${currentTierMeta?.displayName}`}
-                      >
-                        <span className={classes.tierButton}>
-                          <span className={classes.tierBadge}>{currentTierMeta?.displayName}</span>
-                          <Badge size="small" appearance="filled" color="warning">POC</Badge>
-                        </span>
-                      </Button>
-                    </Tooltip>
-                  </MenuTrigger>
-                  <MenuPopover>
-                    <MenuList>
-                      <div className={classes.tierMenuHeader}>
-                        <Sparkle20Regular />
-                        <Text weight="semibold" size={200}>Throughline Tier</Text>
-                      </div>
-                      <MenuDivider />
-                      {tierOptions.map(tier => {
-                        const meta = LicenseTierMeta[tier];
-                        return (
-                          <MenuItemRadio key={tier} name="tier" value={tier}>
-                            {meta.displayName} — {meta.price}
-                          </MenuItemRadio>
-                        );
-                      })}
-                      <MenuDivider />
-                      <div className={classes.tierStats}>
-                        {accessibleCount} accessible · {lockedCount} locked · {accessibleCount + lockedCount} total
-                      </div>
-                    </MenuList>
-                  </MenuPopover>
-                </Menu>
-              )}
+          {pulseElement}
 
-              {onOpenCatalog && (
-                <Tooltip content="Card Catalog" relationship="label">
-                  <Button
-                    appearance="subtle"
-                    icon={<Library20Regular />}
-                    size="small"
-                    onClick={onOpenCatalog}
-                    aria-label="Card Catalog"
-                  />
-                </Tooltip>
-              )}
+          {aiChatTrigger}
 
-              {showCustomiseButton && onOpenCommandCentre && (
-                <Tooltip content="Customise" relationship="label">
-                  <Button
-                    appearance="subtle"
-                    icon={<Settings20Regular />}
-                    size="small"
-                    onClick={onOpenCommandCentre}
-                    aria-label="Customise dashboard"
-                  />
-                </Tooltip>
-              )}
-
-              <OverflowMenu
-                onToggleCategories={onToggleCategories}
-                isCategoriesVisible={isCategoriesVisible}
-                onExpandAll={onExpandAll}
-                onCollapseAll={onCollapseAll}
-                onSetAllCardSizes={onSetAllCardSizes}
-                onOpenCatalog={onOpenCatalog}
-                onOpenCommandCentre={onOpenCommandCentre}
+          {onOpenCatalog && (
+            <Tooltip content="Card Catalog" relationship="label">
+              <Button
+                appearance="subtle"
+                icon={<Library20Regular />}
+                size="small"
+                onClick={onOpenCatalog}
+                aria-label="Card Catalog"
               />
-            </div>
+            </Tooltip>
           )}
 
-          {/* Hamburger / Close toggle — icon rotates on state change */}
-          <Tooltip content={isMenuOpen ? 'Close menu' : 'Menu'} relationship="label">
-            <Button
-              appearance="subtle"
-              size="small"
-              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={isMenuOpen}
-              onClick={handleToggleMenu}
-              icon={
-                <span key={isMenuOpen ? 'close' : 'open'} className={classes.iconRotateIn}>
-                  {isMenuOpen ? <Dismiss20Regular /> : <Navigation20Filled />}
-                </span>
-              }
-            />
-          </Tooltip>
+          {onOpenStore && (
+            <Tooltip content="Card Store" relationship="label">
+              <Button
+                appearance="subtle"
+                icon={<Cart20Regular />}
+                size="small"
+                onClick={onOpenStore}
+                aria-label="Card Store"
+              />
+            </Tooltip>
+          )}
+
+          {showCustomiseButton && onOpenCommandCentre && (
+            <Tooltip content="Customise" relationship="label">
+              <Button
+                appearance="subtle"
+                icon={<Settings20Regular />}
+                size="small"
+                onClick={onOpenCommandCentre}
+                aria-label="Customise dashboard"
+              />
+            </Tooltip>
+          )}
+
+          <OverflowMenu
+            onToggleCategories={onToggleCategories}
+            isCategoriesVisible={isCategoriesVisible}
+            onExpandAll={onExpandAll}
+            onCollapseAll={onCollapseAll}
+            onSetAllCardSizes={onSetAllCardSizes}
+            onOpenCatalog={onOpenCatalog}
+            onOpenCommandCentre={onOpenCommandCentre}
+          />
         </div>
       </div>
-      </>
-    );
-  }
 
-  // ---- EXPANDED: All buttons visible individually (default) ----
-  return (
-    <>
-    {/* Sentinel: when this scrolls out of view, the sticky header shows its background */}
-    <div ref={sentinelRef} className={classes.sentinel} />
-    <div className={headerClassName}>
-      <div className={classes.spacer} />
-      <div className={classes.actions}>
-        {/* Search icon — expands into pill-shaped search bar on click */}
-        <CardSearch
-          searchQuery={searchQuery}
-          onSearch={onSearch}
-          onClear={onClearSearch}
-          resultCount={searchResultCount}
-          totalCount={totalCardCount}
-        />
-        <ViewSwitcher currentView={currentView} onViewChange={onViewChange} />
-
-        {/* Tier Switcher — only visible in demo mode */}
-        {isDemoMode && currentTier && onTierChange && (
-          <Menu
-            checkedValues={{ tier: [currentTier] }}
-            onCheckedValueChange={(_e, data) => {
-              const selected = data.checkedItems[0] as LicenseTier;
-              if (selected) onTierChange(selected);
-            }}
-          >
-            <MenuTrigger>
-              <Tooltip content="Switch license tier (demo)" relationship="label">
-                <Button
-                  appearance="subtle"
-                  size="small"
-                  icon={<Sparkle20Regular />}
-                  aria-label={`Current tier: ${currentTierMeta?.displayName}`}
-                >
-                  <span className={classes.tierButton}>
-                    <span className={classes.tierBadge}>{currentTierMeta?.displayName}</span>
-                    <Badge
-                      size="small"
-                      appearance="filled"
-                      color="warning"
-                    >
-                      POC
-                    </Badge>
-                  </span>
-                </Button>
-              </Tooltip>
-            </MenuTrigger>
-            <MenuPopover>
-              <MenuList>
-                <div className={classes.tierMenuHeader}>
-                  <Sparkle20Regular />
-                  <Text weight="semibold" size={200}>Throughline Tier</Text>
-                </div>
-                <MenuDivider />
-                {tierOptions.map(tier => {
-                  const meta = LicenseTierMeta[tier];
-                  return (
-                    <MenuItemRadio
-                      key={tier}
-                      name="tier"
-                      value={tier}
-                    >
-                      {meta.displayName} — {meta.price}
-                    </MenuItemRadio>
-                  );
-                })}
-                <MenuDivider />
-                <div className={classes.tierStats}>
-                  {accessibleCount} accessible · {lockedCount} locked · {accessibleCount + lockedCount} total
-                </div>
-              </MenuList>
-            </MenuPopover>
-          </Menu>
-        )}
-
-        {onOpenCatalog && (
-          <Tooltip content="Card Catalog" relationship="label">
-            <Button
-              appearance="subtle"
-              icon={<Library20Regular />}
-              size="small"
-              onClick={onOpenCatalog}
-              aria-label="Card Catalog"
-            />
-          </Tooltip>
-        )}
-
-        {showCustomiseButton && onOpenCommandCentre && (
-          <Tooltip content="Customise" relationship="label">
-            <Button
-              appearance="subtle"
-              icon={<Settings20Regular />}
-              size="small"
-              onClick={onOpenCommandCentre}
-              aria-label="Customise dashboard"
-            />
-          </Tooltip>
-        )}
-
-        <OverflowMenu
-          onToggleCategories={onToggleCategories}
-          isCategoriesVisible={isCategoriesVisible}
-          onExpandAll={onExpandAll}
-          onCollapseAll={onCollapseAll}
-          onSetAllCardSizes={onSetAllCardSizes}
-          onOpenCatalog={onOpenCatalog}
-          onOpenCommandCentre={onOpenCommandCentre}
-        />
-      </div>
-    </div>
+      {/* Nav below header — animated: visible at rest, collapses when stuck */}
+      {categoryNavElement && (
+        <div className={mergeClasses(classes.navBelow, isStuck && classes.navBelowHidden)}>
+          {categoryNavElement}
+        </div>
+      )}
     </>
   );
 };

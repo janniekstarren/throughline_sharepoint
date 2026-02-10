@@ -48,6 +48,10 @@ export interface ICategorySectionProps {
   description?: string;
   /** Optional summary text when collapsed (e.g., "12 cards · 3 with data") */
   collapsedSummary?: string;
+  /** Adaptive rendering state summary (e.g., "2 critical · 1 warning · 5 clear") */
+  stateSummaryText?: string;
+  /** Whether adaptive rendering is enabled */
+  isAdaptiveEnabled?: boolean;
 }
 
 // Size priority for sorting (larger cards first for better packing)
@@ -73,6 +77,8 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
   categoryColor,
   description,
   collapsedSummary,
+  stateSummaryText,
+  isAdaptiveEnabled = false,
 }) => {
   // Helper to determine card size
   const getCardSize = (card: IOrderedCard): CardSize => {
@@ -172,6 +178,9 @@ export const CategorySection: React.FC<ICategorySectionProps> = ({
           <span className={styles.cardCount}>({orderedCards.length})</span>
           {collapsedSummary && (
             <span className={styles.cardCount}>{collapsedSummary}</span>
+          )}
+          {isAdaptiveEnabled && stateSummaryText && (
+            <span className={styles.stateSummary}>{stateSummaryText}</span>
           )}
           {onToggleCollapsed && (
             <span className={styles.chevron}>

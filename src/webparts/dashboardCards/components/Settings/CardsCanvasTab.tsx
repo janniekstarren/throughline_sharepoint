@@ -20,6 +20,7 @@ import {
   CheckmarkCircle16Filled,
   Circle16Regular,
   LockClosed16Regular,
+  Cart20Regular,
 } from '@fluentui/react-icons';
 import { CARD_REGISTRY } from '../../config/cardRegistry';
 import {
@@ -31,6 +32,8 @@ import {
 } from '../../models/CardCatalog';
 import { FeatureFlags } from '../../context/FeatureFlagContext';
 import { useLicense } from '../../context/LicenseContext';
+import { useEntitlements } from '../../context/EntitlementContext';
+import { EntitlementSource } from '../../models/CardEntitlement';
 import { getCardsByCategory, sortCardsImplementedFirst } from '../../utils/cardUtils';
 import { searchCards } from '../../utils/cardSearch';
 
@@ -135,6 +138,18 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusMedium,
     backgroundColor: tokens.colorNeutralBackground2,
   },
+  entitlementBadge: {
+    fontSize: tokens.fontSizeBase100,
+    color: tokens.colorNeutralForeground3,
+    whiteSpace: 'nowrap',
+  },
+  storeLink: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: tokens.spacingVerticalL,
+    paddingTop: tokens.spacingVerticalM,
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+  },
 });
 
 // ============================================
@@ -148,6 +163,8 @@ interface CardsCanvasTabProps {
   onTogglePin: (cardId: string) => void;
   onToggleHide: (cardId: string) => void;
   currentTier: LicenseTier;
+  /** Opens the Card Store (optionally to a specific card) */
+  onOpenStore?: (cardId?: string) => void;
 }
 
 // ============================================
@@ -161,9 +178,11 @@ export const CardsCanvasTab: React.FC<CardsCanvasTabProps> = ({
   onTogglePin,
   onToggleHide,
   currentTier,
+  onOpenStore,
 }) => {
   const classes = useStyles();
   const { isCardAccessible } = useLicense();
+  const { getEntitlement } = useEntitlements();
   const [searchQuery, setSearchQuery] = React.useState('');
 
   const pinnedSet = React.useMemo(() => new Set(pinnedCardIds), [pinnedCardIds]);
@@ -186,10 +205,26 @@ export const CardsCanvasTab: React.FC<CardsCanvasTabProps> = ({
     [filteredCards, pinnedSet]
   );
 
+  // Map entitlement source to short label
+  const getSourceLabel = (source: EntitlementSource | null): string => {
+    switch (source) {
+      case EntitlementSource.DemoMode: return 'Demo';
+      case EntitlementSource.SiteLicense: return 'Site';
+      case EntitlementSource.AdminGrant: return 'Granted';
+      case EntitlementSource.TierSubscription: return 'Tier';
+      case EntitlementSource.IndividualPurchase: return 'Add-on';
+      case EntitlementSource.Trial: return 'Trial';
+      case EntitlementSource.Free: return 'Free';
+      default: return '';
+    }
+  };
+
   const renderTile = (card: CardRegistration): React.ReactElement => {
     const locked = !isCardAccessible(card.id);
     const isPinned = pinnedSet.has(card.id);
     const isHidden = hiddenSet.has(card.id);
+    const entitlement = getEntitlement(card.id);
+    const sourceLabel = locked ? '' : getSourceLabel(entitlement.source);
 
     const tileClasses = [
       classes.tile,
@@ -216,6 +251,9 @@ export const CardsCanvasTab: React.FC<CardsCanvasTabProps> = ({
           <Badge size="small" appearance="tint" color="informative">
             {card.impactRating}
           </Badge>
+          {sourceLabel && (
+            <Text className={classes.entitlementBadge}>{sourceLabel}</Text>
+          )}
           <div className={classes.tileActions}>
             {permissions.allowCardPinning && (
               <Button
@@ -291,6 +329,19 @@ export const CardsCanvasTab: React.FC<CardsCanvasTabProps> = ({
             </div>
           );
         })}
+
+      {/* Get more cards — store link */}
+      {onOpenStore && (
+        <div className={classes.storeLink}>
+          <Button
+            appearance="subtle"
+            icon={<Cart20Regular />}
+            onClick={() => onOpenStore()}
+          >
+            Get more cards in the Store
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

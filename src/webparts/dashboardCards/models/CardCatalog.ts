@@ -196,6 +196,9 @@ export interface CardRegistration {
   // Data source info (for placeholder cards)
   dataSources?: string[]; // e.g. ['Mail API', 'Teams Chat API']
 
+  // Ambient data visualisation hint for SmallCard hero area
+  dataVisualisationHint?: 'sparkline' | 'gauge' | 'count' | 'status';
+
   // Tags for search/filter
   tags?: string[];
 

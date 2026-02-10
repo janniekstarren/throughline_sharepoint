@@ -15,6 +15,7 @@ import {
 import {
   LockClosed20Regular,
   ArrowUpRight20Regular,
+  Cart20Regular,
 } from '@fluentui/react-icons';
 import {
   CardRegistration,
@@ -22,6 +23,8 @@ import {
   LicenseTierMeta,
   CardSize,
 } from '../../../models/CardCatalog';
+import { getStoreListing } from '../../../config/storeListings';
+import { CARD_PRICING_DEFAULTS } from '../../../models/CardStore';
 
 // ============================================
 // Styles
@@ -190,9 +193,22 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground3,
   },
 
+  // Button row — side-by-side upgrade + add-on buttons
+  buttonRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
+    marginTop: tokens.spacingVerticalS,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+
   // Upgrade button
   upgradeButton: {
-    marginTop: tokens.spacingVerticalS,
+  },
+
+  // Add-on button
+  addOnButton: {
   },
 
   // Description (hidden in mini)
@@ -212,6 +228,8 @@ interface LockedCardProps {
   size: CardSize;
   currentTier: LicenseTier;
   onUpgradeClick?: () => void;
+  /** Opens the Card Store to this card's detail page */
+  onStoreOpen?: (cardId: string) => void;
 }
 
 // ============================================
@@ -222,6 +240,7 @@ export const LockedCard: React.FC<LockedCardProps> = ({
   size,
   currentTier,
   onUpgradeClick,
+  onStoreOpen,
 }) => {
   const styles = useStyles();
   const requiredTierMeta = LicenseTierMeta[card.minimumTier];
@@ -289,18 +308,31 @@ export const LockedCard: React.FC<LockedCardProps> = ({
             <LockClosed20Regular style={{ fontSize: '14px' }} />
             Requires {requiredTierMeta.displayName} · {requiredTierMeta.price}
           </span>
-          {onUpgradeClick && (
-            <Button
-              appearance="primary"
-              size="small"
-              icon={<ArrowUpRight20Regular />}
-              iconPosition="after"
-              className={styles.upgradeButton}
-              onClick={onUpgradeClick}
-            >
-              Upgrade from {currentTierMeta.displayName}
-            </Button>
-          )}
+          <div className={styles.buttonRow}>
+            {onUpgradeClick && (
+              <Button
+                appearance="primary"
+                size="small"
+                icon={<ArrowUpRight20Regular />}
+                iconPosition="after"
+                className={styles.upgradeButton}
+                onClick={onUpgradeClick}
+              >
+                Upgrade from {currentTierMeta.displayName}
+              </Button>
+            )}
+            {onStoreOpen && (
+              <Button
+                appearance="outline"
+                size="small"
+                icon={<Cart20Regular />}
+                className={styles.addOnButton}
+                onClick={() => onStoreOpen(card.id)}
+              >
+                Get as add-on
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -346,17 +378,34 @@ export const LockedCard: React.FC<LockedCardProps> = ({
           You are currently on {currentTierMeta.displayName}
           {currentTierMeta.priceNumeric > 0 && ` (${currentTierMeta.price})`}
         </Text>
-        {onUpgradeClick && (
-          <Button
-            appearance="primary"
-            icon={<ArrowUpRight20Regular />}
-            iconPosition="after"
-            className={styles.upgradeButton}
-            onClick={onUpgradeClick}
-          >
-            Upgrade to {requiredTierMeta.displayName}
-          </Button>
-        )}
+        <div className={styles.buttonRow}>
+          {onUpgradeClick && (
+            <Button
+              appearance="primary"
+              icon={<ArrowUpRight20Regular />}
+              iconPosition="after"
+              className={styles.upgradeButton}
+              onClick={onUpgradeClick}
+            >
+              Upgrade to {requiredTierMeta.displayName}
+            </Button>
+          )}
+          {onStoreOpen && (() => {
+            const listing = getStoreListing(card.id);
+            const pricing = CARD_PRICING_DEFAULTS[listing.pricingTier];
+            const priceLabel = pricing.monthlyPrice > 0 ? ` — $${pricing.monthlyPrice}/mo` : '';
+            return (
+              <Button
+                appearance="outline"
+                icon={<Cart20Regular />}
+                className={styles.addOnButton}
+                onClick={() => onStoreOpen(card.id)}
+              >
+                Get as add-on{priceLabel}
+              </Button>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );

@@ -27,6 +27,20 @@ import { WaitingOnYouCard, WaitingOnYouCardLarge } from '../components/WaitingOn
 import { WaitingOnOthersCard } from '../components/WaitingOnOthersCard';
 import { WaitingOnOthersCardLarge } from '../components/WaitingOnOthersCardLarge';
 import { ContextSwitchingCard, ContextSwitchingCardLarge } from '../components/ContextSwitchingCard';
+import { ApprovalBottlenecksCard, ApprovalBottlenecksCardLarge } from '../components/ApprovalBottlenecksCard';
+import { PreMeetingConflictsCard, PreMeetingConflictsCardLarge } from '../components/PreMeetingConflictsCard';
+import { ContextualActionsCard, ContextualActionsCardLarge } from '../components/ContextualActionsCard';
+
+// Productivity Patterns cards
+import { PeakProductivityCard, PeakProductivityCardLarge } from '../components/PeakProductivityCard';
+import { DeepWorkOpportunitiesCard, DeepWorkOpportunitiesCardLarge } from '../components/DeepWorkOpportunitiesCard';
+import { AfterHoursFootprintCard, AfterHoursFootprintCardLarge } from '../components/AfterHoursFootprintCard';
+import { MeetingPrepGapCard, MeetingPrepGapCardLarge } from '../components/MeetingPrepGapCard';
+import { EmailResponseCard, EmailResponseCardLarge } from '../components/EmailResponseCard';
+import { CollaborationOverloadCard, CollaborationOverloadCardLarge } from '../components/CollaborationOverloadCard';
+import { CommitmentCapacityCard, CommitmentCapacityCardLarge } from '../components/CommitmentCapacityCard';
+import { SeasonalWorkloadCard, SeasonalWorkloadCardLarge } from '../components/SeasonalWorkloadCard';
+import { MeetingCreepCard, MeetingCreepCardLarge } from '../components/MeetingCreepCard';
 
 // Placeholder and locked card components
 import { PlaceholderCard } from '../components/cards/PlaceholderCard/PlaceholderCard';
@@ -57,6 +71,8 @@ export interface CardRenderProps {
   cardTitle?: string;
   /** Opens the Command Centre to a specific platform's detail page */
   onOpenIntegrations?: (platformId: string) => void;
+  /** Opens the Card Store to a specific card's detail page */
+  onStoreOpen?: (cardId: string) => void;
 }
 
 // ============================================
@@ -86,6 +102,7 @@ export function renderCardFromRegistry(
         card={card}
         size={size}
         currentTier={currentTier}
+        onStoreOpen={props.onStoreOpen}
       />
     );
   }
@@ -291,6 +308,58 @@ function renderImplementedCard(
         />
       );
     }
+
+    // --- Approval Bottlenecks (standard props) ---
+    case 'approvalBottlenecks':
+      if (size === 'large') return <ApprovalBottlenecksCardLarge {...standardProps} />;
+      return <ApprovalBottlenecksCard {...standardProps} />;
+
+    // --- Pre-Meeting Conflicts (standard props) ---
+    case 'preMeetingConflicts':
+      if (size === 'large') return <PreMeetingConflictsCardLarge {...standardProps} />;
+      return <PreMeetingConflictsCard {...standardProps} />;
+
+    // --- Contextual Action Suggestions (standard props) ---
+    case 'contextualActions':
+      if (size === 'large') return <ContextualActionsCardLarge {...standardProps} />;
+      return <ContextualActionsCard {...standardProps} />;
+
+    // --- Productivity Patterns cards (standard props) ---
+    case 'peakProductivity':
+      if (size === 'large') return <PeakProductivityCardLarge {...standardProps} />;
+      return <PeakProductivityCard {...standardProps} />;
+
+    case 'deepWorkOpportunities':
+      if (size === 'large') return <DeepWorkOpportunitiesCardLarge {...standardProps} />;
+      return <DeepWorkOpportunitiesCard {...standardProps} />;
+
+    case 'afterHoursFootprint':
+      if (size === 'large') return <AfterHoursFootprintCardLarge {...standardProps} />;
+      return <AfterHoursFootprintCard {...standardProps} />;
+
+    case 'meetingPrepGap':
+      if (size === 'large') return <MeetingPrepGapCardLarge {...standardProps} />;
+      return <MeetingPrepGapCard {...standardProps} />;
+
+    case 'emailResponse':
+      if (size === 'large') return <EmailResponseCardLarge {...standardProps} />;
+      return <EmailResponseCard {...standardProps} />;
+
+    case 'collaborationOverload':
+      if (size === 'large') return <CollaborationOverloadCardLarge {...standardProps} />;
+      return <CollaborationOverloadCard {...standardProps} />;
+
+    case 'commitmentCapacity':
+      if (size === 'large') return <CommitmentCapacityCardLarge {...standardProps} />;
+      return <CommitmentCapacityCard {...standardProps} />;
+
+    case 'seasonalWorkload':
+      if (size === 'large') return <SeasonalWorkloadCardLarge {...standardProps} />;
+      return <SeasonalWorkloadCard {...standardProps} />;
+
+    case 'meetingCreep':
+      if (size === 'large') return <MeetingCreepCardLarge {...standardProps} />;
+      return <MeetingCreepCard {...standardProps} />;
 
     // --- organizationalHandoffMap (not yet a card, but registered as implemented) ---
     case 'organizationalHandoffMap':
